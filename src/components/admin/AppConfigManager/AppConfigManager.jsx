@@ -36,7 +36,7 @@ const AppConfigManager = () => {
     logo_url: "",
     initialinfo: "",
     show_initialinfo: true,
-    currency: "MN", // ✅ NUEVO CAMPO
+    currency: "CUP", // ✅ NUEVO CAMPO
   });
 
   const [activeTab, setActiveTab] = useState("general");
@@ -59,7 +59,7 @@ const AppConfigManager = () => {
         logo_url: config.logo_url || "",
         initialinfo: config.initialinfo || "",
         show_initialinfo: config.show_initialinfo !== false,
-        currency: config.currency || "MN", // ✅ NUEVO CAMPO
+        currency: config.currency || "CUP", // ✅ NUEVO CAMPO
       });
     }
   }, [config]);
@@ -215,10 +215,10 @@ const AppConfigManager = () => {
   // ✅ NUEVO: Opciones de moneda (con iconos corregidos)
   const currencyOptions = [
     {
-      code: "MN",
+      code: "CUP",
       name: "Moneda Nacional",
       symbol: "$",
-      description: "Peso local (MN)",
+      description: "Peso local (CUP)",
       icon: HiOutlineCash, // Usando HiOutlineCash para moneda nacional
     },
     {
