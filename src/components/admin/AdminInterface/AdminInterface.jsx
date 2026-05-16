@@ -40,7 +40,9 @@ import {
   deleteCategory,
 } from "../../../actions/categoriesActions";
 import { startLogout } from "../../../actions/authActions";
-
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://minimarket-backend-6z9m.onrender.com";
 import "./AdminInterface.css";
 
 // Constantes para evitar recreación de objetos

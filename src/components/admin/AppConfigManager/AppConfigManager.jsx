@@ -11,6 +11,8 @@ import {
   HiOutlineCurrencyDollar,
   HiOutlineCurrencyEuro,
   HiOutlineCash,
+  HiOutlineTruck,
+  HiOutlineLocationMarker,
 } from "react-icons/hi";
 import {
   updateAppConfig,
@@ -21,6 +23,8 @@ import {
 import { getThemePreview } from "../../../utils/themeManager";
 import Swal from "sweetalert2";
 import "./AppConfigManager.css";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const AppConfigManager = () => {
   const dispatch = useDispatch();
@@ -36,15 +40,165 @@ const AppConfigManager = () => {
     logo_url: "",
     initialinfo: "",
     show_initialinfo: true,
-    currency: "CUP", // ✅ NUEVO CAMPO
+    currency: "CUP",
+    delivery_origin_name: "",
+    delivery_origin_address: "",
+    delivery_origin_lat: "",
+    delivery_origin_lng: "",
+    delivery_price_per_km: "",
+    delivery_minimum_price: "",
+    delivery_free_from: "",
+    delivery_max_distance: "",
   });
 
   const [activeTab, setActiveTab] = useState("general");
   const [previewingTheme, setPreviewingTheme] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [gpsLoadingDelivery, setGpsLoadingDelivery] = useState(false);
+
+  const getGPSLocationForDelivery = () => {
+    setGpsLoadingDelivery(true);
+
+    if (!navigator.geolocation) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Tu navegador no soporta geolocalización",
+      });
+      setGpsLoadingDelivery(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        // Obtener dirección desde coordenadas
+        try {
+          const res = await fetch(`${API_URL}/api/geocoding/reverse`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lat: latitude, lng: longitude }),
+          });
+          const data = await res.json();
+
+          setFormData((prev) => ({
+            ...prev,
+            delivery_origin_lat: latitude.toString(),
+            delivery_origin_lng: longitude.toString(),
+            delivery_origin_address:
+              data.display_name || `${latitude}, ${longitude}`,
+          }));
+        } catch (err) {
+          setFormData((prev) => ({
+            ...prev,
+            delivery_origin_lat: latitude.toString(),
+            delivery_origin_lng: longitude.toString(),
+          }));
+        }
+
+        setGpsLoadingDelivery(false);
+        Swal.fire({
+          icon: "success",
+          title: "¡Ubicación obtenida!",
+          text: "Se ha configurado el punto de partida con tu ubicación actual",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      },
+      (err) => {
+        setGpsLoadingDelivery(false);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Error obteniendo ubicación: " + err.message,
+        });
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
+
+  // Cargar configuración de delivery
+  const loadDeliveryConfig = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const res = await fetch(`${API_URL}/api/delivery/config`, {
+        headers: { "x-token": token },
+      });
+      const data = await res.json();
+
+      if (data.ok && data.config) {
+        setFormData((prev) => ({
+          ...prev,
+          delivery_origin_name: data.config.origin_name || "",
+          delivery_origin_address: data.config.origin_address || "",
+          delivery_origin_lat: data.config.origin_lat?.toString() || "",
+          delivery_origin_lng: data.config.origin_lng?.toString() || "",
+          delivery_price_per_km: data.config.price_per_km?.toString() || "",
+          delivery_minimum_price: data.config.minimum_price?.toString() || "",
+          delivery_free_from: data.config.free_delivery_from?.toString() || "",
+          delivery_max_distance: data.config.max_distance_km?.toString() || "",
+        }));
+      }
+    } catch (err) {
+      console.error("Error cargando delivery config:", err);
+    }
+  };
+
+  const handleSaveDelivery = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const res = await fetch(`${API_URL}/api/delivery/config`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-token": token,
+        },
+        body: JSON.stringify({
+          origin_name: formData.delivery_origin_name,
+          origin_address: formData.delivery_origin_address,
+          origin_lat: parseFloat(formData.delivery_origin_lat) || 23.113592,
+          origin_lng: parseFloat(formData.delivery_origin_lng) || -82.366592,
+          price_per_km: parseFloat(formData.delivery_price_per_km) || 50,
+          minimum_price: parseFloat(formData.delivery_minimum_price) || 100,
+          free_delivery_from: parseFloat(formData.delivery_free_from) || 500,
+          max_distance_km: parseFloat(formData.delivery_max_distance) || 15,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        Swal.fire({
+          icon: "success",
+          title: "¡Configuración de delivery guardada!",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: data.msg || "No se pudo guardar",
+        });
+      }
+    } catch (err) {
+      console.error("Error guardando delivery:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error de conexión",
+      });
+    }
+  };
 
   useEffect(() => {
     dispatch(loadAppConfig());
+    loadDeliveryConfig();
   }, [dispatch]);
 
   useEffect(() => {
@@ -280,6 +434,13 @@ const AppConfigManager = () => {
           <HiOutlineInformationCircle />
           Mensaje Bienvenida
         </button>
+        <button
+          className={`tab ${activeTab === "delivery" ? "active" : ""}`}
+          onClick={() => setActiveTab("delivery")}
+        >
+          <HiOutlineTruck />
+          Delivery
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="config-form">
@@ -410,7 +571,211 @@ const AppConfigManager = () => {
             </div>
           </div>
         )}
+        {activeTab === "delivery" && (
+          <div className="tab-content">
+            <div className="delivery-config">
+              <h3 className="delivery-title">
+                <HiOutlineTruck className="delivery-title-icon" />
+                Configuración de Delivery
+              </h3>
+              <p className="delivery-subtitle">
+                Configura el punto de partida y las tarifas de envío a domicilio
+              </p>
 
+              {/* Punto de Origen */}
+              <div className="delivery-section">
+                <h4 className="delivery-section-title">
+                  <HiOutlineLocationMarker /> Punto de Partida (Farmacia)
+                </h4>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Latitud</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.delivery_origin_lat}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          delivery_origin_lat: e.target.value,
+                        }))
+                      }
+                      placeholder="23.113592"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Longitud</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.delivery_origin_lng}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          delivery_origin_lng: e.target.value,
+                        }))
+                      }
+                      placeholder="-82.366592"
+                    />
+                  </div>
+                </div>
+
+                {/* ✅ BOTÓN GPS PARA OBTENER UBICACIÓN ACTUAL */}
+                <button
+                  type="button"
+                  className="gps-button-delivery"
+                  onClick={getGPSLocationForDelivery}
+                  disabled={gpsLoadingDelivery}
+                  style={{
+                    width: "100%",
+                    marginTop: "0.5rem",
+                  }}
+                >
+                  {gpsLoadingDelivery ? (
+                    <>⏳ Obteniendo ubicación...</>
+                  ) : (
+                    <>📍 Usar mi ubicación actual como punto de partida</>
+                  )}
+                </button>
+
+                <small className="help-text" style={{ marginTop: "0.5rem" }}>
+                  Puedes obtener las coordenadas exactas desde Google Maps,
+                  OpenStreetMap o usar el botón GPS
+                </small>
+              </div>
+
+              {/* Tarifas */}
+              <div className="delivery-section">
+                <h4 className="delivery-section-title">
+                  <HiOutlineCurrencyDollar /> Tarifas de Envío
+                </h4>
+
+                <div className="form-group">
+                  <label>Precio por kilómetro (CUP)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.delivery_price_per_km}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        delivery_price_per_km: e.target.value,
+                      }))
+                    }
+                    placeholder="50.00"
+                  />
+                  <small className="help-text">
+                    Costo en CUP por cada kilómetro recorrido
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label>Precio mínimo de delivery (CUP)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.delivery_minimum_price}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        delivery_minimum_price: e.target.value,
+                      }))
+                    }
+                    placeholder="100.00"
+                  />
+                  <small className="help-text">
+                    Cobro mínimo aunque la distancia sea corta
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label>Delivery gratis desde (CUP)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.delivery_free_from}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        delivery_free_from: e.target.value,
+                      }))
+                    }
+                    placeholder="500.00"
+                  />
+                  <small className="help-text">
+                    Si el pedido supera este monto, el delivery es gratis
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label>Distancia máxima (km)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={formData.delivery_max_distance}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        delivery_max_distance: e.target.value,
+                      }))
+                    }
+                    placeholder="15.00"
+                  />
+                  <small className="help-text">
+                    No se harán envíos más allá de esta distancia
+                  </small>
+                </div>
+              </div>
+
+              {/* Ejemplo de cálculo */}
+              <div className="delivery-preview">
+                <h4>📊 Ejemplo de Cálculo</h4>
+                <div className="preview-examples">
+                  <div className="example-item">
+                    <span>Cliente a 2 km:</span>
+                    <strong>
+                      {formData.delivery_price_per_km &&
+                      formData.delivery_minimum_price
+                        ? `${formData.delivery_origin_address ? formData.delivery_origin_address.split(",")[0] : "Origen"} → 2km = ${Math.max(
+                            parseFloat(formData.delivery_minimum_price) || 100,
+                            (parseFloat(formData.delivery_price_per_km) || 50) *
+                              2,
+                          ).toFixed(2)} CUP`
+                        : "Configura las tarifas"}
+                    </strong>
+                  </div>
+                  <div className="example-item">
+                    <span>Cliente a 5 km:</span>
+                    <strong>
+                      {formData.delivery_price_per_km
+                        ? `${(parseFloat(formData.delivery_price_per_km) * 5).toFixed(2)} CUP`
+                        : "—"}
+                    </strong>
+                  </div>
+                  <div className="example-item">
+                    <span>
+                      Pedido mayor a {formData.delivery_free_from || "—"} CUP:
+                    </span>
+                    <strong className="free-delivery">¡GRATIS!</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botón guardar */}
+              <div className="form-actions" style={{ marginTop: "1.5rem" }}>
+                <button
+                  type="button"
+                  className="save-btn"
+                  onClick={handleSaveDelivery}
+                >
+                  <HiOutlineTruck style={{ marginRight: "0.5rem" }} />
+                  Guardar Configuración de Delivery
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* ✅ NUEVA PESTAÑA: Configuración de Moneda */}
         {activeTab === "currency" && (
           <div className="tab-content">

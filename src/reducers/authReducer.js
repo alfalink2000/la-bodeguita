@@ -31,6 +31,7 @@ export const authReducer = (state = initialState, action) => {
         loading: false,
         uid: action.payload.uid,
         name: action.payload.name,
+        role: action.payload.role,
         isLoggedIn: true,
       };
 

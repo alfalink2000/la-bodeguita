@@ -1,9 +1,14 @@
 // components/client/ChatModal/ChatModal.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
-import { HiOutlineX, HiOutlinePaperAirplane, HiOutlineChat, HiOutlineUserCircle } from "react-icons/hi";
+import {
+  HiOutlineX,
+  HiOutlinePaperAirplane,
+  HiOutlineChat,
+  HiOutlineUserCircle,
+} from "react-icons/hi";
 import "./ChatModal.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "https://minimarket-backend-6z9m.onrender.com";
+const API_URL = import.meta.env.VITE_API_URL;
 
 const ChatModal = ({ isOpen, onClose, token, userData }) => {
   const [messages, setMessages] = useState([]);
@@ -16,14 +21,14 @@ const ChatModal = ({ isOpen, onClose, token, userData }) => {
   // Cargar mensajes
   const loadMessages = useCallback(async () => {
     if (!token) return;
-    
+
     try {
       setLoading(true);
       const res = await fetch(`${API_URL}/api/chat/messages`, {
         headers: { "x-token": token },
       });
       const data = await res.json();
-      
+
       if (data.ok) {
         setMessages(data.mensajes || []);
       }
@@ -51,20 +56,20 @@ const ChatModal = ({ isOpen, onClose, token, userData }) => {
   // Polling cada 5 segundos
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const interval = setInterval(() => {
       loadMessages();
     }, 5000);
-    
+
     return () => clearInterval(interval);
   }, [isOpen, loadMessages]);
 
   // Enviar mensaje
   const handleSend = async (e) => {
     e.preventDefault();
-    
+
     if (!newMessage.trim() || !token) return;
-    
+
     try {
       const res = await fetch(`${API_URL}/api/chat/send`, {
         method: "POST",
@@ -75,7 +80,7 @@ const ChatModal = ({ isOpen, onClose, token, userData }) => {
         body: JSON.stringify({ message: newMessage.trim() }),
       });
       const data = await res.json();
-      
+
       if (data.ok) {
         setNewMessage("");
         // Recargar mensajes
@@ -98,12 +103,12 @@ const ChatModal = ({ isOpen, onClose, token, userData }) => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") onClose();
     };
-    
+
     if (isOpen) {
       document.addEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "hidden";
     }
-    
+
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
@@ -113,7 +118,10 @@ const ChatModal = ({ isOpen, onClose, token, userData }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="chat-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="chat-modal-overlay"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="chat-modal">
         {/* Header */}
         <div className="chat-modal__header">
@@ -126,7 +134,11 @@ const ChatModal = ({ isOpen, onClose, token, userData }) => {
               <p className="chat-modal__subtitle">Respondemos en minutos</p>
             </div>
           </div>
-          <button className="chat-modal__close" onClick={onClose} aria-label="Cerrar chat">
+          <button
+            className="chat-modal__close"
+            onClick={onClose}
+            aria-label="Cerrar chat"
+          >
             <HiOutlineX />
           </button>
         </div>

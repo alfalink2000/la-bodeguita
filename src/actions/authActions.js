@@ -30,7 +30,7 @@ export const StartLogin = (username, password) => {
           username,
           password_hash: password,
         },
-        "POST"
+        "POST",
       );
 
       console.log("📦 Body completo recibido:", body);
@@ -58,7 +58,8 @@ export const StartLogin = (username, password) => {
           login({
             uid: body.id,
             name: body.username,
-          })
+            role: body.role,
+          }),
         );
       } else {
         // ✅ MEJOR MANEJO DE ERRORES - EL BACKEND YA DEVUELVE body.msg
@@ -142,7 +143,8 @@ export const StartChecking = () => {
           login({
             uid: body.uid || body.id,
             name: body.name || body.username,
-          })
+            role: body.role,
+          }),
         );
       } else {
         localStorage.removeItem("token");
