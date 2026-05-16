@@ -602,3 +602,22 @@
 .admin-sidebar::-webkit-scrollbar-thumb:hover {
   background: var(--gray-400);
 }
+.admin-sidebar__badge {
+  background: var(--error);
+  color: white;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: auto;
+  animation: badgePulse 2s infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}

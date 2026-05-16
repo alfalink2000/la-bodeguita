@@ -2,7 +2,8 @@
 import { useState, useRef, useEffect } from "react";
 import {
   HiOutlineEye,
-  HiOutlineLockClosed,
+  HiOutlineLogout,
+  HiOutlineUser,
   HiOutlineFilter,
   HiOutlineSearch,
   HiOutlineHome,
@@ -25,6 +26,9 @@ const BottomNavigation = ({
   onSearchClick,
   activeSection,
   onSectionChange,
+  isLoggedIn,        // ✅ NUEVA PROP
+  onLogout,           // ✅ NUEVA PROP
+  onShowLogin,        // ✅ NUEVA PROP
 }) => {
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
@@ -141,14 +145,26 @@ const BottomNavigation = ({
             </span>
           </button>
 
-          {/* Botón Admin */}
-          <button
-            onClick={onAdminClick}
-            className="bottom-nav__button bottom-nav__button--inactive"
-          >
-            <HiOutlineLockClosed className="bottom-nav__icon" />
-            <span className="bottom-nav__label">Admin</span>
-          </button>
+          {/* ✅ BOTÓN MODIFICADO: Entrar / Salir según autenticación */}
+          {isLoggedIn ? (
+            <button
+              onClick={onLogout}
+              className="bottom-nav__button bottom-nav__button--logout"
+              title="Cerrar sesión"
+            >
+              <HiOutlineLogout className="bottom-nav__icon" />
+              <span className="bottom-nav__label">Salir</span>
+            </button>
+          ) : (
+            <button
+              onClick={onShowLogin}
+              className="bottom-nav__button bottom-nav__button--inactive"
+              title="Iniciar sesión"
+            >
+              <HiOutlineUser className="bottom-nav__icon" />
+              <span className="bottom-nav__label">Entrar</span>
+            </button>
+          )}
         </div>
 
         {/* Menú de Categorías */}
@@ -174,10 +190,9 @@ const BottomNavigation = ({
                 <div className="category-dot"></div>
               </button>
 
-              {/* ✅ ESTA ES LA PARTE CORREGIDA */}
               {categories.map((category) => (
                 <button
-                  key={category} // ✅ KEY AÑADIDA AQUÍ
+                  key={category}
                   onClick={() => handleCategorySelect(category)}
                   className={`category-item ${
                     selectedCategory === category ? "category-item--active" : ""
@@ -191,7 +206,7 @@ const BottomNavigation = ({
           </div>
         )}
 
-        {/* Menú de Navegación Rápida - ESTE YA ESTÁ BIEN */}
+        {/* Menú de Navegación Rápida */}
         {showQuickActions && (
           <div className="bottom-nav-menu quick-actions-menu">
             <div className="menu-header">
@@ -208,7 +223,7 @@ const BottomNavigation = ({
                 const IconComponent = section.icon;
                 return (
                   <button
-                    key={section.id} // ✅ Este ya tiene key
+                    key={section.id}
                     onClick={() => handleSectionSelect(section.id)}
                     className={`quick-action-item ${
                       activeSection === section.id

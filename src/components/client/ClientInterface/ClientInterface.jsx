@@ -14,10 +14,9 @@ import {
   HiOutlineStar,
   HiOutlineCog,
   HiOutlineInformationCircle,
+  HiOutlineMenu,
+  HiOutlineChat 
 } from "react-icons/hi";
-
-
-import { HiOutlineMenu } from "react-icons/hi";
 
 // Components
 import Header from "../../common/Header/Header";
@@ -29,6 +28,8 @@ import BottomNavigation from "../../common/BottomNavigation/BottomNavigation";
 import InitialInfoModal from "../../common/InitialInfoModal/InitialInfoModal";
 import CartModal from "../../common/CartModal/CartModal";
 import SideMenu from "../SideMenu/SideMenu";
+import ChatModal from "../ChatModal/ChatModal";
+
 
 // Actions & Selectors
 import { loadFeaturedProducts } from "../../../actions/featuredProductsActions";
@@ -66,6 +67,7 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
   const [isDesktop, setIsDesktop] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   // ⚠️ ELIMINAMOS el isLoading interno
 
   const dispatch = useDispatch();
@@ -261,14 +263,14 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
         >
           <HiOutlinePhone className="header-action__icon" />
         </button>
-        <button
+        {/* <button
           onClick={onShowLoginForm}
           className="header-action header-action--admin"
           title="Panel de administración"
         >
           <HiOutlineCog className="header-action__icon" />
           <span className="header-action__text">Admin</span>
-        </button>
+        </button> */}
       </div>
     ),
     [onShowLoginForm]
@@ -732,10 +734,32 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
           onSearchClick={handleSearchClick}
           activeSection={activeSection}
           onSectionChange={handleSectionChange}
+          isLoggedIn={isLoggedIn}
+          onLogout={onLogout}
+          onShowLogin={onShowLoginForm}
         />
       )}
 
-      <FloatingWhatsAppButton />
+      {/* <FloatingWhatsAppButton /> */}
+      {/* ✅ Botón flotante de Chat (reemplaza al de WhatsApp) */}
+<button
+  className="floating-chat-button"
+  onClick={() => setIsChatOpen(true)}
+  title="Chatear con soporte"
+>
+  <HiOutlineChat className="chat-icon" />
+  <div className="chat-pulse"></div>
+</button>
+
+{/* ✅ Chat Modal */}
+<ChatModal
+  isOpen={isChatOpen}
+  onClose={() => setIsChatOpen(false)}
+  token={localStorage.getItem("token")}
+  userData={userData}
+/>
+
+       
       <SideMenu
   isOpen={isSideMenuOpen}
   onClose={() => setIsSideMenuOpen(false)}

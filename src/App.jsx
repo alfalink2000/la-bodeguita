@@ -1,4 +1,4 @@
-// App.js - VERSIÓN CON AUTENTICACIÓN Y PERSISTENCIA LOCAL
+// App.js - VERSIÓN CON AUTENTICACIÓN, ROLES Y PERSISTENCIA LOCAL
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
@@ -6,6 +6,7 @@ import { persistor } from "./store/store";
 import ClientInterface from "./components/client/ClientInterface/ClientInterface";
 import AdminInterface from "./components/admin/AdminInterface/AdminInterface";
 import AuthPage from "./components/auth/AuthPage";
+import RoleSelector from "./components/auth/RoleSelector";
 import {
   StartChecking,
   checkingFinish,
@@ -29,6 +30,7 @@ const AppContent = () => {
   const [usingCachedData, setUsingCachedData] = useState(false);
   const [syncCompleted, setSyncCompleted] = useState(false);
   const [showAuthPage, setShowAuthPage] = useState(false);
+  const [showRoleSelector, setShowRoleSelector] = useState(false); // ✅ ESTÁ AQUÍ
 
   const dispatch = useDispatch();
   const auth = useSelector((state) => state.auth);
@@ -42,13 +44,7 @@ const AppContent = () => {
     const hasAppConfig = appConfig && appConfig.app_name;
     const hasProducts = Array.isArray(products) && products.length > 0;
     const hasCategories = Array.isArray(categories) && categories.length > 0;
-
     return hasAppConfig && hasProducts && hasCategories;
-  };
-
-  // ✅ VERIFICAR SI LOS DATOS ESENCIALES ESTÁN CARGADOS
-  const areEssentialDataLoaded = () => {
-    return hasValidCachedData();
   };
 
   // ✅ CARGAR DATOS INICIALES MEJORADO
@@ -56,15 +52,10 @@ const AppContent = () => {
     try {
       console.log("🚀 Iniciando carga de datos...");
 
-      // ✅ ESTRATEGIA: MOSTRAR DATOS CACHEADOS INMEDIATAMENTE SI EXISTEN
       if (hasValidCachedData() && !syncCompleted) {
-        console.log(
-          "📦 Datos cacheados encontrados, mostrando UI inmediatamente..."
-        );
+        console.log("📦 Datos cacheados encontrados, mostrando UI inmediatamente...");
         setUsingCachedData(true);
-        setIsLoading(false); // Quitar loading inmediatamente
-
-        // Mostrar mensaje de sincronización en background
+        setIsLoading(false);
         setLoadingStatus("Sincronizando datos en segundo plano...");
       } else {
         setLoadingStatus("Conectando con el servidor...");
@@ -72,7 +63,6 @@ const AppContent = () => {
 
       let syncErrors = [];
 
-      // ✅ CARGAR CONFIGURACIÓN (CON REINTENTOS)
       try {
         if (!usingCachedData) setLoadingStatus("Cargando configuración...");
         await dispatch(loadAppConfig());
@@ -80,16 +70,12 @@ const AppContent = () => {
       } catch (configError) {
         console.warn("⚠️ Error cargando configuración:", configError);
         syncErrors.push("config");
-
-        // Solo cargar configuración por defecto si no hay caché
         if (!hasValidCachedData()) {
           await dispatch(loadDefaultConfig());
         }
       }
 
-      // ✅ CARGAR DATOS ADICIONALES EN PARALELO
-      if (!usingCachedData)
-        setLoadingStatus("Cargando productos y categorías...");
+      if (!usingCachedData) setLoadingStatus("Cargando productos y categorías...");
 
       const loadPromises = [
         dispatch(getProducts()).catch((error) => {
@@ -104,7 +90,6 @@ const AppContent = () => {
         }),
       ];
 
-      // ✅ CARGAR PRODUCTOS DESTACADOS (OPCIONAL - NO BLOQUEANTE)
       try {
         if (!usingCachedData) setLoadingStatus("Cargando datos adicionales...");
         loadPromises.push(dispatch(loadFeaturedProducts()));
@@ -114,7 +99,6 @@ const AppContent = () => {
 
       await Promise.allSettled(loadPromises);
 
-      // ✅ VERIFICAR AUTENTICACIÓN
       const token = localStorage.getItem("token");
       if (token) {
         dispatch(StartChecking());
@@ -122,21 +106,17 @@ const AppContent = () => {
         dispatch(checkingFinish());
       }
 
-      // ✅ MARCAR SINCRONIZACIÓN COMPLETADA
       setSyncCompleted(true);
       setDataLoaded(true);
 
       if (syncErrors.length > 0) {
-        console.warn(
-          `⚠️ Sincronización completada con errores: ${syncErrors.join(", ")}`
-        );
+        console.warn(`⚠️ Sincronización completada con errores: ${syncErrors.join(", ")}`);
         setHasErrors(true);
       } else {
         console.log("✅ Sincronización completada exitosamente");
         setHasErrors(false);
       }
 
-      // Si estábamos usando datos cacheados, actualizar el estado
       if (usingCachedData) {
         setUsingCachedData(false);
         console.log("🔄 Cambiando de datos cacheados a datos actualizados");
@@ -144,69 +124,42 @@ const AppContent = () => {
     } catch (error) {
       console.error("❌ Error crítico en sincronización:", error);
       setHasErrors(true);
-
-      // Si no hay datos cacheados y hay error, mantener loading
       if (!hasValidCachedData()) {
         setDataLoaded(false);
       }
     }
   };
 
-  // ✅ EFECTO PRINCIPAL - CARGAR DATOS AL INICIAR
+  // ✅ EFECTO PRINCIPAL
   useEffect(() => {
     const initializeApp = async () => {
-      // Verificar si tenemos datos cacheados válidos
       if (hasValidCachedData()) {
         console.log("🎯 Datos cacheados disponibles, mostrando UI...");
         setIsLoading(false);
       }
-
-      // Iniciar carga/sincronización de datos
       await loadInitialData();
     };
-
     initializeApp();
   }, []);
 
-  // ✅ EFECTO PARA MANEJAR ESTADOS DE CARGA MEJORADO
+  // ✅ EFECTO PARA MANEJAR ESTADOS DE CARGA
   useEffect(() => {
-    console.log("🔄 Actualizando estado de carga:", {
-      isLoading,
-      dataLoaded,
-      hasValidCachedData: hasValidCachedData(),
-      usingCachedData,
-      syncCompleted,
-    });
-
-    // CASO 1: Tenemos datos cacheados y la sincronización completó
     if (hasValidCachedData() && syncCompleted) {
-      console.log("🎯 Datos actualizados, UI lista");
       setIsLoading(false);
       return;
     }
-
-    // CASO 2: Tenemos datos cacheados pero aún no sincronizamos
-    if (hasValidCachedData() && !syncCompleted) {
-      // No hacer nada - ya mostramos la UI con datos cacheados
-      return;
-    }
-
-    // CASO 3: No hay datos cacheados pero la sincronización completó
+    if (hasValidCachedData() && !syncCompleted) return;
     if (!hasValidCachedData() && dataLoaded) {
-      console.log("📱 Datos cargados desde servidor, UI lista");
       setIsLoading(false);
       return;
     }
-
-    // CASO 4: Hay errores pero tenemos datos cacheados
     if (hasErrors && hasValidCachedData()) {
-      console.log("⚠️ Errores pero con datos cacheados, UI funcional");
       setIsLoading(false);
       return;
     }
   }, [dataLoaded, hasErrors, syncCompleted, usingCachedData]);
 
-  // ✅ TIMEOUT MEJORADO (12 SEGUNDOS)
+  // ✅ TIMEOUT (12 SEGUNDOS)
   useEffect(() => {
     const maintenanceTimeout = setTimeout(() => {
       if (isLoading && !hasValidCachedData()) {
@@ -215,11 +168,10 @@ const AppContent = () => {
         setIsLoading(false);
       }
     }, 12000);
-
     return () => clearTimeout(maintenanceTimeout);
-  }, [isLoading, hasValidCachedData()]);
+  }, [isLoading]);
 
-  // ✅ REINTENTAR CONEXIÓN DESDE MODO MANTENIMIENTO
+  // ✅ REINTENTAR CONEXIÓN
   const handleRetryConnection = () => {
     console.log("🔄 Reintentando conexión...");
     setMaintenanceMode(false);
@@ -231,18 +183,15 @@ const AppContent = () => {
     loadInitialData();
   };
 
-  // ✅ VERIFICAR AUTENTICACIÓN Y MOSTRAR AUTH PAGE
+  // ✅ VERIFICAR AUTENTICACIÓN
   useEffect(() => {
     if (!isLoading && !auth.isLoggedIn && !auth.checking && !maintenanceMode && dataLoaded) {
       console.log("🔒 Usuario no autenticado, mostrando página de autenticación...");
       setShowAuthPage(true);
+      setShowRoleSelector(false); // ✅ Ocultar selector si no está logueado
     } else if (auth.isLoggedIn && !auth.checking) {
       console.log("✅ Usuario autenticado:", auth.username);
       setShowAuthPage(false);
-      // Mantener la vista actual (client por defecto, admin si es admin)
-      if (auth.role === "admin") {
-        setCurrentView("admin");
-      }
     }
   }, [isLoading, auth.isLoggedIn, auth.checking, maintenanceMode, dataLoaded]);
 
@@ -253,13 +202,15 @@ const AppContent = () => {
     setShowAuthPage(false);
     
     if (userData.role === "admin") {
-      setCurrentView("admin");
+      // ✅ Mostrar selector de rol para admin
+      setShowRoleSelector(true);
     } else {
+      // Cliente va directo a la vista cliente
       setCurrentView("client");
     }
   };
 
-  // ✅ MANEJAR LOGIN (desde LoginModal si se usa)
+  // ✅ MANEJAR LOGIN
   const handleLogin = async (username, password) => {
     try {
       await dispatch(StartLogin(username, password));
@@ -274,6 +225,7 @@ const AppContent = () => {
     dispatch({ type: "[auth] Logout" });
     localStorage.removeItem("token");
     setCurrentView("client");
+    setShowRoleSelector(false); // ✅ Ocultar selector al cerrar sesión
     setShowAuthPage(true);
   };
 
@@ -287,21 +239,17 @@ const AppContent = () => {
     handleLogout();
   };
 
-  // ✅ DEBUG: Estado actual
+  // ✅ DEBUG
   console.log("🔍 Estado App:", {
     isLoading,
     maintenanceMode,
     hasErrors,
     dataLoaded,
     syncCompleted,
-    usingCachedData,
     showAuthPage,
+    showRoleSelector,
     isLoggedIn: auth.isLoggedIn,
-    authChecking: auth.checking,
-    hasCachedData: hasValidCachedData(),
-    hasConfig: !!(appConfig && appConfig.app_name),
-    productsCount: Array.isArray(products) ? products.length : 0,
-    categoriesCount: Array.isArray(categories) ? categories.length : 0,
+    currentView,
   });
 
   // ✅ RENDERIZAR MODO MANTENIMIENTO
@@ -309,12 +257,12 @@ const AppContent = () => {
     return (
       <MaintenanceMode
         onRetry={handleRetryConnection}
-        message="No se pudieron cargar los datos esenciales. Esto puede deberse a problemas de conexión o mantenimiento del servicio."
+        message="No se pudieron cargar los datos esenciales."
       />
     );
   }
 
-  // ✅ RENDERIZAR LOADING SOLO SI NO HAY DATOS CACHEADOS
+  // ✅ RENDERIZAR LOADING
   if (isLoading && !hasValidCachedData()) {
     return (
       <div className="relative">
@@ -324,16 +272,6 @@ const AppContent = () => {
             <div className="flex items-center gap-3">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
               <span className="font-medium">{loadingStatus}</span>
-              {hasErrors && (
-                <span className="text-orange-300 text-sm">
-                  • Reconectando... (
-                  {Math.round(
-                    (Date.now() - window.performance.timing.navigationStart) /
-                      1000
-                  )}
-                  s)
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -341,12 +279,12 @@ const AppContent = () => {
     );
   }
 
-  // ✅ RENDERIZAR PÁGINA DE AUTENTICACIÓN SI NO ESTÁ LOGUEADO
+  // ✅ RENDERIZAR AUTH PAGE
   if (showAuthPage && !auth.isLoggedIn && !isLoading && !maintenanceMode) {
     return <AuthPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // ✅ RENDERIZAR INTERFAZ PRINCIPAL (CON DATOS CACHEADOS O ACTUALIZADOS)
+  // ✅ RENDERIZAR INTERFAZ PRINCIPAL
   return (
     <div className="font-sans antialiased">
       {/* Indicador de datos cacheados */}
@@ -365,6 +303,21 @@ const AppContent = () => {
             <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
           </div>
         </div>
+      )}
+
+      {/* ✅ ROLE SELECTOR PARA ADMIN */}
+      {showRoleSelector && (
+        <RoleSelector
+          userData={auth}
+          onSelectClient={() => {
+            setShowRoleSelector(false);
+            setCurrentView("client");
+          }}
+          onSelectAdmin={() => {
+            setShowRoleSelector(false);
+            setCurrentView("admin");
+          }}
+        />
       )}
 
       {currentView === "client" ? (

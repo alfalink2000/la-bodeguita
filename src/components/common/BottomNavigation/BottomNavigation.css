@@ -422,3 +422,22 @@
     font-size: 0.65rem;
   }
 }
+/* Botón de Logout */
+.bottom-nav__button--logout {
+  color: var(--error) !important;
+}
+
+.bottom-nav__button--logout:hover {
+  background-color: var(--error-light) !important;
+  color: var(--error) !important;
+}
+
+.bottom-nav__button--logout .bottom-nav__icon {
+  color: var(--error);
+}
+
+/* Animación sutil para el botón de entrar */
+.bottom-nav__button--inactive:hover .bottom-nav__icon {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}

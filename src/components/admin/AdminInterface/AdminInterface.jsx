@@ -12,6 +12,7 @@ import {
   HiOutlineShieldCheck,
   HiOutlineUserCircle,
   HiOutlineUsers,
+  HiOutlineChat,
 } from "react-icons/hi";
 
 // Components
@@ -23,6 +24,7 @@ import CategoryManager from "../CategoryManager/CategoryManager";
 import FeaturedProductsManager from "../FeaturedProductsManager/FeaturedProductsManager";
 import AdminUsersManager from "../AdminUsersManager/AdminUsersManager";
 import AppConfigManager from "../AppConfigManager/AppConfigManager";
+import AdminChatManager from "../AdminChatManager/AdminChatManager";
 
 // Actions
 import { getFeaturedProducts } from "../../../actions/featuredProductsActions";
@@ -44,6 +46,7 @@ import "./AdminInterface.css";
 // Constantes para evitar recreación de objetos
 const MENU_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: HiOutlineChartBar },
+  { id: "chats", label: "Chats", icon: HiOutlineChat, badge: true },
   { id: "products", label: "Productos", icon: HiOutlineCube },
   { id: "categories", label: "Categorías", icon: HiOutlineTag },
   { id: "featured", label: "Destacados", icon: HiOutlineStar },
@@ -56,6 +59,7 @@ const AdminInterface = ({ onLogout }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [unreadChats, setUnreadChats] = useState(0);
 
   const dispatch = useDispatch();
 
@@ -70,13 +74,35 @@ const AdminInterface = ({ onLogout }) => {
     dispatch(getAdminUsers());
   }, [dispatch]);
 
+  // Cargar contador de chats no leídos
+  useEffect(() => {
+    const loadUnread = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await fetch(`${API_URL}/api/chat/admin/unread`, {
+          headers: { "x-token": token },
+        });
+        const data = await res.json();
+        if (data.ok) setUnreadChats(data.noLeidos);
+      } catch (err) {
+        console.error("Error cargando no leídos:", err);
+      }
+    };
+
+    loadUnread();
+    const interval = setInterval(loadUnread, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Memoizar valores derivados
   const categoryNames = useMemo(
     () =>
       Array.isArray(categories)
         ? categories.map((cat) => cat.name).filter(Boolean)
         : [],
-    [categories]
+    [categories],
   );
 
   // Handlers optimizados con useCallback
@@ -91,7 +117,7 @@ const AdminInterface = ({ onLogout }) => {
       setShowAddForm(false);
       setEditingProduct(null);
     },
-    [editingProduct, dispatch]
+    [editingProduct, dispatch],
   );
 
   const handleEdit = useCallback((product) => {
@@ -107,7 +133,7 @@ const AdminInterface = ({ onLogout }) => {
         dispatch(deleteProduct(productId));
       }
     },
-    [dispatch]
+    [dispatch],
   );
 
   const handleCancel = useCallback(() => {
@@ -119,27 +145,27 @@ const AdminInterface = ({ onLogout }) => {
     (categoryName) => {
       dispatch(insertCategory(categoryName));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const handleUpdateCategory = useCallback(
     (oldName, newName) => {
       dispatch(updateCategory(oldName, newName));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const handleDeleteCategory = useCallback(
     (categoryName) => {
       if (
         window.confirm(
-          `¿Estás seguro de que quieres eliminar la categoría "${categoryName}"?`
+          `¿Estás seguro de que quieres eliminar la categoría "${categoryName}"?`,
         )
       ) {
         dispatch(deleteCategory(categoryName));
       }
     },
-    [dispatch]
+    [dispatch],
   );
 
   const handleLogout = useCallback(() => {
@@ -205,7 +231,12 @@ const AdminInterface = ({ onLogout }) => {
             />
           </div>
         );
-
+      case "chats":
+        return (
+          <div className="admin-section">
+            <AdminChatManager token={localStorage.getItem("token")} />
+          </div>
+        );
       case "featured":
         return (
           <div className="admin-section">
@@ -310,6 +341,10 @@ const AdminInterface = ({ onLogout }) => {
                 >
                   <Icon className="admin-sidebar__icon" />
                   <span className="admin-sidebar__label">{item.label}</span>
+                  {/* ✅ Badge de notificación para chats */}
+                  {item.id === "chats" && unreadChats > 0 && (
+                    <span className="admin-sidebar__badge">{unreadChats}</span>
+                  )}
                 </button>
               );
             })}
