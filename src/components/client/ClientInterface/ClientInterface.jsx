@@ -16,7 +16,7 @@ import {
   HiOutlineInformationCircle,
 } from "react-icons/hi";
 
-import { useState, useCallback } from "react";
+
 import { HiOutlineMenu } from "react-icons/hi";
 
 // Components
@@ -28,7 +28,7 @@ import ProductDetail from "../ProductDetail/ProductDetail";
 import BottomNavigation from "../../common/BottomNavigation/BottomNavigation";
 import InitialInfoModal from "../../common/InitialInfoModal/InitialInfoModal";
 import CartModal from "../../common/CartModal/CartModal";
-import SideMenu from "./SideMenu/SideMenu";
+import SideMenu from "../SideMenu/SideMenu";
 
 // Actions & Selectors
 import { loadFeaturedProducts } from "../../../actions/featuredProductsActions";
