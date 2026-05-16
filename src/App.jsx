@@ -1,11 +1,11 @@
-// App.js - VERSIÓN CON PERSISTENCIA LOCAL
+// App.js - VERSIÓN CON AUTENTICACIÓN Y PERSISTENCIA LOCAL
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistor } from "./store/store";
 import ClientInterface from "./components/client/ClientInterface/ClientInterface";
 import AdminInterface from "./components/admin/AdminInterface/AdminInterface";
-import LoginModal from "./components/auth/LoginModal";
+import AuthPage from "./components/auth/AuthPage";
 import {
   StartChecking,
   checkingFinish,
@@ -28,6 +28,7 @@ const AppContent = () => {
   const [hasErrors, setHasErrors] = useState(false);
   const [usingCachedData, setUsingCachedData] = useState(false);
   const [syncCompleted, setSyncCompleted] = useState(false);
+  const [showAuthPage, setShowAuthPage] = useState(false);
 
   const dispatch = useDispatch();
   const auth = useSelector((state) => state.auth);
@@ -230,16 +231,35 @@ const AppContent = () => {
     loadInitialData();
   };
 
-  // ✅ REDIRIGIR SI ESTÁ AUTENTICADO
+  // ✅ VERIFICAR AUTENTICACIÓN Y MOSTRAR AUTH PAGE
   useEffect(() => {
-    if (!isLoading && auth.isLoggedIn && !auth.checking && !maintenanceMode) {
-      console.log("🔄 Usuario autenticado, redirigiendo a admin...");
-      setCurrentView("admin");
-      setShowLoginForm(false);
+    if (!isLoading && !auth.isLoggedIn && !auth.checking && !maintenanceMode && dataLoaded) {
+      console.log("🔒 Usuario no autenticado, mostrando página de autenticación...");
+      setShowAuthPage(true);
+    } else if (auth.isLoggedIn && !auth.checking) {
+      console.log("✅ Usuario autenticado:", auth.username);
+      setShowAuthPage(false);
+      // Mantener la vista actual (client por defecto, admin si es admin)
+      if (auth.role === "admin") {
+        setCurrentView("admin");
+      }
     }
-  }, [auth.isLoggedIn, auth.checking, isLoading, maintenanceMode]);
+  }, [isLoading, auth.isLoggedIn, auth.checking, maintenanceMode, dataLoaded]);
 
-  // ✅ MANEJAR LOGIN
+  // ✅ MANEJAR LOGIN EXITOSO
+  const handleLoginSuccess = (userData) => {
+    console.log("🔑 Login exitoso:", userData);
+    dispatch({ type: "[auth] Login", payload: userData });
+    setShowAuthPage(false);
+    
+    if (userData.role === "admin") {
+      setCurrentView("admin");
+    } else {
+      setCurrentView("client");
+    }
+  };
+
+  // ✅ MANEJAR LOGIN (desde LoginModal si se usa)
   const handleLogin = async (username, password) => {
     try {
       await dispatch(StartLogin(username, password));
@@ -250,12 +270,21 @@ const AppContent = () => {
 
   // ✅ MANEJAR LOGOUT
   const handleLogout = () => {
+    console.log("👋 Cerrando sesión...");
+    dispatch({ type: "[auth] Logout" });
+    localStorage.removeItem("token");
     setCurrentView("client");
+    setShowAuthPage(true);
   };
 
   // ✅ FUNCIÓN PARA CAMBIAR VISTA
   const handleViewChange = (view) => {
     setCurrentView(view);
+  };
+
+  // ✅ MANEJAR CIERRE DE SESIÓN DESDE ADMIN
+  const handleAdminLogout = () => {
+    handleLogout();
   };
 
   // ✅ DEBUG: Estado actual
@@ -266,6 +295,9 @@ const AppContent = () => {
     dataLoaded,
     syncCompleted,
     usingCachedData,
+    showAuthPage,
+    isLoggedIn: auth.isLoggedIn,
+    authChecking: auth.checking,
     hasCachedData: hasValidCachedData(),
     hasConfig: !!(appConfig && appConfig.app_name),
     productsCount: Array.isArray(products) ? products.length : 0,
@@ -309,6 +341,11 @@ const AppContent = () => {
     );
   }
 
+  // ✅ RENDERIZAR PÁGINA DE AUTENTICACIÓN SI NO ESTÁ LOGUEADO
+  if (showAuthPage && !auth.isLoggedIn && !isLoading && !maintenanceMode) {
+    return <AuthPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
   // ✅ RENDERIZAR INTERFAZ PRINCIPAL (CON DATOS CACHEADOS O ACTUALIZADOS)
   return (
     <div className="font-sans antialiased">
@@ -317,9 +354,6 @@ const AppContent = () => {
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-white rounded-full"></div>
-            {/* <span className="text-sm font-medium">
-              Modo offline - Sincronizando...
-            </span> */}
           </div>
         </div>
       )}
@@ -329,9 +363,6 @@ const AppContent = () => {
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white px-4 py-2 rounded-lg shadow-lg z-50">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-            {/* <span className="text-sm font-medium">
-              Modo local - Algunos datos pueden estar desactualizados
-            </span> */}
           </div>
         </div>
       )}
@@ -340,21 +371,15 @@ const AppContent = () => {
         <ClientInterface
           currentView={currentView}
           onViewChange={handleViewChange}
-          onShowLoginForm={() => setShowLoginForm(true)}
+          onShowLoginForm={() => setShowAuthPage(true)}
+          onLogout={handleLogout}
+          isLoggedIn={auth.isLoggedIn}
+          userData={auth}
         />
       ) : (
         <AdminInterface
-          onLogout={handleLogout}
+          onLogout={handleAdminLogout}
           onSwitchToClient={() => setCurrentView("client")}
-        />
-      )}
-
-      {/* Modal de Login */}
-      {showLoginForm && (
-        <LoginModal
-          onLogin={handleLogin}
-          onClose={() => setShowLoginForm(false)}
-          isLoading={authLoading}
         />
       )}
 
