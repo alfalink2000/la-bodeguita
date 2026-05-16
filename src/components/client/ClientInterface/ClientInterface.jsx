@@ -736,6 +736,14 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
       )}
 
       <FloatingWhatsAppButton />
+      <SideMenu
+  isOpen={isSideMenuOpen}
+  onClose={() => setIsSideMenuOpen(false)}
+  isLoggedIn={isLoggedIn}
+  userData={userData}
+  onLogout={onLogout}
+  onShowLogin={onShowLoginForm}
+/>
     </div>
   );
 };

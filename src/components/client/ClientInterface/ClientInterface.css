@@ -1602,3 +1602,23 @@
 .contact-item .contact-label:contains("Horario") {
   color: var(--primary-orange) !important; /* Naranja para horario */
 }
+/* Botón de menú hamburguesa */
+.sidemenu-trigger {
+  position: relative;
+}
+
+.sidemenu-trigger .header-action__icon {
+  font-size: 1.5rem;
+  stroke-width: 2;
+}
+
+/* Ajuste en header para móvil */
+@media (max-width: 767px) {
+  .header-actions {
+    gap: 0.5rem;
+  }
+  
+  .sidemenu-trigger {
+    margin-left: 0.25rem;
+  }
+}
