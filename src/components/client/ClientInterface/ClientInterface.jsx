@@ -16,6 +16,9 @@ import {
   HiOutlineInformationCircle,
 } from "react-icons/hi";
 
+import { useState, useCallback } from "react";
+import { HiOutlineMenu } from "react-icons/hi";
+
 // Components
 import Header from "../../common/Header/Header";
 import SearchBar from "../../common/SearchBar/SearchBar";
@@ -25,6 +28,7 @@ import ProductDetail from "../ProductDetail/ProductDetail";
 import BottomNavigation from "../../common/BottomNavigation/BottomNavigation";
 import InitialInfoModal from "../../common/InitialInfoModal/InitialInfoModal";
 import CartModal from "../../common/CartModal/CartModal";
+import SideMenu from "./SideMenu/SideMenu";
 
 // Actions & Selectors
 import { loadFeaturedProducts } from "../../../actions/featuredProductsActions";
@@ -51,7 +55,7 @@ const SECTIONS = {
 
 const PRODUCT_SECTIONS = [SECTIONS.TODOS, SECTIONS.POPULARES, SECTIONS.OFERTAS];
 
-const ClientInterface = ({ currentView, onViewChange, onShowLoginForm }) => {
+const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogout, isLoggedIn,userData        }) => {
   // 🔄 SINCRONIZACIÓN AUTOMÁTICA DE PRODUCTOS
   useProductsSync(30000);
 
@@ -61,6 +65,7 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm }) => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   // ⚠️ ELIMINAMOS el isLoading interno
 
   const dispatch = useDispatch();
@@ -695,6 +700,14 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm }) => {
         showInfoButton={!isDesktop}
       >
         <DesktopNavigation />
+         {/* NUEVO: Botón de menú hamburguesa (visible en móvil y desktop) */}
+  <button
+    className="header-action header-action--icon sidemenu-trigger"
+    onClick={() => setIsSideMenuOpen(true)}
+    title="Menú"
+  >
+    <HiOutlineMenu className="header-action__icon" />
+  </button>
       </Header>
 
       {/* AGREGAR EL MODAL DEL CARRITO */}
