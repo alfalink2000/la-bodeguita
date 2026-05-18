@@ -26,9 +26,10 @@ const BottomNavigation = ({
   onSearchClick,
   activeSection,
   onSectionChange,
-  isLoggedIn,        // ✅ NUEVA PROP
-  onLogout,           // ✅ NUEVA PROP
-  onShowLogin,        // ✅ NUEVA PROP
+  isLoggedIn,
+  onLogout,
+  onShowLogin,
+  onProfileClick,
 }) => {
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
@@ -145,15 +146,15 @@ const BottomNavigation = ({
             </span>
           </button>
 
-          {/* ✅ BOTÓN MODIFICADO: Entrar / Salir según autenticación */}
+          {/* ✅ BOTÓN MODIFICADO: Perfil / Entrar */}
           {isLoggedIn ? (
             <button
-              onClick={onLogout}
-              className="bottom-nav__button bottom-nav__button--logout"
-              title="Cerrar sesión"
+              onClick={onProfileClick} // ✅ NUEVA PROP
+              className="bottom-nav__button bottom-nav__button--profile"
+              title="Mi perfil"
             >
-              <HiOutlineLogout className="bottom-nav__icon" />
-              <span className="bottom-nav__label">Salir</span>
+              <HiOutlineUser className="bottom-nav__icon" />
+              <span className="bottom-nav__label">Perfil</span>
             </button>
           ) : (
             <button

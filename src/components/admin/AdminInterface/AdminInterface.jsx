@@ -13,6 +13,8 @@ import {
   HiOutlineUserCircle,
   HiOutlineUsers,
   HiOutlineChat,
+  HiOutlineClipboardList,
+  HiOutlineStore,
 } from "react-icons/hi";
 
 // Components
@@ -25,6 +27,7 @@ import FeaturedProductsManager from "../FeaturedProductsManager/FeaturedProducts
 import AdminUsersManager from "../AdminUsersManager/AdminUsersManager";
 import AppConfigManager from "../AppConfigManager/AppConfigManager";
 import AdminChatManager from "../AdminChatManager/AdminChatManager";
+import StoreManager from "../StoreManager/StoreManager";
 
 // Actions
 import { getFeaturedProducts } from "../../../actions/featuredProductsActions";
@@ -40,15 +43,18 @@ import {
   deleteCategory,
 } from "../../../actions/categoriesActions";
 import { startLogout } from "../../../actions/authActions";
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "https://minimarket-backend-6z9m.onrender.com";
+const API_URL = import.meta.env.VITE_API_URL;
+
+import AdminOrdersManager from "../AdminOrdersManager/AdminOrdersManager";
+
 import "./AdminInterface.css";
 
 // Constantes para evitar recreación de objetos
 const MENU_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: HiOutlineChartBar },
+  { id: "orders", label: "Pedidos", icon: HiOutlineClipboardList, badge: true },
   { id: "chats", label: "Chats", icon: HiOutlineChat, badge: true },
+  { id: "stores", label: "Tiendas", icon: HiOutlineStore },
   { id: "products", label: "Productos", icon: HiOutlineCube },
   { id: "categories", label: "Categorías", icon: HiOutlineTag },
   { id: "featured", label: "Destacados", icon: HiOutlineStar },
@@ -62,6 +68,7 @@ const AdminInterface = ({ onLogout }) => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [unreadChats, setUnreadChats] = useState(0);
+  const [pendingOrders, setPendingOrders] = useState(0);
 
   const dispatch = useDispatch();
 
@@ -75,6 +82,28 @@ const AdminInterface = ({ onLogout }) => {
     dispatch(getFeaturedProducts());
     dispatch(getAdminUsers());
   }, [dispatch]);
+
+  // Cargar pedidos pendientes
+  useEffect(() => {
+    const loadPending = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await fetch(`${API_URL}/api/orders/admin/all?status=open`, {
+          headers: { "x-token": token },
+        });
+        const data = await res.json();
+        if (data.ok) setPendingOrders((data.pedidos || []).length);
+      } catch (err) {
+        console.error("Error cargando pedidos:", err);
+      }
+    };
+
+    loadPending();
+    const interval = setInterval(loadPending, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Cargar contador de chats no leídos
   useEffect(() => {
@@ -144,8 +173,8 @@ const AdminInterface = ({ onLogout }) => {
   }, []);
 
   const handleAddCategory = useCallback(
-    (categoryName) => {
-      dispatch(insertCategory(categoryName));
+    (categoryName, storeId) => {
+      dispatch(insertCategory(categoryName, storeId));
     },
     [dispatch],
   );
@@ -185,6 +214,13 @@ const AdminInterface = ({ onLogout }) => {
     switch (activeSection) {
       case "dashboard":
         return <DashboardStats products={products} />;
+
+      case "stores":
+        return (
+          <div className="admin-section">
+            <StoreManager />
+          </div>
+        );
 
       case "products":
         return (
@@ -262,6 +298,16 @@ const AdminInterface = ({ onLogout }) => {
           <div className="admin-section">
             <h2 className="admin-section__title">Configuración de la App</h2>
             <AppConfigManager />
+          </div>
+        );
+
+      case "orders":
+        return (
+          <div
+            className="admin-section"
+            style={{ height: "calc(100vh - 120px)", padding: 0 }}
+          >
+            <AdminOrdersManager token={localStorage.getItem("token")} />
           </div>
         );
 
@@ -346,6 +392,11 @@ const AdminInterface = ({ onLogout }) => {
                   {/* ✅ Badge de notificación para chats */}
                   {item.id === "chats" && unreadChats > 0 && (
                     <span className="admin-sidebar__badge">{unreadChats}</span>
+                  )}
+                  {item.id === "orders" && pendingOrders > 0 && (
+                    <span className="admin-sidebar__badge">
+                      {pendingOrders}
+                    </span>
                   )}
                 </button>
               );

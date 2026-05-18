@@ -53,4 +53,27 @@ export const types = {
   cartUpdateQuantity: "[cart] Update quantity",
   cartClear: "[cart] Clear cart",
   cartToggleModal: "[cart] Toggle modal",
+
+  // ========== ORDERS ==========
+  ordersLoad: "[orders] Load orders",
+  ordersStartLoading: "[orders] Start loading",
+  ordersFinishLoading: "[orders] Finish loading",
+  orderAddNew: "[orders] Add new order",
+  orderUpdated: "[orders] Updated order",
+  orderStatusChanged: "[orders] Status changed",
+  orderSetActive: "[orders] Set active order",
+  orderClearActive: "[orders] Clear active order",
+
+  // ========== ORDER CONFIG ==========
+  orderConfigLoad: "[orderConfig] Load config",
+  orderConfigUpdate: "[orderConfig] Update config",
+
+  // ========== STORES ==========
+  storesLoad: "[stores] Load stores",
+  storesStartLoading: "[stores] Start loading",
+  storesFinishLoading: "[stores] Finish loading",
+  storeAddNew: "[stores] Add new store",
+  storeUpdated: "[stores] Updated store",
+  storeDeleted: "[stores] Deleted store",
+  storeSetActive: "[stores] Set active store",
 };

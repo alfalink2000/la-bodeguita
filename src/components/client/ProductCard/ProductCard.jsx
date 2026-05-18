@@ -14,7 +14,7 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
 
   // ✅ OBTENER LA MONEDA DESDE LA CONFIGURACIÓN
   const currency = useSelector(
-    (state) => state.appConfig.config?.currency || "MN"
+    (state) => state.appConfig.config?.currency || "MN",
   );
 
   const isAvailable =
@@ -49,7 +49,7 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
       e.stopPropagation();
       onWhatsAppClick?.(product.name);
     },
-    [onWhatsAppClick, product.name]
+    [onWhatsAppClick, product.name],
   );
 
   const handleAddToCart = useCallback(
@@ -60,7 +60,7 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
       dispatch(addToCart(product));
       setShowQuantity(true);
     },
-    [dispatch, product, isAvailable]
+    [dispatch, product, isAvailable],
   );
 
   const handleQuantityChange = useCallback(
@@ -74,7 +74,7 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
 
       dispatch(updateCartQuantity(product.id, newQuantity));
     },
-    [dispatch, product.id, currentQuantity]
+    [dispatch, product.id, currentQuantity],
   );
 
   const handleImageError = useCallback((e) => {
@@ -156,14 +156,14 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
               Agregar
             </button>
 
-            <button
+            {/* <button
               className="product-card__whatsapp-btn"
               onClick={handleWhatsAppClick}
               disabled={!isAvailable}
             >
               <FiPhone className="whatsapp-icon" />
               Info
-            </button>
+            </button> */}
           </div>
         )}
       </div>

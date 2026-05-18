@@ -18,7 +18,7 @@ export const getCategories = () => {
 
       if (body.ok) {
         console.log(
-          `✅ ${body.categories.length} categorías cargadas exitosamente`
+          `✅ ${body.categories.length} categorías cargadas exitosamente`,
         );
         dispatch({
           type: types.categoriesLoad,
@@ -28,7 +28,7 @@ export const getCategories = () => {
       } else {
         console.error("❌ Error en respuesta de categorías:", body.msg);
         return Promise.reject(
-          new Error(body.msg || "Error cargando categorías")
+          new Error(body.msg || "Error cargando categorías"),
         );
       }
     } catch (error) {
@@ -38,13 +38,13 @@ export const getCategories = () => {
   };
 };
 
-export const insertCategory = (categoryName) => {
+export const insertCategory = (categoryName, storeId) => {
   return async (dispatch) => {
     try {
       const body = await fetchAPIConfig(
         "categories/new",
-        { name: categoryName },
-        "POST"
+        { name: categoryName, store_id: storeId },
+        "POST",
       );
 
       if (body.ok) {
@@ -89,7 +89,7 @@ export const updateCategory = (oldName, newName) => {
       const body = await fetchAPIConfig(
         `categories/update/${encodeURIComponent(oldName)}`,
         { newName },
-        "PUT"
+        "PUT",
       );
 
       if (body.ok) {
@@ -165,7 +165,7 @@ export const deleteCategory = (categoryName) => {
       const body = await fetchAPIConfig(
         `categories/delete/${encodeURIComponent(categoryName)}`,
         {},
-        "DELETE"
+        "DELETE",
       );
 
       if (body.ok) {
@@ -193,8 +193,8 @@ export const deleteCategory = (categoryName) => {
               <div style="text-align: left;">
                 <p style="margin-bottom: 15px;">
                   <strong>"${categoryName}"</strong> no se puede eliminar porque tiene <strong>${
-              body.productsCount || "varios"
-            } producto(s)</strong> asociado(s).
+                    body.productsCount || "varios"
+                  } producto(s)</strong> asociado(s).
                 </p>
                 <div style="background: #fef2f2; padding: 12px; border-radius: 8px; border-left: 4px solid #ef4444;">
                   <p style="margin: 0; font-size: 0.9rem; color: #7f1d1d;">
@@ -217,7 +217,7 @@ export const deleteCategory = (categoryName) => {
                           (product) =>
                             `<div style="padding: 4px 0; border-bottom: 1px solid #fef2f2; font-size: 0.85rem;">
                           • ${product.name}
-                        </div>`
+                        </div>`,
                         )
                         .join("")}
                     </div>

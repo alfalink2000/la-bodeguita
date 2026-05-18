@@ -10,6 +10,8 @@ import { authReducer } from "../reducers/authReducer";
 import { adminUsersReducer } from "../reducers/adminUsersReducer";
 import { appConfigReducer } from "../reducers/appConfigReducer";
 import { cartReducer } from "../reducers/cartReducer";
+import { ordersReducer } from "../reducers/ordersReducer";
+import { storesReducer } from "../reducers/storesReducer";
 
 const reducers = combineReducers({
   products: productsReducer,
@@ -18,6 +20,8 @@ const reducers = combineReducers({
   adminUsers: adminUsersReducer,
   appConfig: appConfigReducer,
   cart: cartReducer,
+  orders: ordersReducer,
+  stores: storesReducer,
 });
 
 // ✅ CONFIGURACIÓN DE PERSISTENCIA
@@ -67,7 +71,7 @@ const composeEnhancers =
 
 export const store = createStore(
   persistedReducer,
-  composeEnhancers(applyMiddleware(thunk, debugMiddleware))
+  composeEnhancers(applyMiddleware(thunk, debugMiddleware)),
 );
 
 export const persistor = persistStore(store);

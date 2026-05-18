@@ -15,7 +15,7 @@ import {
   HiOutlineCog,
   HiOutlineInformationCircle,
   HiOutlineMenu,
-  HiOutlineChat 
+  HiOutlineChat,
 } from "react-icons/hi";
 
 // Components
@@ -29,7 +29,7 @@ import InitialInfoModal from "../../common/InitialInfoModal/InitialInfoModal";
 import CartModal from "../../common/CartModal/CartModal";
 import SideMenu from "../SideMenu/SideMenu";
 import ChatModal from "../ChatModal/ChatModal";
-
+import UserProfile from "../UserProfile/UserProfile";
 
 // Actions & Selectors
 import { loadFeaturedProducts } from "../../../actions/featuredProductsActions";
@@ -56,7 +56,14 @@ const SECTIONS = {
 
 const PRODUCT_SECTIONS = [SECTIONS.TODOS, SECTIONS.POPULARES, SECTIONS.OFERTAS];
 
-const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogout, isLoggedIn,userData        }) => {
+const ClientInterface = ({
+  currentView,
+  onViewChange,
+  onShowLoginForm,
+  onLogout,
+  isLoggedIn,
+  userData,
+}) => {
   // 🔄 SINCRONIZACIÓN AUTOMÁTICA DE PRODUCTOS
   useProductsSync(30000);
 
@@ -68,7 +75,7 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
-  // ⚠️ ELIMINAMOS el isLoading interno
+  const [showProfile, setShowProfile] = useState(false);
 
   const dispatch = useDispatch();
 
@@ -115,7 +122,7 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
   // ✅ Handlers optimizados con useCallback
   const handleSearchClick = useCallback(() => {
     const searchInput = document.querySelector(
-      ".client-interface__search-section input"
+      ".client-interface__search-section input",
     );
     searchInput?.focus();
   }, []);
@@ -138,11 +145,11 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
       const phoneNumber = appConfig?.whatsapp_number || "5491112345678";
       const message = `¡Hola! Estoy interesado en el producto: ${productName} que vi en su catálogo online. ¿Podrían ayudarme?`;
       const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
-        message
+        message,
       )}`;
       window.open(whatsappUrl, "_blank");
     },
-    [appConfig?.whatsapp_number]
+    [appConfig?.whatsapp_number],
   );
 
   // ✅ Componentes memoizados
@@ -156,7 +163,7 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
         <HiOutlineInformationCircle className="header-action__icon" />
       </button>
     ),
-    []
+    [],
   );
 
   const FloatingWhatsAppButton = useCallback(() => {
@@ -164,7 +171,7 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
       const phoneNumber = appConfig?.whatsapp_number || "5491112345678";
       const message = `¡Hola! Me gustaría obtener más información sobre sus productos y servicios. ¿Podrían ayudarme?`;
       const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
-        message
+        message,
       )}`;
       window.open(whatsappUrl, "_blank");
     };
@@ -273,7 +280,7 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
         </button> */}
       </div>
     ),
-    [onShowLoginForm]
+    [onShowLoginForm],
   );
 
   // ✅ FILTRADO CORREGIDO Y MEMOIZADO
@@ -282,10 +289,10 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
       activeSection === SECTIONS.TODOS
         ? products
         : activeSection === SECTIONS.POPULARES
-        ? popularProducts
-        : activeSection === SECTIONS.OFERTAS
-        ? offerProducts
-        : products;
+          ? popularProducts
+          : activeSection === SECTIONS.OFERTAS
+            ? offerProducts
+            : products;
 
     return productsToFilter.filter((product) => {
       const matchesSearch =
@@ -311,7 +318,7 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
   // ✅ FUNCIÓN MEJORADA PARA OBTENER PRODUCTOS
   const getProductsToShow = useCallback(
     () => filteredProducts,
-    [filteredProducts]
+    [filteredProducts],
   );
 
   // ✅ OBTENER CONTADOR DE PRODUCTOS
@@ -575,7 +582,7 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
       getProductsToShow,
       handleWhatsAppClick,
       handleProductClick,
-    ]
+    ],
   );
 
   // ✅ RENDERIZADO PARA MÓVIL OPTIMIZADO
@@ -662,7 +669,7 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
       getProductsToShow,
       handleWhatsAppClick,
       handleProductClick,
-    ]
+    ],
   );
 
   // ✅ **ELIMINAMOS COMPLETAMENTE LA VERIFICACIÓN DE CARGA INTERNA**
@@ -702,26 +709,30 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
         showInfoButton={!isDesktop}
       >
         <DesktopNavigation />
-         {/* NUEVO: Botón de menú hamburguesa (visible en móvil y desktop) */}
-  <button
-    className="header-action header-action--icon sidemenu-trigger"
-    onClick={() => setIsSideMenuOpen(true)}
-    title="Menú"
-  >
-    <HiOutlineMenu className="header-action__icon" />
-  </button>
+        {/* NUEVO: Botón de menú hamburguesa (visible en móvil y desktop) */}
+        <button
+          className="header-action header-action--icon sidemenu-trigger"
+          onClick={() => setIsSideMenuOpen(true)}
+          title="Menú"
+        >
+          <HiOutlineMenu className="header-action__icon" />
+        </button>
       </Header>
-
       {/* AGREGAR EL MODAL DEL CARRITO */}
-      <CartModal />
-
+      <CartModal isLoggedIn={isLoggedIn} onShowLogin={onShowLoginForm} />
       <InitialInfoModal
         isOpen={showInfoModal}
         onClose={() => setShowInfoModal(false)}
         initialInfo={appConfig.initialinfo}
       />
-
       {isDesktop ? renderDesktopLayout : renderMobileLayout}
+
+      {showProfile && (
+        <UserProfile
+          userData={userData}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
 
       {!isDesktop && (
         <BottomNavigation
@@ -737,37 +748,34 @@ const ClientInterface = ({ currentView, onViewChange, onShowLoginForm ,  onLogou
           isLoggedIn={isLoggedIn}
           onLogout={onLogout}
           onShowLogin={onShowLoginForm}
+          onProfileClick={() => setShowProfile(true)}
         />
       )}
-
       {/* <FloatingWhatsAppButton /> */}
       {/* ✅ Botón flotante de Chat (reemplaza al de WhatsApp) */}
-<button
-  className="floating-chat-button"
-  onClick={() => setIsChatOpen(true)}
-  title="Chatear con soporte"
->
-  <HiOutlineChat className="chat-icon" />
-  <div className="chat-pulse"></div>
-</button>
-
-{/* ✅ Chat Modal */}
-<ChatModal
-  isOpen={isChatOpen}
-  onClose={() => setIsChatOpen(false)}
-  token={localStorage.getItem("token")}
-  userData={userData}
-/>
-
-       
+      <button
+        className="floating-chat-button"
+        onClick={() => setIsChatOpen(true)}
+        title="Chatear con soporte"
+      >
+        <HiOutlineChat className="chat-icon" />
+        <div className="chat-pulse"></div>
+      </button>
+      {/* ✅ Chat Modal */}
+      <ChatModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        token={localStorage.getItem("token")}
+        userData={userData}
+      />
       <SideMenu
-  isOpen={isSideMenuOpen}
-  onClose={() => setIsSideMenuOpen(false)}
-  isLoggedIn={isLoggedIn}
-  userData={userData}
-  onLogout={onLogout}
-  onShowLogin={onShowLoginForm}
-/>
+        isOpen={isSideMenuOpen}
+        onClose={() => setIsSideMenuOpen(false)}
+        isLoggedIn={isLoggedIn}
+        userData={userData}
+        onLogout={onLogout}
+        onShowLogin={onShowLoginForm}
+      />
     </div>
   );
 };

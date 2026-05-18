@@ -6,12 +6,7 @@ import ProductCardOffer from "../ProductCardOffer/ProductCardOffer";
 import "./ProductGrid.css";
 import "./ProductGrid.desktop.css";
 
-const ProductGrid = ({
-  products,
-  onWhatsAppClick,
-  onProductClick,
-  isOfferSection = false,
-}) => {
+const ProductGrid = ({ products, onProductClick, isOfferSection = false }) => {
   if (products.length === 0) {
     return (
       <div className="product-grid__empty">
@@ -37,7 +32,6 @@ const ProductGrid = ({
             <ProductCardOffer
               key={product.id}
               product={product}
-              onWhatsAppClick={onWhatsAppClick}
               onProductClick={onProductClick}
             />
           ) : (
@@ -45,10 +39,9 @@ const ProductGrid = ({
             <ProductCard
               key={product.id} // ✅ KEY ÚNICA REQUERIDA
               product={product}
-              onWhatsAppClick={onWhatsAppClick}
               onProductClick={onProductClick}
             />
-          )
+          ),
         )}
       </div>
     </div>

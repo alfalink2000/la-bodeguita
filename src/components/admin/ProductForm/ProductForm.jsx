@@ -1,5 +1,6 @@
 // components/ProductForm/ProductForm.jsx
 import { useState, useEffect } from "react";
+import StoreSelector from "../StoreSelector/StoreSelector";
 import "./ProductForm.css";
 
 const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
@@ -13,7 +14,9 @@ const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
-  const [errors, setErrors] = useState({}); // ✅ NUEVO: Estado para errores
+  const [errors, setErrors] = useState({});
+  const [selectedStoreId, setSelectedStoreId] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
 
   useEffect(() => {
     if (product) {
@@ -22,9 +25,14 @@ const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
         description: product.description || "",
         price: product.price ? product.price.toString() : "",
         category_id: product.category_id ? product.category_id.toString() : "",
+        store_id: product.store_id ? product.store_id.toString() : "",
         status: product.status || "available",
         stock_quantity: product.stock_quantity || 0,
       });
+      setSelectedCategoryId(
+        product.category_id ? product.category_id.toString() : "",
+      );
+      setSelectedStoreId(product.store_id ? product.store_id.toString() : "");
       if (product.image_url) {
         setImagePreview(product.image_url);
       }
@@ -253,24 +261,23 @@ const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
 
           {/* Campo Categoría */}
           <div className="product-form__group">
-            <label className="product-form__label">Categoría *</label>
-            <select
-              name="category_id"
-              value={formData.category_id}
-              onChange={handleInputChange}
-              className={`product-form__select ${
-                errors.category_id ? "product-form__input--error" : ""
-              }`}
-              required
-            >
-              <option value="">Seleccionar categoría</option>
-              {Array.isArray(categories) &&
-                categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-            </select>
+            <label className="product-form__label">Tienda y Categoría *</label>
+            <StoreSelector
+              selectedStoreId={selectedStoreId}
+              onStoreChange={(storeId) => {
+                setSelectedStoreId(storeId);
+                setFormData((prev) => ({
+                  ...prev,
+                  category_id: "",
+                  store_id: storeId,
+                }));
+              }}
+              selectedCategoryId={selectedCategoryId}
+              onCategoryChange={(catId) => {
+                setSelectedCategoryId(catId);
+                setFormData((prev) => ({ ...prev, category_id: catId }));
+              }}
+            />
             {errors.category_id && (
               <span className="product-form__error">{errors.category_id}</span>
             )}

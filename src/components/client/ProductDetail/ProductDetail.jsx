@@ -6,7 +6,8 @@ import {
   HiOutlineShieldCheck,
   HiOutlineClock,
 } from "react-icons/hi";
-import { FiPhone, FiShare2 } from "react-icons/fi";
+import { FiPhone } from "react-icons/fi";
+import { FiShoppingCart, FiShare2 } from "react-icons/fi";
 import "./ProductDetail.css";
 
 // Componente memoizado para evitar re-renders innecesarios
@@ -41,7 +42,7 @@ const ProductDetail = ({ product, onBack, onWhatsAppClick }) => {
         ? `$${parseFloat(product.price).toFixed(2)}`
         : "$0.00",
     }),
-    [product]
+    [product],
   );
 
   // Handlers memoizados
@@ -170,12 +171,12 @@ const GallerySection = React.memo(
         )}
       </div>
     </section>
-  )
+  ),
 );
 
 // Subcomponente para la información
 const InfoSection = React.memo(
-  ({ product, isAvailable, formattedPrice, onWhatsAppClick }) => (
+  ({ product, isAvailable, formattedPrice, onAddToCart }) => (
     <section className="info-section-premium">
       <div className="info-content">
         {/* Header Compacto */}
@@ -199,16 +200,13 @@ const InfoSection = React.memo(
         <BenefitsSection />
 
         {/* Botón de acción */}
-        <ActionSection
-          isAvailable={isAvailable}
-          onWhatsAppClick={onWhatsAppClick}
-        />
+        <ActionSection isAvailable={isAvailable} onAddToCart={onAddToCart} />
 
         {/* Nota de seguridad */}
         <SecurityNotice />
       </div>
     </section>
-  )
+  ),
 );
 
 // Componente para especificaciones
@@ -275,25 +273,20 @@ const BenefitsSection = React.memo(() => (
 ));
 
 // Componente para acciones
-const ActionSection = React.memo(({ isAvailable, onWhatsAppClick }) => (
+const ActionSection = React.memo(({ isAvailable, onAddToCart }) => (
   <div className="action-section">
     <button
       className={`whatsapp-button-premium ${!isAvailable ? "disabled" : ""}`}
-      onClick={onWhatsAppClick}
+      onClick={onAddToCart}
       disabled={!isAvailable}
-      aria-label={
-        isAvailable
-          ? "Consultar disponibilidad por WhatsApp"
-          : "Producto agotado"
-      }
     >
       <div className="button-content">
-        <FiPhone className="whatsapp-icon-premium" />
+        <FiShoppingCart className="whatsapp-icon-premium" />
         <div className="button-text">
           <span className="button-main-text">
-            {isAvailable ? "Consultar Disponibilidad" : "Producto Agotado"}
+            {isAvailable ? "Agregar al Carrito" : "Producto Agotado"}
           </span>
-          <span className="button-sub-text">Vía WhatsApp</span>
+          <span className="button-sub-text">Compra rápida y segura</span>
         </div>
       </div>
       <div className="button-glow"></div>
