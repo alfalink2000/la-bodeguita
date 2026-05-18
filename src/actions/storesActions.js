@@ -1,8 +1,12 @@
-// actions/storesActions.js
+// actions/storesActions.js - COMPLETO
 import { fetchPublic } from "../helpers/fetchPublic";
 import { fetchAPIConfig } from "../helpers/fetchAPIConfig";
 import { types } from "../types/types";
 import Swal from "sweetalert2";
+
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://minimarket-backend-6z9m.onrender.com";
 
 export const getStores = () => {
   return async (dispatch) => {
@@ -93,9 +97,7 @@ export const deleteStore = (id) => {
 
 export const getCategoriesByStore = async (storeId) => {
   try {
-    const res = await fetch(
-      `${import.meta.env.VITE_API_URL || "https://minimarket-backend-6z9m.onrender.com"}/api/stores/${storeId}/categories`,
-    );
+    const res = await fetch(`${API_URL}/api/stores/${storeId}/categories`);
     const data = await res.json();
     return data.ok ? data.categories : [];
   } catch (error) {

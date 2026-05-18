@@ -1,12 +1,12 @@
 // components/admin/StoreSelector/StoreSelector.jsx
-import { useState, useEffect, useCallback } from "react";
-import { HiOutlineStore, HiOutlinePlus, HiOutlineCheck } from "react-icons/hi";
-import { getCategoriesByStore } from "../../../actions/storesActions";
+import { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { HiOutlineCollection } from "react-icons/hi";
+import {
+  getStores,
+  getCategoriesByStore,
+} from "../../../actions/storesActions";
 import "./StoreSelector.css";
-
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "https://minimarket-backend-6z9m.onrender.com";
 
 const StoreSelector = ({
   selectedStoreId,
@@ -14,23 +14,17 @@ const StoreSelector = ({
   selectedCategoryId,
   onCategoryChange,
 }) => {
-  const [stores, setStores] = useState([]);
+  const dispatch = useDispatch();
+  const stores = useSelector((state) => state.stores.stores);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Cargar tiendas
+  // Cargar tiendas si no hay
   useEffect(() => {
-    const loadStores = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/stores`);
-        const data = await res.json();
-        if (data.ok) setStores(data.stores || []);
-      } catch (err) {
-        console.error("Error cargando tiendas:", err);
-      }
-    };
-    loadStores();
-  }, []);
+    if (stores.length === 0) {
+      dispatch(getStores());
+    }
+  }, [dispatch, stores.length]);
 
   // Cargar categorías cuando cambia la tienda
   useEffect(() => {
@@ -53,7 +47,7 @@ const StoreSelector = ({
       {/* Selector de Tienda */}
       <div className="store-selector__field">
         <label className="store-selector__label">
-          <HiOutlineStore /> Tienda *
+          <HiOutlineCollection /> Tienda *
         </label>
         <select
           value={selectedStoreId || ""}

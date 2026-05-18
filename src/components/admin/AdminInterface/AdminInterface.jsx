@@ -14,7 +14,7 @@ import {
   HiOutlineUsers,
   HiOutlineChat,
   HiOutlineClipboardList,
-  HiOutlineStore,
+  HiOutlineCollection,
 } from "react-icons/hi";
 
 // Components
@@ -54,7 +54,7 @@ const MENU_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: HiOutlineChartBar },
   { id: "orders", label: "Pedidos", icon: HiOutlineClipboardList, badge: true },
   { id: "chats", label: "Chats", icon: HiOutlineChat, badge: true },
-  { id: "stores", label: "Tiendas", icon: HiOutlineStore },
+  { id: "stores", label: "Tiendas", icon: HiOutlineCollection },
   { id: "products", label: "Productos", icon: HiOutlineCube },
   { id: "categories", label: "Categorías", icon: HiOutlineTag },
   { id: "featured", label: "Destacados", icon: HiOutlineStar },
