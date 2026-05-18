@@ -999,3 +999,214 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+/* ===== INDICADOR DE ESTADO DELIVERY ===== */
+.delivery-status {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.5rem;
+  border: 2px solid;
+  transition: all 0.3s ease;
+  background: var(--white);
+}
+
+.delivery-status--active {
+  border-color: var(--success);
+  background: var(--success-light);
+}
+
+.delivery-status--inactive {
+  border-color: var(--warning);
+  background: var(--warning-light);
+}
+
+.delivery-status__indicator {
+  flex-shrink: 0;
+}
+
+.delivery-status__dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  animation: pulseStatus 2s infinite;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+}
+
+.delivery-status__dot--green {
+  background: var(--success);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+}
+
+.delivery-status__dot--red {
+  background: var(--error);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+}
+
+@keyframes pulseStatus {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.7;
+  }
+}
+
+.delivery-status__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.delivery-status__label {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.delivery-status--active .delivery-status__label {
+  color: var(--primary-green-dark);
+}
+
+.delivery-status--inactive .delivery-status__label {
+  color: var(--warning);
+}
+
+.delivery-status__address {
+  font-size: 0.85rem;
+  color: var(--gray-700);
+  font-weight: 500;
+}
+
+.delivery-status__coords {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  font-family: monospace;
+}
+
+.delivery-status__actions {
+  flex-shrink: 0;
+}
+
+.delivery-status__badge {
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.delivery-status__badge--active {
+  background: var(--success);
+  color: white;
+}
+
+.delivery-status__badge--inactive {
+  background: var(--warning);
+  color: white;
+  animation: badgeBlink 1.5s infinite;
+}
+
+@keyframes badgeBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+  .delivery-status {
+    flex-direction: column;
+    text-align: center;
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+
+  .delivery-status__info {
+    align-items: center;
+  }
+
+  .delivery-status__actions {
+    width: 100%;
+  }
+
+  .delivery-status__badge {
+    width: 100%;
+    text-align: center;
+  }
+}
+/* ===== BOTONES DE GUARDAR/QUITAR UBICACIÓN ===== */
+.delivery-location-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.location-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid;
+}
+
+.location-btn--save {
+  background: var(--primary-blue-light);
+  color: var(--primary-blue-dark);
+  border-color: var(--primary-blue);
+}
+
+.location-btn--save:hover {
+  background: var(--primary-blue);
+  color: white;
+}
+
+.location-btn--save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+  color: var(--gray-400);
+}
+
+.location-btn--clear {
+  background: var(--error-light);
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.location-btn--clear:hover {
+  background: var(--error);
+  color: white;
+}
+
+.location-btn--clear:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+  color: var(--gray-400);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+  .delivery-location-actions {
+    flex-direction: column;
+  }
+}

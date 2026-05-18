@@ -13,6 +13,7 @@ import {
   HiOutlineCash,
   HiOutlineTruck,
   HiOutlineLocationMarker,
+  HiOutlineX,
 } from "react-icons/hi";
 import {
   updateAppConfig,
@@ -145,6 +146,81 @@ const AppConfigManager = () => {
     } catch (err) {
       console.error("Error cargando delivery config:", err);
     }
+  };
+
+  // ✅ Guardar ubicación escrita manualmente
+  const handleSaveManualLocation = async () => {
+    const lat = parseFloat(formData.delivery_origin_lat);
+    const lng = parseFloat(formData.delivery_origin_lng);
+
+    if (!lat || !lng) {
+      Swal.fire({
+        icon: "warning",
+        title: "Coordenadas incompletas",
+        text: "Ingresa latitud y longitud válidas",
+      });
+      return;
+    }
+
+    // Intentar obtener la dirección desde las coordenadas
+    try {
+      const res = await fetch(`${API_URL}/api/geocoding/reverse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat, lng }),
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        setFormData((prev) => ({
+          ...prev,
+          delivery_origin_address:
+            data.display_name || prev.delivery_origin_address,
+        }));
+      }
+    } catch (err) {
+      console.error("Error obteniendo dirección:", err);
+    }
+
+    Swal.fire({
+      icon: "success",
+      title: "¡Ubicación guardada!",
+      text: `Coordenadas: ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+      showConfirmButton: false,
+      timer: 1500,
+    });
+  };
+
+  // ✅ Quitar ubicación (limpiar todo)
+  const handleClearLocation = () => {
+    Swal.fire({
+      title: "¿Quitar ubicación?",
+      text: "Se borrarán las coordenadas y dirección del punto de partida",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Sí, quitar",
+      cancelButtonText: "Cancelar",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setFormData((prev) => ({
+          ...prev,
+          delivery_origin_lat: "",
+          delivery_origin_lng: "",
+          delivery_origin_address: "",
+          delivery_origin_name: "",
+        }));
+
+        Swal.fire({
+          icon: "info",
+          title: "Ubicación eliminada",
+          text: "El punto de partida ha sido desconfigurado",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      }
+    });
   };
 
   const handleSaveDelivery = async () => {
@@ -582,12 +658,54 @@ const AppConfigManager = () => {
                 Configura el punto de partida y las tarifas de envío a domicilio
               </p>
 
+              {/* ✅ INDICADOR DE ESTADO DE CONFIGURACIÓN */}
+              <div
+                className={`delivery-status ${formData.delivery_origin_lat && formData.delivery_origin_lng ? "delivery-status--active" : "delivery-status--inactive"}`}
+              >
+                <div className="delivery-status__indicator">
+                  <div
+                    className={`delivery-status__dot ${formData.delivery_origin_lat && formData.delivery_origin_lng ? "delivery-status__dot--green" : "delivery-status__dot--red"}`}
+                  ></div>
+                </div>
+                <div className="delivery-status__info">
+                  <span className="delivery-status__label">
+                    {formData.delivery_origin_lat &&
+                    formData.delivery_origin_lng
+                      ? "✅ Punto de partida configurado"
+                      : "❌ Punto de partida no configurado"}
+                  </span>
+                  {formData.delivery_origin_address && (
+                    <span className="delivery-status__address">
+                      📍 {formData.delivery_origin_address}
+                    </span>
+                  )}
+                  {formData.delivery_origin_lat &&
+                    formData.delivery_origin_lng && (
+                      <span className="delivery-status__coords">
+                        🗺️ {parseFloat(formData.delivery_origin_lat).toFixed(6)}
+                        , {parseFloat(formData.delivery_origin_lng).toFixed(6)}
+                      </span>
+                    )}
+                </div>
+                <div className="delivery-status__actions">
+                  {formData.delivery_origin_lat &&
+                  formData.delivery_origin_lng ? (
+                    <span className="delivery-status__badge delivery-status__badge--active">
+                      ACTIVO
+                    </span>
+                  ) : (
+                    <span className="delivery-status__badge delivery-status__badge--inactive">
+                      PENDIENTE
+                    </span>
+                  )}
+                </div>
+              </div>
+
               {/* Punto de Origen */}
               <div className="delivery-section">
                 <h4 className="delivery-section-title">
                   <HiOutlineLocationMarker /> Punto de Partida (Farmacia)
                 </h4>
-
                 <div className="form-row">
                   <div className="form-group">
                     <label>Latitud</label>
@@ -620,7 +738,55 @@ const AppConfigManager = () => {
                     />
                   </div>
                 </div>
+                {/* ✅ BOTONES DE GUARDAR Y QUITAR UBICACIÓN MANUAL */}
+                <div className="delivery-location-actions">
+                  <button
+                    type="button"
+                    className="location-btn location-btn--save"
+                    onClick={handleSaveManualLocation}
+                    disabled={
+                      !formData.delivery_origin_lat ||
+                      !formData.delivery_origin_lng
+                    }
+                    title="Guardar ubicación escrita manualmente"
+                  >
+                    <HiOutlineLocationMarker />
+                    Guardar ubicación manual
+                  </button>
 
+                  <button
+                    type="button"
+                    className="location-btn location-btn--clear"
+                    onClick={handleClearLocation}
+                    disabled={
+                      !formData.delivery_origin_lat &&
+                      !formData.delivery_origin_lng &&
+                      !formData.delivery_origin_address
+                    }
+                    title="Quitar ubicación configurada"
+                  >
+                    <HiOutlineX />
+                    Quitar ubicación
+                  </button>
+                </div>
+                {/* ✅ BOTÓN GPS
+                <button
+                  type="button"
+                  className="gps-button-delivery"
+                  onClick={getGPSLocationForDelivery}
+                  disabled={gpsLoadingDelivery}
+                >
+                  {gpsLoadingDelivery ? (
+                    <>⏳ Obteniendo ubicación...</>
+                  ) : (
+                    <>📍 Usar mi ubicación actual como punto de partida</>
+                  )}
+                </button>
+                <small className="help-text" style={{ marginTop: "0.5rem" }}>
+                  Escribe las coordenadas manualmente y presiona "Guardar
+                  ubicación manual", o usa el botón GPS para obtenerlas
+                  automáticamente
+                </small> */}
                 {/* ✅ BOTÓN GPS PARA OBTENER UBICACIÓN ACTUAL */}
                 <button
                   type="button"
@@ -638,7 +804,6 @@ const AppConfigManager = () => {
                     <>📍 Usar mi ubicación actual como punto de partida</>
                   )}
                 </button>
-
                 <small className="help-text" style={{ marginTop: "0.5rem" }}>
                   Puedes obtener las coordenadas exactas desde Google Maps,
                   OpenStreetMap o usar el botón GPS

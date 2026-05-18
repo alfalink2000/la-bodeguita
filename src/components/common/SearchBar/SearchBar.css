@@ -1,4 +1,4 @@
-/* SearchBar.css - SIN STICKY */
+/* SearchBar.css - CON MARQUESINA CONTINUA Y SOPORTE MÓVIL/DESKTOP */
 
 .search-bar {
   position: relative;
@@ -7,7 +7,7 @@
   margin-bottom: 1rem;
 }
 
-/* Contenedor principal para desktop */
+/* ===== CONTENEDOR PRINCIPAL ===== */
 .search-bar--desktop .search-bar__content {
   display: flex;
   align-items: center;
@@ -15,48 +15,11 @@
   width: 100%;
 }
 
-/* Contenedor del input (70% del espacio) */
+/* ===== INPUT DE BÚSQUEDA ===== */
 .search-bar__input-container {
   position: relative;
   flex: 1;
   max-width: 70%;
-}
-
-/* Campo de información de ubicación (30% del espacio) */
-.search-bar__location-info {
-  flex: 0 0 30%;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, var(--primary-blue), var(--accent-teal));
-  color: white;
-  border-radius: var(--radius-lg);
-  font-size: 0.875rem;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
-  min-width: 0;
-}
-
-.location-info__icon {
-  font-size: 1.1rem;
-  flex-shrink: 0;
-  opacity: 0.9;
-}
-
-.location-info__text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.search-bar__location-info:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
 }
 
 .search-bar__icon {
@@ -99,9 +62,103 @@
   border-color: var(--gray-300);
 }
 
-/* Responsive para móviles */
+/* ===== INFO DE UBICACIÓN / ENVÍOS ===== */
+.search-bar__location-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, var(--primary-blue), var(--accent-teal));
+  color: white;
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.search-bar__location-info:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ===== DESKTOP: Al lado del input ===== */
+.search-bar__location-info--desktop {
+  flex: 0 0 30%;
+}
+
+/* ===== MÓVIL: Arriba del input ===== */
+.search-bar__location-info--mobile {
+  display: flex !important;
+  width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+}
+
+.search-bar__location-info--mobile .location-info__icon {
+  font-size: 0.95rem;
+}
+
+/* ===== ICONO DE UBICACIÓN ===== */
+.location-info__icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+/* ===== MARQUESINA CONTINUA (SIN ESPACIOS VACÍOS) ===== */
+.location-info__text-wrapper {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  min-width: 0;
+}
+
+.location-info__text {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 10s linear infinite;
+  padding-left: 0;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Pausar animación al pasar el mouse */
+.location-info__text:hover {
+  animation-play-state: paused;
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* Tablets y móviles */
+@media (max-width: 1023px) {
+  .search-bar__location-info--mobile {
+    display: flex !important;
+  }
+
+  .search-bar__location-info--desktop {
+    display: none !important;
+  }
+
+  .search-bar__input-container {
+    max-width: 100% !important;
+    flex: 1 !important;
+  }
+}
+
+/* Móviles */
 @media (max-width: 768px) {
-  /* Resetear el max-width para móvil */
   .search-bar__input-container {
     max-width: 100% !important;
     flex: 1 !important;
@@ -117,23 +174,44 @@
     width: 1.25rem;
     height: 1.25rem;
   }
+}
 
-  /* Ocultar info de ubicación en móvil */
-  .search-bar__location-info {
-    display: none !important;
+/* Móviles pequeños */
+@media (max-width: 480px) {
+  .search-bar__icon {
+    left: 0.75rem;
   }
 
-  /* Ajuste para pantallas muy pequeñas */
-  @media (max-width: 480px) {
-    .search-bar__icon {
-      left: 0.75rem;
-    }
+  .search-bar__location-info--mobile {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .search-bar__location-info--mobile .location-info__icon {
+    font-size: 0.85rem;
   }
 }
 
-/* Para desktop específico */
+/* Desktop */
 @media (min-width: 1024px) {
+  .search-bar__location-info--mobile {
+    display: none !important;
+  }
+
+  .search-bar__location-info--desktop {
+    display: flex !important;
+  }
+
   .search-bar--desktop .search-bar__content {
     max-width: 100%;
+  }
+}
+
+/* ===== ACCESIBILIDAD ===== */
+@media (prefers-reduced-motion: reduce) {
+  .location-info__text {
+    animation: none;
+    padding-left: 0;
+    white-space: normal;
   }
 }
