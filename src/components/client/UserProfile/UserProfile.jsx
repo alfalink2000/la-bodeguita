@@ -1,55 +1,126 @@
 // components/client/UserProfile/UserProfile.jsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import Swal from "sweetalert2";
 import {
   HiOutlineUser,
   HiOutlineLocationMarker,
   HiOutlinePhone,
   HiOutlineMail,
-  HiOutlineCamera,
   HiOutlineSave,
   HiOutlineClipboardList,
   HiOutlineClock,
-  HiOutlineCheck,
   HiOutlineX,
   HiOutlineTruck,
   HiOutlineCurrencyDollar,
+  HiOutlineRefresh,
 } from "react-icons/hi";
 import {
   startLoadMyOrders,
   startCancelOrder,
 } from "../../../actions/ordersActions";
+import { startLoadUserProfile } from "../../../actions/authActions";
 import "./UserProfile.css";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
   "https://minimarket-backend-6z9m.onrender.com";
 
-const UserProfile = ({ userData, onClose }) => {
+const UserProfile = ({ onClose }) => {
   const dispatch = useDispatch();
   const orders = useSelector((state) => state.orders.orders);
   const appConfig = useSelector((state) => state.appConfig.config);
+  const auth = useSelector((state) => state.auth);
   const currency = appConfig?.currency || "CUP";
 
   const [activeTab, setActiveTab] = useState("profile");
   const [editing, setEditing] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
+  // ✅ Estado para el formulario de edición (usando datos de auth)
   const [formData, setFormData] = useState({
-    full_name: userData?.full_name || "",
-    phone: userData?.phone || "",
-    address: userData?.address || "",
-    lat: userData?.lat || null,
-    lng: userData?.lng || null,
+    full_name: auth?.full_name || "",
+    phone: auth?.phone || "",
+    address: auth?.address || "",
+    lat: auth?.lat || null,
+    lng: auth?.lng || null,
   });
 
+  // ✅ Cargar perfil desde el backend
+  const loadProfile = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setIsLoadingProfile(false);
+      return;
+    }
+
+    try {
+      console.log("🔄 Cargando perfil desde:", `${API_URL}/api/auth/profile`);
+      const res = await fetch(`${API_URL}/api/auth/profile`, {
+        headers: { "x-token": token },
+      });
+      const data = await res.json();
+      console.log("📦 Respuesta del perfil:", data);
+
+      if (data.ok && data.user) {
+        setFormData({
+          full_name: data.user.full_name || "",
+          phone: data.user.phone || "",
+          address: data.user.address || "",
+          lat: data.user.lat || null,
+          lng: data.user.lng || null,
+        });
+      }
+    } catch (err) {
+      console.error("❌ Error en petición:", err);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  // ✅ Actualizar formData cuando auth cambie
   useEffect(() => {
+    if (auth) {
+      setFormData({
+        full_name: auth.full_name || "",
+        phone: auth.phone || "",
+        address: auth.address || "",
+        lat: auth.lat || null,
+        lng: auth.lng || null,
+      });
+    }
+  }, [auth]);
+
+  // ✅ Cargar datos al abrir
+  useEffect(() => {
+    dispatch(startLoadUserProfile());
     dispatch(startLoadMyOrders());
+    loadProfile();
   }, [dispatch]);
 
-  // Actualizar perfil
+  // ✅ Función segura para formatear números
+  const formatPrice = (value) => {
+    if (value === null || value === undefined) return "0.00";
+    const num = typeof value === "string" ? parseFloat(value) : value;
+    return isNaN(num) ? "0.00" : num.toFixed(2);
+  };
+
+  // ✅ Actualizar perfil
   const handleUpdateProfile = async () => {
+    setLoading(true);
     try {
       const token = localStorage.getItem("token");
+      const userId = auth?.uid;
+
+      console.log("🔄 Actualizando perfil:", {
+        id: userId,
+        full_name: formData.full_name,
+        phone: formData.phone,
+        address: formData.address,
+      });
+
       const res = await fetch(`${API_URL}/api/auth/update`, {
         method: "PUT",
         headers: {
@@ -57,26 +128,64 @@ const UserProfile = ({ userData, onClose }) => {
           "x-token": token,
         },
         body: JSON.stringify({
-          id: userData?.id || userData?.uid,
-          ...formData,
+          id: userId,
+          full_name: formData.full_name,
+          phone: formData.phone,
+          address: formData.address,
+          lat: formData.lat,
+          lng: formData.lng,
         }),
       });
       const data = await res.json();
+
       if (data.ok) {
         setEditing(false);
+        await loadProfile();
+        dispatch(startLoadUserProfile());
+
+        Swal.fire({
+          icon: "success",
+          title: "¡Perfil actualizado!",
+          text: "Tus datos han sido guardados correctamente",
+          confirmButtonColor: "#059669",
+          timer: 2000,
+          timerProgressBar: true,
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: data.msg || "No se pudo actualizar el perfil",
+          confirmButtonColor: "#ef4444",
+        });
       }
     } catch (err) {
       console.error("Error actualizando perfil:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error de conexión",
+        text: "No se pudo conectar con el servidor",
+        confirmButtonColor: "#ef4444",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Obtener ubicación GPS
+  // ✅ Obtener ubicación GPS
   const getGPSLocation = () => {
     setGpsLoading(true);
     if (!navigator.geolocation) {
+      Swal.fire({
+        icon: "error",
+        title: "GPS no disponible",
+        text: "Tu navegador no soporta geolocalización",
+        confirmButtonColor: "#ef4444",
+      });
       setGpsLoading(false);
       return;
     }
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
@@ -93,18 +202,37 @@ const UserProfile = ({ userData, onClose }) => {
             lng: longitude,
             address: data.display_name || `${latitude}, ${longitude}`,
           }));
+
+          Swal.fire({
+            icon: "success",
+            title: "Ubicación obtenida",
+            text: "Tu dirección ha sido actualizada",
+            confirmButtonColor: "#059669",
+            timer: 1500,
+            timerProgressBar: true,
+          });
         } catch (err) {
           setFormData((prev) => ({ ...prev, lat: latitude, lng: longitude }));
         }
         setGpsLoading(false);
       },
-      () => setGpsLoading(false),
+      (err) => {
+        console.error("GPS Error:", err);
+        Swal.fire({
+          icon: "error",
+          title: "Error de GPS",
+          text: "No se pudo obtener tu ubicación. Verifica los permisos.",
+          confirmButtonColor: "#ef4444",
+        });
+        setGpsLoading(false);
+      },
       { enableHighAccuracy: true, timeout: 10000 },
     );
   };
 
-  // Formatear fecha
+  // ✅ Formatear fecha
   const formatDate = (dateString) => {
+    if (!dateString) return "Fecha no disponible";
     const date = new Date(dateString);
     return date.toLocaleDateString("es-ES", {
       day: "2-digit",
@@ -115,7 +243,7 @@ const UserProfile = ({ userData, onClose }) => {
     });
   };
 
-  // Estado del pedido en español
+  // ✅ Estado del pedido en español
   const statusLabels = {
     open: "Abierto",
     pending: "En Proceso",
@@ -130,21 +258,57 @@ const UserProfile = ({ userData, onClose }) => {
     cancelled: "#ef4444",
   };
 
-  // Calcular tiempo restante estimado
+  // ✅ Calcular tiempo restante estimado
   const getTimeRemaining = (order) => {
     if (order.status !== "open" && order.status !== "pending") return null;
+    if (!order.created_at) return null;
+
     const created = new Date(order.created_at);
-    const estimated = new Date(
-      created.getTime() + order.estimated_completion_hours * 3600000,
-    );
+    const hours = order.estimated_completion_hours || 1;
+    const estimated = new Date(created.getTime() + hours * 3600000);
     const now = new Date();
     const diff = estimated - now;
 
     if (diff <= 0) return "Tiempo cumplido";
-    const hours = Math.floor(diff / 3600000);
-    const minutes = Math.floor((diff % 3600000) / 60000);
-    return `${hours}h ${minutes}min restantes`;
+    const hoursLeft = Math.floor(diff / 3600000);
+    const minutesLeft = Math.floor((diff % 3600000) / 60000);
+    return `${hoursLeft}h ${minutesLeft}min restantes`;
   };
+
+  // ✅ Cancelar pedido con confirmación
+  const handleCancelOrder = async (orderId) => {
+    const result = await Swal.fire({
+      title: "¿Cancelar pedido?",
+      text: "Esta acción no se puede deshacer",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Sí, cancelar",
+      cancelButtonText: "No, mantener",
+    });
+
+    if (result.isConfirmed) {
+      dispatch(startCancelOrder(orderId));
+    }
+  };
+
+  // Mostrar loading mientras se cargan los datos
+  if (isLoadingProfile && !auth?.uid) {
+    return (
+      <div
+        className="user-profile-overlay"
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+        <div className="user-profile-modal">
+          <div className="up-loading">
+            <div className="up-spinner"></div>
+            <p>Cargando perfil...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -152,7 +316,7 @@ const UserProfile = ({ userData, onClose }) => {
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="user-profile-modal">
-        {/* Header */}
+        {/* Header Fijo */}
         <div className="up-header">
           <button className="up-close" onClick={onClose}>
             <HiOutlineX />
@@ -161,12 +325,14 @@ const UserProfile = ({ userData, onClose }) => {
             <HiOutlineUser />
           </div>
           <h2 className="up-name">
-            {userData?.full_name || userData?.username || "Usuario"}
+            {formData.full_name || auth?.name || "Usuario"}
           </h2>
-          <p className="up-role">Cliente</p>
+          <p className="up-role">
+            {auth?.role === "admin" ? "Administrador" : "Cliente"}
+          </p>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs Fijos */}
         <div className="up-tabs">
           <button
             className={`up-tab ${activeTab === "profile" ? "up-tab--active" : ""}`}
@@ -185,13 +351,13 @@ const UserProfile = ({ userData, onClose }) => {
           </button>
         </div>
 
-        {/* Contenido */}
-        <div className="up-content">
+        {/* Contenido Scrollable */}
+        <div className="up-content-wrapper">
           {activeTab === "profile" && (
             <div className="up-profile-section">
               <div className="up-field">
                 <label>
-                  <HiOutlineUser /> Nombre
+                  <HiOutlineUser /> Nombre completo
                 </label>
                 {editing ? (
                   <input
@@ -203,9 +369,10 @@ const UserProfile = ({ userData, onClose }) => {
                         full_name: e.target.value,
                       }))
                     }
+                    placeholder="Tu nombre completo"
                   />
                 ) : (
-                  <span>{userData?.full_name || "No especificado"}</span>
+                  <span>{formData.full_name || "No especificado"}</span>
                 )}
               </div>
 
@@ -213,7 +380,7 @@ const UserProfile = ({ userData, onClose }) => {
                 <label>
                   <HiOutlineMail /> Usuario
                 </label>
-                <span>{userData?.username || "—"}</span>
+                <span>{auth?.name || "—"}</span>
               </div>
 
               <div className="up-field">
@@ -223,47 +390,66 @@ const UserProfile = ({ userData, onClose }) => {
                 {editing ? (
                   <input
                     type="tel"
-                    value={formData.phone}
+                    value={formData.phone || ""}
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
                         phone: e.target.value,
                       }))
                     }
+                    placeholder="Ej: +53 5XXXXXXXX"
                   />
                 ) : (
-                  <span>{userData?.phone || "No especificado"}</span>
+                  <span>{formData.phone || "No especificado"}</span>
                 )}
               </div>
 
               <div className="up-field">
                 <label>
-                  <HiOutlineLocationMarker /> Dirección
+                  <HiOutlineLocationMarker /> Dirección de entrega
                 </label>
                 {editing ? (
                   <>
-                    <input
-                      type="text"
-                      value={formData.address}
+                    <textarea
+                      value={formData.address || ""}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
                           address: e.target.value,
                         }))
                       }
+                      placeholder="Tu dirección completa"
+                      rows="3"
+                      style={{ resize: "vertical" }}
                     />
                     <button
                       className="up-gps-btn"
                       onClick={getGPSLocation}
                       disabled={gpsLoading}
                     >
-                      {gpsLoading ? "⏳" : "📍"} Usar GPS
+                      {gpsLoading ? (
+                        <>
+                          <HiOutlineRefresh className="spinning" />{" "}
+                          Obteniendo...
+                        </>
+                      ) : (
+                        <>
+                          <HiOutlineLocationMarker /> Usar mi ubicación actual
+                        </>
+                      )}
                     </button>
                   </>
                 ) : (
-                  <span>{userData?.address || "No especificada"}</span>
+                  <span>{formData.address || "No especificada"}</span>
                 )}
               </div>
+
+              {formData.lat && formData.lng && editing && (
+                <div className="up-coords-info">
+                  📍 Coordenadas: {formData.lat.toFixed(6)},{" "}
+                  {formData.lng.toFixed(6)}
+                </div>
+              )}
 
               <div className="up-actions">
                 {editing ? (
@@ -271,12 +457,30 @@ const UserProfile = ({ userData, onClose }) => {
                     <button
                       className="up-btn up-btn--save"
                       onClick={handleUpdateProfile}
+                      disabled={loading}
                     >
-                      <HiOutlineSave /> Guardar
+                      {loading ? (
+                        <>
+                          <HiOutlineRefresh className="spinning" /> Guardando...
+                        </>
+                      ) : (
+                        <>
+                          <HiOutlineSave /> Guardar Cambios
+                        </>
+                      )}
                     </button>
                     <button
                       className="up-btn up-btn--cancel"
-                      onClick={() => setEditing(false)}
+                      onClick={() => {
+                        setEditing(false);
+                        setFormData({
+                          full_name: auth?.full_name || "",
+                          phone: auth?.phone || "",
+                          address: auth?.address || "",
+                          lat: auth?.lat || null,
+                          lng: auth?.lng || null,
+                        });
+                      }}
                     >
                       <HiOutlineX /> Cancelar
                     </button>
@@ -295,7 +499,7 @@ const UserProfile = ({ userData, onClose }) => {
 
           {activeTab === "orders" && (
             <div className="up-orders-section">
-              {orders.length === 0 ? (
+              {!orders || orders.length === 0 ? (
                 <div className="up-empty">
                   <HiOutlineClipboardList className="up-empty-icon" />
                   <h3>No tienes pedidos</h3>
@@ -331,12 +535,12 @@ const UserProfile = ({ userData, onClose }) => {
                       <div className="up-order-details">
                         <span>
                           <HiOutlineCurrencyDollar /> Total: $
-                          {order.total_amount} {currency}
+                          {formatPrice(order.total_amount)} {currency}
                         </span>
                         {order.delivery_price > 0 && (
                           <span>
-                            <HiOutlineTruck /> Delivery: ${order.delivery_price}{" "}
-                            {currency}
+                            <HiOutlineTruck /> Delivery: $
+                            {formatPrice(order.delivery_price)} {currency}
                           </span>
                         )}
                         <span>
@@ -350,10 +554,11 @@ const UserProfile = ({ userData, onClose }) => {
                         </div>
                       )}
 
-                      {order.status === "open" && (
+                      {(order.status === "open" ||
+                        order.status === "pending") && (
                         <button
                           className="up-order-cancel"
-                          onClick={() => dispatch(startCancelOrder(order.id))}
+                          onClick={() => handleCancelOrder(order.id)}
                         >
                           Cancelar Pedido
                         </button>

@@ -31,7 +31,7 @@ const persistConfig = {
   stateReconciler: autoMergeLevel2,
   whitelist: ["products", "categories", "appConfig", "cart"], // Qué datos persistir
   timeout: 5000,
-  version: 1, // Versión para migraciones futuras
+  version: 2, // Versión para migraciones futuras
 };
 
 const persistedReducer = persistReducer(persistConfig, reducers);

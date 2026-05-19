@@ -6,6 +6,8 @@
   position: fixed;
   top: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
@@ -30,11 +32,16 @@
   flex-direction: column;
   overflow: hidden;
   animation: modalSlideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 @keyframes overlayFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modalSlideUp {
@@ -48,13 +55,17 @@
   }
 }
 
-/* Header */
+/* Header - fijo */
 .chat-modal__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.25rem;
-  background: linear-gradient(135deg, var(--primary-green), var(--primary-green-dark));
+  background: linear-gradient(
+    135deg,
+    var(--primary-green),
+    var(--primary-green-dark)
+  );
   color: white;
   flex-shrink: 0;
 }
@@ -108,7 +119,7 @@
   transform: rotate(90deg);
 }
 
-/* Mensajes */
+/* Mensajes - scrollable */
 .chat-modal__messages {
   flex: 1;
   overflow-y: auto;
@@ -117,8 +128,21 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-height: 0;
 }
 
+/* Input - fijo abajo */
+.chat-modal__input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--gray-200);
+  background: var(--white);
+  flex-shrink: 0;
+}
+
+/* Estados de carga/vacío */
 .chat-modal__loading,
 .chat-modal__empty {
   display: flex;
@@ -155,6 +179,12 @@
   border-top-color: var(--primary-green);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Mensaje individual */
@@ -256,17 +286,7 @@
   cursor: pointer;
 }
 
-/* Input */
-.chat-modal__input {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border-top: 1px solid var(--gray-200);
-  background: var(--white);
-  flex-shrink: 0;
-}
-
+/* Input field */
 .chat-modal__input-field {
   flex: 1;
   padding: 0.625rem 0.875rem;
@@ -324,8 +344,8 @@
   border-radius: var(--radius-full);
 }
 
-/* Responsive */
-@media (max-width: 480px) {
+/* ===== RESPONSIVE MÓVIL ===== */
+@media (max-width: 768px) {
   .chat-modal-overlay {
     padding: 0;
     align-items: flex-end;
@@ -333,14 +353,39 @@
 
   .chat-modal {
     max-width: 100%;
-    height: 70vh;
+    width: 100%;
     max-height: 70vh;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     animation: modalSlideUpMobile 0.35s ease;
   }
 
   @keyframes modalSlideUpMobile {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  /* ✅ Cuando el teclado está abierto, ajustar la altura */
+  .chat-modal:focus-within {
+    max-height: 85vh;
+  }
+
+  /* ✅ Prevenir zoom en iOS al enfocar input */
+  .chat-modal__input-field {
+    font-size: 16px;
+  }
+}
+
+/* ✅ Soporte para safe area en iPhone con notch */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .chat-modal__input {
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  }
+
+  .chat-modal {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }

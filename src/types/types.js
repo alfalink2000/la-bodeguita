@@ -8,6 +8,7 @@ export const types = {
   authStartRegister: "[auth] Start register",
   authStartTokenRenew: "[auth] Start token renew",
   authGetUsers: "[auth] Get users",
+  authUpdateProfile: "[auth] Update profile",
 
   // ✅ AGREGAR ESTOS TYPES QUE TU ACTION NECESITA
   authStartLoading: "[auth] Start loading",

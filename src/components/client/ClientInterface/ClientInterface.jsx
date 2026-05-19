@@ -799,6 +799,7 @@ const ClientInterface = ({
         userData={userData}
         onLogout={onLogout}
         onShowLogin={onShowLoginForm}
+        onProfileClick={() => setShowProfile(true)}
       />
     </div>
   );

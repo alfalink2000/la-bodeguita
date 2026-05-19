@@ -1,4 +1,4 @@
-// actions/authActions.js - VERSIÓN MODIFICADA (usando types existentes)
+// actions/authActions.js - VERSIÓN CORREGIDA (guarda todos los datos)
 import { fetchConToken, fetchSinToken } from "../helpers/fetchAdmin";
 import { types } from "../types/types";
 import Swal from "sweetalert2";
@@ -7,12 +7,10 @@ export const checkingFinish = () => ({
   type: types.authCheckingFinish,
 });
 
-// ✅ USAR authStartLogin EN LUGAR DE authStartLoading
 export const startLoading = () => ({
   type: types.authStartLogin,
 });
 
-// ✅ USAR authCheckingFinish EN LUGAR DE authFinishLoading
 export const finishLoading = () => ({
   type: types.authCheckingFinish,
 });
@@ -33,9 +31,10 @@ export const StartLogin = (username, password) => {
         "POST",
       );
 
-      console.log("📦 Body completo recibido:", body);
+      console.log("📦 Body completo recibido del backend:", body);
+      console.log("📞 Teléfono recibido en login:", body?.phone);
+      console.log("👤 Nombre recibido en login:", body?.full_name);
 
-      // ✅ VERIFICAR SI LA RESPUESTA ES VÁLIDA
       if (!body) {
         throw new Error("El servidor no respondió correctamente");
       }
@@ -54,18 +53,24 @@ export const StartLogin = (username, password) => {
         localStorage.setItem("token", body.token);
         localStorage.setItem("token-init-date", new Date().getTime());
 
+        // ✅ GUARDAR TODOS LOS DATOS DEL USUARIO
         dispatch(
           login({
             uid: body.id,
             name: body.username,
             role: body.role,
+            full_name: body.full_name || "",
+            email: body.email || "",
+            address: body.address || "",
+            city: body.city || "",
+            lat: body.lat || null,
+            lng: body.lng || null,
+            phone: body.phone || "", //
           }),
         );
       } else {
-        // ✅ MEJOR MANEJO DE ERRORES - EL BACKEND YA DEVUELVE body.msg
         let errorMessage = body.msg || "Credenciales incorrectas";
 
-        // Mapear mensajes del backend a mensajes más amigables
         const errorMessages = {
           "Usuario no encontrado": "El usuario no existe en el sistema",
           "Contraseña incorrecta": "La contraseña es incorrecta",
@@ -123,6 +128,33 @@ export const StartLogin = (username, password) => {
   };
 };
 
+export const startLoadUserProfile = () => {
+  return async (dispatch) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      console.log("🔄 Cargando perfil desde /api/auth/profile");
+      const resp = await fetch(`${API_URL}/api/auth/profile`, {
+        headers: { "x-token": token },
+      });
+      const body = await resp.json();
+
+      console.log("📦 Respuesta del perfil:", body);
+
+      if (body.ok && body.user) {
+        // ✅ Actualizar el estado de auth con los datos del perfil
+        dispatch({
+          type: types.authUpdateProfile,
+          payload: body.user,
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error cargando perfil:", error);
+    }
+  };
+};
+
 export const StartChecking = () => {
   return async (dispatch) => {
     try {
@@ -144,6 +176,13 @@ export const StartChecking = () => {
             uid: body.uid || body.id,
             name: body.name || body.username,
             role: body.role,
+            full_name: body.full_name || "",
+            email: body.email || "",
+            address: body.address || "",
+            city: body.city || "",
+            lat: body.lat || null,
+            lng: body.lng || null,
+            phone: body.phone || "",
           }),
         );
       } else {
@@ -178,6 +217,7 @@ export const startLogout = () => {
 
 const logout = () => ({ type: types.authLogout });
 
+// ✅ LOGIN ACTUALIZADO - guarda todos los campos
 const login = (user) => ({
   type: types.authLogin,
   payload: user,

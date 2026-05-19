@@ -6,18 +6,30 @@ import {
   HiOutlineUser,
   HiOutlineLogout,
   HiOutlineHome,
-  HiOutlineShoppingBag,
-  HiOutlinePhone,
   HiOutlineQuestionMarkCircle,
   HiOutlineUserCircle,
+  HiOutlineChat,
+  HiOutlineInformationCircle,
 } from "react-icons/hi";
+import Swal from "sweetalert2";
 import "./SideMenu.css";
 
-const SideMenu = ({ isOpen, onClose, isLoggedIn, userData, onLogout, onShowLogin }) => {
+const SideMenu = ({
+  isOpen,
+  onClose,
+  isLoggedIn,
+  userData,
+  onLogout,
+  onShowLogin,
+  onProfileClick,
+}) => {
   // Cerrar con tecla Escape
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === "Escape") onClose();
-  }, [onClose]);
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Escape") onClose();
+    },
+    [onClose],
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -33,6 +45,31 @@ const SideMenu = ({ isOpen, onClose, isLoggedIn, userData, onLogout, onShowLogin
   // Cerrar al hacer clic fuera del menú
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) onClose();
+  };
+
+  // Mostrar ayuda informativa
+  const showHelpInfo = () => {
+    onClose();
+    Swal.fire({
+      title: "📱 Ayuda y Navegación",
+      html: `
+        <div style="text-align: left; line-height: 1.6;">
+          <p style="margin-bottom: 1rem;"><strong>🔍 Búsqueda:</strong> Usa el buscador para encontrar productos rápidamente.</p>
+          <p style="margin-bottom: 1rem;"><strong>🏪 Tiendas:</strong> Selecciona una tienda para ver sus productos específicos.</p>
+          <p style="margin-bottom: 1rem;"><strong>📂 Categorías:</strong> Filtra productos por categoría para una mejor experiencia.</p>
+          <p style="margin-bottom: 1rem;"><strong>🛒 Carrito:</strong> Agrega productos y realiza tu pedido fácilmente.</p>
+          <p style="margin-bottom: 1rem;"><strong>💬 Soporte:</strong> Usa el botón flotante de chat (💬) para contactar con soporte.</p>
+          <p style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; color: #059669;">
+            ✅ ¿Necesitas ayuda adicional? ¡Contáctanos por chat!
+          </p>
+        </div>
+      `,
+      icon: "info",
+      confirmButtonText: "Entendido",
+      confirmButtonColor: "#059669",
+      background: "#ffffff",
+      iconColor: "#059669",
+    });
   };
 
   return (
@@ -53,7 +90,11 @@ const SideMenu = ({ isOpen, onClose, isLoggedIn, userData, onLogout, onShowLogin
             </div>
             <h2 className="sidemenu__title">Menú</h2>
           </div>
-          <button className="sidemenu__close" onClick={onClose} aria-label="Cerrar menú">
+          <button
+            className="sidemenu__close"
+            onClick={onClose}
+            aria-label="Cerrar menú"
+          >
             <HiOutlineX className="sidemenu__close-icon" />
           </button>
         </div>
@@ -78,6 +119,7 @@ const SideMenu = ({ isOpen, onClose, isLoggedIn, userData, onLogout, onShowLogin
         {/* Items del menú */}
         <nav className="sidemenu__nav">
           <ul className="sidemenu__list">
+            {/* ✅ Inicio - solo cierra el menú (ya estamos en la página de inicio) */}
             <li className="sidemenu__item">
               <button className="sidemenu__link" onClick={onClose}>
                 <HiOutlineHome className="sidemenu__link-icon" />
@@ -85,24 +127,39 @@ const SideMenu = ({ isOpen, onClose, isLoggedIn, userData, onLogout, onShowLogin
               </button>
             </li>
 
-            <li className="sidemenu__item">
-              <button className="sidemenu__link" onClick={onClose}>
-                <HiOutlineShoppingBag className="sidemenu__link-icon" />
-                <span className="sidemenu__link-text">Productos</span>
-              </button>
-            </li>
+            {/* ✅ ELIMINADO: Productos (es la misma vista que Inicio) */}
 
+            {/* ✅ Ayuda - muestra información de navegación */}
             <li className="sidemenu__item">
-              <button className="sidemenu__link" onClick={onClose}>
-                <HiOutlinePhone className="sidemenu__link-icon" />
-                <span className="sidemenu__link-text">Contacto</span>
-              </button>
-            </li>
-
-            <li className="sidemenu__item">
-              <button className="sidemenu__link" onClick={onClose}>
+              <button className="sidemenu__link" onClick={showHelpInfo}>
                 <HiOutlineQuestionMarkCircle className="sidemenu__link-icon" />
                 <span className="sidemenu__link-text">Ayuda</span>
+              </button>
+            </li>
+
+            {/* ✅ Información - muestra información de la tienda */}
+            <li className="sidemenu__item">
+              <button
+                className="sidemenu__link"
+                onClick={() => {
+                  onClose();
+                  // Puedes abrir el modal de información aquí si lo tienes disponible
+                  Swal.fire({
+                    title: "ℹ Información",
+                    html: `
+                     <div style="text-align: left;">                 
+                      <hr style="margin: 1rem 0;">
+                      <p>💬 ¿Necesitas ayuda? Usa el botón flotante de chat (💬) en la esquina inferior derecha para contactar con soporte.</p>
+                    </div>
+                  `,
+                    icon: "info",
+                    confirmButtonText: "Cerrar",
+                    confirmButtonColor: "#059669",
+                  });
+                }}
+              >
+                <HiOutlineInformationCircle className="sidemenu__link-icon" />
+                <span className="sidemenu__link-text">Información</span>
               </button>
             </li>
           </ul>
@@ -115,7 +172,15 @@ const SideMenu = ({ isOpen, onClose, isLoggedIn, userData, onLogout, onShowLogin
             {isLoggedIn ? (
               <>
                 <li className="sidemenu__item">
-                  <button className="sidemenu__link" onClick={onClose}>
+                  <button
+                    className="sidemenu__link"
+                    onClick={() => {
+                      onClose();
+                      if (onProfileClick) {
+                        onProfileClick();
+                      }
+                    }}
+                  >
                     <HiOutlineUser className="sidemenu__link-icon" />
                     <span className="sidemenu__link-text">Mi Perfil</span>
                   </button>
@@ -153,6 +218,9 @@ const SideMenu = ({ isOpen, onClose, isLoggedIn, userData, onLogout, onShowLogin
         {/* Footer del menú */}
         <div className="sidemenu__footer">
           <span className="sidemenu__version">v1.0.0</span>
+          <span className="sidemenu__footer-text">
+            💬 Soporte disponible por chat
+          </span>
         </div>
       </div>
     </>
