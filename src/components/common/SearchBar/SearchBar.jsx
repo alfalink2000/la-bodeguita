@@ -1,6 +1,7 @@
 // components/common/SearchBar/SearchBar.jsx
 import { Search } from "lucide-react";
 import { HiOutlineLocationMarker } from "react-icons/hi";
+import { useEffect, useRef, useState } from "react";
 import "./SearchBar.css";
 
 const SearchBar = ({
@@ -9,18 +10,52 @@ const SearchBar = ({
   isDesktop = false,
   appConfig,
 }) => {
+  const [marqueeSpeed, setMarqueeSpeed] = useState(12);
+  const textRef = useRef(null);
+  const wrapperRef = useRef(null);
+
+  const marqueeText =
+    "🚚 Envíos a Domicilio — GRATIS por cantidad — ¡No dude en preguntar! 🚚";
+
+  // ✅ Calcular velocidad basada en la longitud del texto y el contenedor
+  useEffect(() => {
+    const calculateSpeed = () => {
+      if (textRef.current && wrapperRef.current) {
+        const textWidth = textRef.current.scrollWidth / 2; // Por duplicado
+        const containerWidth = wrapperRef.current.clientWidth;
+
+        // Velocidad base: 40-60px por segundo
+        // Mientras más largo el texto, más tiempo toma
+        const distance = textWidth;
+        const speed = Math.max(8, Math.min(20, distance / 50));
+        setMarqueeSpeed(speed);
+      }
+    };
+
+    calculateSpeed();
+    window.addEventListener("resize", calculateSpeed);
+    return () => window.removeEventListener("resize", calculateSpeed);
+  }, []);
+
   return (
     <div className={`search-bar ${isDesktop ? "search-bar--desktop" : ""}`}>
-      {/* ✅ Mensaje de envíos - Visible en móvil (arriba) */}
+      {/* Mensaje de envíos - Móvil */}
       {!isDesktop && (
         <div className="search-bar__location-info search-bar__location-info--mobile">
           <HiOutlineLocationMarker className="location-info__icon" />
-          <div className="location-info__text-wrapper">
-            <span className="location-info__text">
-              🚚 Envíos a Domicilio — GRATIS por cantidad — ¡No dude en
-              preguntar! 🚚 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🚚 Envíos a
-              Domicilio — GRATIS por cantidad — ¡No dude en preguntar! 🚚
-            </span>
+          <div className="location-info__text-wrapper" ref={wrapperRef}>
+            <div
+              className="location-info__container animate"
+              style={{ animationDuration: `${marqueeSpeed}s` }}
+            >
+              <span ref={textRef} className="location-info__text">
+                {marqueeText}
+                <span className="marquee-spacer"></span>
+                {marqueeText}
+                <span className="marquee-spacer"></span>
+                {marqueeText}
+              </span>
+            </div>
           </div>
         </div>
       )}
@@ -37,15 +72,21 @@ const SearchBar = ({
           />
         </div>
 
-        {/* ✅ Mensaje de envíos - Visible en desktop (al lado derecho) */}
+        {/* Mensaje de envíos - Desktop (SIEMPRE CON ANIMACIÓN) */}
         {isDesktop && (
           <div className="search-bar__location-info search-bar__location-info--desktop">
             <HiOutlineLocationMarker className="location-info__icon" />
-            <div className="location-info__text-wrapper">
-              <span className="location-info__text">
-                🚚 Envíos a Domicilio — GRATIS por cantidad — ¡No dude en
-                preguntar! 🚚
-              </span>
+            <div className="location-info__text-wrapper" ref={wrapperRef}>
+              <div
+                className="location-info__container animate"
+                style={{ animationDuration: `${marqueeSpeed}s` }}
+              >
+                <span ref={textRef} className="location-info__text">
+                  {marqueeText}
+                  <span className="marquee-spacer"></span>
+                  {marqueeText}
+                </span>
+              </div>
             </div>
           </div>
         )}

@@ -1,4 +1,4 @@
-/* SearchBar.css - CON MARQUESINA CONTINUA Y SOPORTE MÓVIL/DESKTOP */
+/* SearchBar.css - ANIMACIÓN SIEMPRE ACTIVA */
 
 .search-bar {
   position: relative;
@@ -68,7 +68,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, var(--primary-blue), var(--accent-teal));
+  background: linear-gradient(135deg, #059669, #047857);
   color: white;
   border-radius: var(--radius-lg);
   font-size: 0.875rem;
@@ -110,7 +110,7 @@
   opacity: 0.9;
 }
 
-/* ===== MARQUESINA CONTINUA (SIN ESPACIOS VACÍOS) ===== */
+/* ===== MARQUESINA CONTINUA - SIEMPRE ACTIVA ===== */
 .location-info__text-wrapper {
   flex: 1;
   overflow: hidden;
@@ -118,25 +118,34 @@
   min-width: 0;
 }
 
-.location-info__text {
+.location-info__container {
   display: inline-block;
   white-space: nowrap;
-  animation: marquee 10s linear infinite;
-  padding-left: 0;
+  will-change: transform;
 }
 
-@keyframes marquee {
+/* ✅ ANIMACIÓN SIEMPRE ACTIVA (sin condición) */
+.location-info__container.animate {
+  animation: marqueeScroll linear infinite;
+}
+
+@keyframes marqueeScroll {
   0% {
-    transform: translateX(100%);
+    transform: translateX(0);
   }
   100% {
-    transform: translateX(-100%);
+    transform: translateX(-50%);
   }
 }
 
 /* Pausar animación al pasar el mouse */
-.location-info__text:hover {
+.search-bar__location-info:hover .location-info__container.animate {
   animation-play-state: paused;
+}
+
+.marquee-spacer {
+  display: inline-block;
+  width: 48px;
 }
 
 /* ===== RESPONSIVE ===== */
@@ -157,6 +166,30 @@
   }
 }
 
+/* Desktop */
+@media (min-width: 1024px) {
+  .search-bar__location-info--mobile {
+    display: none !important;
+  }
+
+  .search-bar__location-info--desktop {
+    display: flex !important;
+  }
+
+  .search-bar--desktop .search-bar__content {
+    max-width: 100%;
+  }
+
+  /* ✅ Ajustes específicos para desktop */
+  .search-bar__location-info--desktop .location-info__container.animate {
+    animation-duration: 15s !important; /* Velocidad más suave en desktop */
+  }
+
+  .search-bar__location-info--desktop .marquee-spacer {
+    width: 32px;
+  }
+}
+
 /* Móviles */
 @media (max-width: 768px) {
   .search-bar__input-container {
@@ -174,6 +207,25 @@
     width: 1.25rem;
     height: 1.25rem;
   }
+
+  .search-bar__location-info--mobile {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .marquee-spacer {
+    width: 32px;
+  }
+
+  /* ✅ Ajuste para móvil */
+  @keyframes marqueeScroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-33.333%);
+    }
+  }
 }
 
 /* Móviles pequeños */
@@ -183,35 +235,22 @@
   }
 
   .search-bar__location-info--mobile {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.75rem;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.7rem;
   }
 
   .search-bar__location-info--mobile .location-info__icon {
-    font-size: 0.85rem;
-  }
-}
-
-/* Desktop */
-@media (min-width: 1024px) {
-  .search-bar__location-info--mobile {
-    display: none !important;
+    font-size: 0.8rem;
   }
 
-  .search-bar__location-info--desktop {
-    display: flex !important;
-  }
-
-  .search-bar--desktop .search-bar__content {
-    max-width: 100%;
+  .marquee-spacer {
+    width: 24px;
   }
 }
 
 /* ===== ACCESIBILIDAD ===== */
 @media (prefers-reduced-motion: reduce) {
-  .location-info__text {
-    animation: none;
-    padding-left: 0;
-    white-space: normal;
+  .location-info__container.animate {
+    animation: none !important;
   }
 }

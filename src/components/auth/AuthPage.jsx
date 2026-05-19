@@ -1,4 +1,4 @@
-// components/auth/AuthPage.jsx
+// components/auth/AuthPage.jsx - VERSIÓN CORREGIDA
 import { useState } from "react";
 import Swal from "sweetalert2";
 import {
@@ -42,9 +42,10 @@ const AuthPage = ({ onLoginSuccess }) => {
     lng: null,
   });
 
-  // Función para mostrar alertas de éxito
-  const showSuccessAlert = (title, message) => {
-    Swal.fire({
+  // ✅ Función para mostrar alerta de éxito con retraso antes de redirigir
+  const showSuccessAlertAndRedirect = async (title, message, userData) => {
+    // Mostrar alerta
+    await Swal.fire({
       title: title,
       text: message,
       icon: "success",
@@ -52,8 +53,11 @@ const AuthPage = ({ onLoginSuccess }) => {
       confirmButtonColor: "#2563eb",
       background: "#ffffff",
       iconColor: "#059669",
-      timer: 3000,
+      timer: 2500,
       timerProgressBar: true,
+      showConfirmButton: false,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
       showClass: {
         popup: "animate__animated animate__fadeInDown",
       },
@@ -61,9 +65,15 @@ const AuthPage = ({ onLoginSuccess }) => {
         popup: "animate__animated animate__fadeOutUp",
       },
     });
+
+    // ✅ Esperar un momento extra para que la animación termine
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // ✅ Ahora sí redirigir
+    onLoginSuccess(userData);
   };
 
-  // Función para mostrar alertas de error mejoradas
+  // Función para mostrar alertas de error
   const showErrorAlert = (message) => {
     Swal.fire({
       title: "¡Error!",
@@ -99,12 +109,12 @@ const AuthPage = ({ onLoginSuccess }) => {
       if (data.ok) {
         localStorage.setItem("token", data.token);
 
-        await showSuccessAlert(
-          "¡Bienvenido! 🎉",
+        // ✅ Usar la nueva función que espera antes de redirigir
+        await showSuccessAlertAndRedirect(
+          "¡Bienvenido!",
           `Has iniciado sesión correctamente como ${loginForm.username}`,
+          data,
         );
-
-        onLoginSuccess(data);
       } else {
         const errorMsg = data.msg || "Error al iniciar sesión";
         setError(errorMsg);
@@ -144,12 +154,12 @@ const AuthPage = ({ onLoginSuccess }) => {
       if (data.ok) {
         localStorage.setItem("token", data.token);
 
-        await showSuccessAlert(
+        // ✅ Usar la nueva función que espera antes de redirigir
+        await showSuccessAlertAndRedirect(
           "¡Registro exitoso! 🎊",
           `Bienvenido/a ${registerForm.full_name || registerForm.username}. Tu cuenta ha sido creada correctamente.`,
+          data,
         );
-
-        onLoginSuccess(data);
       } else {
         const errorMsg = data.msg || "Error al registrarse";
         setError(errorMsg);
@@ -239,7 +249,7 @@ const AuthPage = ({ onLoginSuccess }) => {
             text: "Tu ubicación ha sido registrada correctamente",
             icon: "success",
             confirmButtonColor: "#2563eb",
-            timer: 2000,
+            timer: 1500,
             timerProgressBar: true,
             showConfirmButton: false,
           });

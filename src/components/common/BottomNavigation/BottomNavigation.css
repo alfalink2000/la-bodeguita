@@ -24,13 +24,13 @@
   align-items: center;
   padding: 0.5rem 1rem;
   position: relative;
-  min-height: 70px; /* ✅ Altura mínima para mejor alineación */
+  min-height: 70px;
 }
 
 .bottom-nav__center {
   position: absolute;
   left: 50%;
-  top: -25px; /* ✅ Ajustado para mejor centrado */
+  top: -25px;
   transform: translateX(-50%);
   z-index: 1002;
 }
@@ -168,7 +168,6 @@
   background-color: rgba(37, 99, 235, 0.1);
 }
 
-/* Indicador de actividad para botones */
 .bottom-nav__button--active::before {
   content: "";
   position: absolute;
@@ -407,21 +406,6 @@
   background: var(--gray-400);
 }
 
-/* Responsive adjustments */
-@media (max-width: 360px) {
-  .bottom-nav__container {
-    padding: 0.5rem 0.75rem;
-  }
-
-  .bottom-nav__button {
-    padding: 0.5rem 0.25rem;
-    margin: 0 0.05rem;
-  }
-
-  .bottom-nav__label {
-    font-size: 0.65rem;
-  }
-}
 /* Botón de Logout */
 .bottom-nav__button--logout {
   color: var(--error) !important;
@@ -440,4 +424,20 @@
 .bottom-nav__button--inactive:hover .bottom-nav__icon {
   transform: scale(1.1);
   transition: transform 0.2s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 360px) {
+  .bottom-nav__container {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .bottom-nav__button {
+    padding: 0.5rem 0.25rem;
+    margin: 0 0.05rem;
+  }
+
+  .bottom-nav__label {
+    font-size: 0.65rem;
+  }
 }

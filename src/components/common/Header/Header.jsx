@@ -1,4 +1,4 @@
-// components/common/Header/Header.jsx - VERSIÓN CON DEBUG
+// components/common/Header/Header.jsx
 import { HiOutlineInformationCircle } from "react-icons/hi";
 import { FiShoppingCart } from "react-icons/fi";
 import { useSelector, useDispatch } from "react-redux";
@@ -14,13 +14,8 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
   const cartItemsCount = useSelector(selectCartItemsCount);
   const isCartOpen = useSelector(selectIsCartOpen);
 
-  console.log("🛒 Header - cartItemsCount:", cartItemsCount);
-  console.log("🛒 Header - isCartOpen:", isCartOpen);
-
   const handleCartClick = () => {
-    console.log("🛒 Botón del carrito CLICKEADO");
     dispatch(toggleCartModal());
-    console.log("🛒 Acción toggleCartModal dispatchada");
   };
 
   return (
@@ -29,9 +24,19 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
         <div className="header__left">{title}</div>
 
         <div className="header__center">
-          <div className="header__status">
-            <span className="status-indicator"></span>
-            <span className="status-text">En línea • Listo para atenderte</span>
+          {/* ✅ ESTADO EN LÍNEA - VERSIÓN PREMIUM DETALLADA */}
+          <div className="online-status">
+            <div className="online-status__indicator">
+              <span className="online-status__pulse"></span>
+              <span className="online-status__dot"></span>
+            </div>
+            <div className="online-status__text">
+              <span className="online-status__label">En línea</span>
+              <span className="online-status__description">
+                Listo para atenderte
+              </span>
+            </div>
+            <div className="online-status__glow"></div>
           </div>
         </div>
 

@@ -246,6 +246,46 @@ const ClientInterface = ({
     );
   }, [appConfig]);
 
+  // const DesktopNavigation = useCallback(
+  //   () => (
+  //     <div className="desktop-navigation">
+  //       <InfoButton />
+  //       <button
+  //         className="header-action header-action--icon"
+  //         title="Búsqueda avanzada"
+  //         onClick={() =>
+  //           document.querySelector(".desktop-search input")?.focus()
+  //         }
+  //       >
+  //         <HiOutlineSearch className="header-action__icon" />
+  //       </button>
+  //       <button
+  //         className="header-action header-action--icon"
+  //         title="Productos destacados"
+  //         onClick={() => setActiveSection(SECTIONS.POPULARES)}
+  //       >
+  //         <HiOutlineStar className="header-action__icon" />
+  //       </button>
+  //       <button
+  //         className="header-action header-action--icon"
+  //         title="Ofertas especiales"
+  //         onClick={() => setActiveSection(SECTIONS.OFERTAS)}
+  //       >
+  //         <HiOutlineTag className="header-action__icon" />
+  //       </button>
+  //       <div className="header-separator"></div>
+  //       <button
+  //         className="header-action header-action--icon"
+  //         title="Contacto rápido"
+  //         onClick={() => setActiveSection(SECTIONS.CONTACTO)}
+  //       >
+  //         <HiOutlinePhone className="header-action__icon" />
+  //       </button>
+  //     </div>
+  //   ),
+  //   [],
+  // );
+  // Dentro de ClientInterface.js - Actualizar DesktopNavigation
   const DesktopNavigation = useCallback(
     () => (
       <div className="desktop-navigation">
@@ -259,33 +299,33 @@ const ClientInterface = ({
         >
           <HiOutlineSearch className="header-action__icon" />
         </button>
-        <button
-          className="header-action header-action--icon"
-          title="Productos destacados"
-          onClick={() => setActiveSection(SECTIONS.POPULARES)}
-        >
-          <HiOutlineStar className="header-action__icon" />
-        </button>
-        <button
-          className="header-action header-action--icon"
-          title="Ofertas especiales"
-          onClick={() => setActiveSection(SECTIONS.OFERTAS)}
-        >
-          <HiOutlineTag className="header-action__icon" />
-        </button>
+        {/* ✅ ELIMINADOS: Productos destacados y Ofertas especiales */}
+        {/* <button
+        className="header-action header-action--icon"
+        title="Productos destacados"
+        onClick={() => setActiveSection(SECTIONS.POPULARES)}
+      >
+        <HiOutlineStar className="header-action__icon" />
+      </button>
+      <button
+        className="header-action header-action--icon"
+        title="Ofertas especiales"
+        onClick={() => setActiveSection(SECTIONS.OFERTAS)}
+      >
+        <HiOutlineTag className="header-action__icon" />
+      </button> */}
         <div className="header-separator"></div>
-        <button
+        {/* <button
           className="header-action header-action--icon"
           title="Contacto rápido"
           onClick={() => setActiveSection(SECTIONS.CONTACTO)}
         >
           <HiOutlinePhone className="header-action__icon" />
-        </button>
+        </button> */}
       </div>
     ),
-    [],
+    [InfoButton], // Eliminadas dependencias de setActiveSection para populares y ofertas
   );
-
   // ✅ FILTRADO DE PRODUCTOS
   const filteredProducts = useMemo(() => {
     const productsToFilter =
@@ -567,7 +607,9 @@ const ClientInterface = ({
         <div className="desktop-sidebar">
           {/* ✅ SELECTOR DE TIENDAS */}
           <div className="desktop-stores-nav">
-            <h3 className="desktop-stores-title">🏪 Tiendas</h3>
+            <h3 className="desktop-stores-title">
+              <HiOutlineCollection className="desktop-stores-icon" /> Tiendas
+            </h3>
             <div className="desktop-stores-list">
               {stores.map((store) => (
                 <button

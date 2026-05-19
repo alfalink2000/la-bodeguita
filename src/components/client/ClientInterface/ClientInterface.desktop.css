@@ -2,6 +2,11 @@
 
 /* ===== MEDIA QUERIES PARA DESKTOP ===== */
 @media (min-width: 1024px) {
+  /* Quitar scroll del body en desktop */
+  body {
+    overflow-y: hidden !important;
+    height: 100dvh !important; /* ✅ dynamic viewport height */
+  }
   .client-interface {
     background: linear-gradient(
       135deg,
@@ -9,7 +14,8 @@
       var(--white) 20%,
       var(--gray-100) 100%
     );
-    min-height: 100vh;
+    min-height: 100dvh;
+    margin-bottom: 6rem !important;
     overflow-x: hidden;
   }
 
@@ -52,7 +58,7 @@
     padding: 0.75rem;
     border: none;
     border-radius: var(--radius-lg);
-    font-weight: 600;
+    font-weight: 400;
     font-size: 0.875rem;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -102,13 +108,15 @@
     background: linear-gradient(135deg, #fef3c7, #f59e0b);
     color: #92400e;
     padding: 0.75rem 1.25rem;
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2),
+    box-shadow:
+      0 4px 12px rgba(245, 158, 11, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.3);
   }
 
   .header-action--admin:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3),
+    box-shadow:
+      0 8px 20px rgba(245, 158, 11, 0.3),
       inset 0 1px 0 rgba(255, 255, 255, 0.4);
   }
 
@@ -187,24 +195,25 @@
     margin-bottom: 0;
   }
 
+  /* ===== SIDEBAR MEJORADO ===== */
   .desktop-sidebar {
     grid-area: sidebar;
     position: sticky;
-    top: 2rem;
+    top: 5rem;
+    display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
     height: fit-content;
-    max-height: calc(100vh - 140px);
+    max-height: calc(100vh - 100px);
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 0 1rem 1rem 0;
-    scrollbar-width: thin;
-    scrollbar-color: var(--gray-300) var(--gray-100);
+    padding-right: 0.5rem;
+    padding: 0 0rem 2rem 0rem; /* ✅ padding-bottom: 2rem */
   }
 
-  /* Scrollbar personalizado para Webkit (Chrome, Safari, Edge) */
+  /* Scrollbar personalizado */
   .desktop-sidebar::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
 
   .desktop-sidebar::-webkit-scrollbar-track {
@@ -217,24 +226,111 @@
     border-radius: 10px;
   }
 
-  .desktop-sidebar::-webkit-scrollbar-thumb:hover {
-    background: var(--gray-400);
+  /* ===== TIENDAS EN SIDEBAR ===== */
+  .desktop-stores-nav {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 1rem;
+    border: 1px solid var(--gray-100);
   }
 
-  /* Contenido principal corregido */
+  .desktop-stores-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gray-500);
+    margin: 0 0 0.75rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--gray-100);
+  }
+
+  .desktop-stores-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .desktop-section-button {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--gray-700);
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    text-align: left;
+  }
+
+  .desktop-section-button:hover {
+    background: var(--gray-50);
+    transform: translateX(4px);
+  }
+
+  .desktop-section-button--active {
+    background: linear-gradient(135deg, #05966910, #04785708);
+    color: #059669;
+    border-left: 3px solid #059669;
+  }
+
+  .desktop-section-icon {
+    font-size: 1.125rem;
+    flex-shrink: 0;
+    color: var(--gray-500);
+  }
+
+  .desktop-section-button--active .desktop-section-icon {
+    color: #059669;
+  }
+
+  .desktop-section-text {
+    flex: 1;
+    font-size: 0.875rem;
+  }
+
+  .desktop-section-badge {
+    background: var(--gray-100);
+    color: var(--gray-600);
+    padding: 0.125rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  .desktop-section-button--active .desktop-section-badge {
+    background: #05966920;
+    color: #059669;
+  }
+
+  /* ===== CATEGORÍAS EN SIDEBAR ===== */
+  .desktop-categories-nav {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 1rem;
+    border: 1px solid var(--gray-100);
+  }
+
+  /* Contenido principal */
   .desktop-main-content {
     grid-area: main;
     height: auto;
     min-height: 60vh;
-    max-height: calc(100vh - 140px);
+    max-height: calc(100vh - 100px);
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 0 1rem 2rem 1rem;
+    padding: 0 1rem 4rem 1rem;
   }
 
-  /* Scrollbar personalizado para el contenido principal */
   .desktop-main-content::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
 
   .desktop-main-content::-webkit-scrollbar-track {
@@ -245,76 +341,6 @@
   .desktop-main-content::-webkit-scrollbar-thumb {
     background: var(--gray-300);
     border-radius: 10px;
-  }
-
-  .desktop-main-content::-webkit-scrollbar-thumb:hover {
-    background: var(--gray-400);
-  }
-
-  /* Navegación de secciones en desktop */
-  .desktop-sections-nav {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    overflow: visible;
-  }
-
-  .desktop-section-button {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
-    border: none;
-    border-radius: var(--radius-lg);
-    background: transparent;
-    color: var(--gray-600);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    width: 100%;
-    text-align: left;
-  }
-
-  .desktop-section-button:hover {
-    transform: translateX(4px);
-  }
-
-  .desktop-section-button--active {
-    background: linear-gradient(
-      135deg,
-      var(--primary-blue),
-      var(--accent-teal)
-    );
-    color: var(--white);
-    box-shadow: var(--shadow-md);
-  }
-
-  .desktop-section-icon {
-    font-size: 1.25rem;
-    flex-shrink: 0;
-  }
-
-  .desktop-section-text {
-    flex: 1;
-    font-size: 0.9rem;
-  }
-
-  .desktop-section-badge {
-    background: var(--gray-100);
-    color: var(--gray-600);
-    padding: 0.25rem 0.5rem;
-    border-radius: var(--radius-full);
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  .desktop-section-button--active .desktop-section-badge {
-    background: rgba(255, 255, 255, 0.2);
-    color: var(--white);
   }
 
   /* Filtros en desktop */
@@ -400,8 +426,10 @@
     backdrop-filter: blur(16px);
     position: relative;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 0 rgba(0, 0, 0, 0.02);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.02);
   }
 
   .contact-section::before {
@@ -467,7 +495,8 @@
     padding: 0.75rem;
     border-radius: 16px;
     background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15),
+    box-shadow:
+      0 4px 16px rgba(59, 130, 246, 0.15),
       inset 0 1px 0 rgba(255, 255, 255, 0.8);
   }
 
@@ -478,7 +507,8 @@
     padding: 1.5rem;
     background: rgba(255, 255, 255, 0.7);
     border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04),
+    box-shadow:
+      0 2px 12px rgba(0, 0, 0, 0.04),
       inset 0 1px 0 rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.6);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -506,7 +536,8 @@
 
   .contact-section .contact-item:hover {
     transform: translateY(-3px) translateX(4px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12),
+    box-shadow:
+      0 8px 30px rgba(0, 0, 0, 0.12),
       inset 0 1px 0 rgba(255, 255, 255, 0.9);
     border-color: rgba(59, 130, 246, 0.3);
     background: rgba(255, 255, 255, 0.9);

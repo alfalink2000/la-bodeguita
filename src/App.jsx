@@ -1,5 +1,5 @@
-// App.js - VERSIÓN CON AUTENTICACIÓN, ROLES Y PERSISTENCIA LOCAL
-import { useState, useEffect } from "react";
+// App.js - VERSIÓN CORREGIDA
+import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistor } from "./store/store";
@@ -7,21 +7,17 @@ import ClientInterface from "./components/client/ClientInterface/ClientInterface
 import AdminInterface from "./components/admin/AdminInterface/AdminInterface";
 import AuthPage from "./components/auth/AuthPage";
 import RoleSelector from "./components/auth/RoleSelector";
-import {
-  StartChecking,
-  checkingFinish,
-  StartLogin,
-} from "./actions/authActions";
+import { StartChecking, checkingFinish } from "./actions/authActions";
 import { getProducts } from "./actions/productsActions";
 import { getCategories } from "./actions/categoriesActions";
 import { loadFeaturedProducts } from "./actions/featuredProductsActions";
 import { loadAppConfig, loadDefaultConfig } from "./actions/appConfigActions";
 import SpiralLoading from "./components/common/SpiralLoading/SpiralLoading";
 import MaintenanceMode from "./components/common/MaintenanceMode/MaintenanceMode";
+import { types } from "./types/types";
 
 const AppContent = () => {
   const [currentView, setCurrentView] = useState("client");
-  const [showLoginForm, setShowLoginForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingStatus, setLoadingStatus] = useState("Iniciando aplicación...");
   const [maintenanceMode, setMaintenanceMode] = useState(false);
@@ -29,12 +25,15 @@ const AppContent = () => {
   const [hasErrors, setHasErrors] = useState(false);
   const [usingCachedData, setUsingCachedData] = useState(false);
   const [syncCompleted, setSyncCompleted] = useState(false);
-  const [showAuthPage, setShowAuthPage] = useState(false);
-  const [showRoleSelector, setShowRoleSelector] = useState(false); // ✅ ESTÁ AQUÍ
+  const [authCheckComplete, setAuthCheckComplete] = useState(false);
+  const [showRoleSelector, setShowRoleSelector] = useState(false);
+
+  // ✅ REF para evitar bucles y ejecuciones múltiples
+  const roleSelectorShownRef = useRef(false);
+  const initialAuthCheckRef = useRef(false);
 
   const dispatch = useDispatch();
   const auth = useSelector((state) => state.auth);
-  const authLoading = useSelector((state) => state.auth.loading);
   const appConfig = useSelector((state) => state.appConfig.config);
   const products = useSelector((state) => state.products.products);
   const categories = useSelector((state) => state.categories.categories);
@@ -47,13 +46,15 @@ const AppContent = () => {
     return hasAppConfig && hasProducts && hasCategories;
   };
 
-  // ✅ CARGAR DATOS INICIALES MEJORADO
+  // ✅ CARGAR DATOS INICIALES Y VERIFICAR AUTENTICACIÓN
   const loadInitialData = async () => {
     try {
       console.log("🚀 Iniciando carga de datos...");
 
       if (hasValidCachedData() && !syncCompleted) {
-        console.log("📦 Datos cacheados encontrados, mostrando UI inmediatamente...");
+        console.log(
+          "📦 Datos cacheados encontrados, mostrando UI inmediatamente...",
+        );
         setUsingCachedData(true);
         setIsLoading(false);
         setLoadingStatus("Sincronizando datos en segundo plano...");
@@ -75,7 +76,8 @@ const AppContent = () => {
         }
       }
 
-      if (!usingCachedData) setLoadingStatus("Cargando productos y categorías...");
+      if (!usingCachedData)
+        setLoadingStatus("Cargando productos y categorías...");
 
       const loadPromises = [
         dispatch(getProducts()).catch((error) => {
@@ -99,18 +101,26 @@ const AppContent = () => {
 
       await Promise.allSettled(loadPromises);
 
+      // ✅ VERIFICAR AUTENTICACIÓN
+      setLoadingStatus("Verificando autenticación...");
       const token = localStorage.getItem("token");
+
       if (token) {
-        dispatch(StartChecking());
+        console.log("🔑 Token encontrado, verificando autenticación...");
+        await dispatch(StartChecking());
       } else {
+        console.log("🔓 No hay token, usuario no autenticado");
         dispatch(checkingFinish());
       }
 
+      setAuthCheckComplete(true);
       setSyncCompleted(true);
       setDataLoaded(true);
 
       if (syncErrors.length > 0) {
-        console.warn(`⚠️ Sincronización completada con errores: ${syncErrors.join(", ")}`);
+        console.warn(
+          `⚠️ Sincronización completada con errores: ${syncErrors.join(", ")}`,
+        );
         setHasErrors(true);
       } else {
         console.log("✅ Sincronización completada exitosamente");
@@ -127,6 +137,7 @@ const AppContent = () => {
       if (!hasValidCachedData()) {
         setDataLoaded(false);
       }
+      setAuthCheckComplete(true);
     }
   };
 
@@ -159,17 +170,45 @@ const AppContent = () => {
     }
   }, [dataLoaded, hasErrors, syncCompleted, usingCachedData]);
 
+  // ✅ EFECTO PARA MANEJAR EL ROLE SELECTOR - CORREGIDO
+  useEffect(() => {
+    // Solo cuando la autenticación está completa, el usuario está logueado,
+    // y NO hemos mostrado el selector aún
+    if (
+      !isLoading &&
+      authCheckComplete &&
+      auth?.isLoggedIn &&
+      !roleSelectorShownRef.current
+    ) {
+      console.log("👤 Usuario autenticado:", auth);
+      console.log("Rol del usuario:", auth?.role);
+
+      // ✅ Si es admin y no estamos en medio de una selección
+      if (auth?.role === "admin") {
+        console.log("🎭 Admin detectado, mostrando RoleSelector");
+        roleSelectorShownRef.current = true;
+        setShowRoleSelector(true);
+      }
+      // ✅ Si es cliente, ir directo a vista cliente
+      else if (auth?.role === "client") {
+        console.log("👤 Cliente detectado, mostrando ClientInterface");
+        setCurrentView("client");
+      }
+    }
+  }, [isLoading, authCheckComplete, auth?.isLoggedIn, auth?.role]);
+
   // ✅ TIMEOUT (12 SEGUNDOS)
   useEffect(() => {
     const maintenanceTimeout = setTimeout(() => {
-      if (isLoading && !hasValidCachedData()) {
+      if (isLoading && !hasValidCachedData() && !authCheckComplete) {
         console.log("🚨 Timeout de 12 segundos: Activando modo mantenimiento");
         setMaintenanceMode(true);
         setIsLoading(false);
+        setAuthCheckComplete(true);
       }
     }, 12000);
     return () => clearTimeout(maintenanceTimeout);
-  }, [isLoading]);
+  }, [isLoading, authCheckComplete]);
 
   // ✅ REINTENTAR CONEXIÓN
   const handleRetryConnection = () => {
@@ -179,58 +218,58 @@ const AppContent = () => {
     setDataLoaded(false);
     setSyncCompleted(false);
     setUsingCachedData(false);
+    setAuthCheckComplete(false);
+    setShowRoleSelector(false);
+    roleSelectorShownRef.current = false;
     setIsLoading(true);
     loadInitialData();
   };
 
-  // ✅ VERIFICAR AUTENTICACIÓN
-  useEffect(() => {
-    if (!isLoading && !auth.isLoggedIn && !auth.checking && !maintenanceMode && dataLoaded) {
-      console.log("🔒 Usuario no autenticado, mostrando página de autenticación...");
-      setShowAuthPage(true);
-      setShowRoleSelector(false); // ✅ Ocultar selector si no está logueado
-    } else if (auth.isLoggedIn && !auth.checking) {
-      console.log("✅ Usuario autenticado:", auth.username);
-      setShowAuthPage(false);
-    }
-  }, [isLoading, auth.isLoggedIn, auth.checking, maintenanceMode, dataLoaded]);
-
-  // ✅ MANEJAR LOGIN EXITOSO
+  // ✅ MANEJAR LOGIN EXITOSO DESDE AuthPage
   const handleLoginSuccess = (userData) => {
-    console.log("🔑 Login exitoso:", userData);
-    dispatch({ type: "[auth] Login", payload: userData });
-    setShowAuthPage(false);
-    
-    if (userData.role === "admin") {
-      // ✅ Mostrar selector de rol para admin
-      setShowRoleSelector(true);
-    } else {
-      // Cliente va directo a la vista cliente
-      setCurrentView("client");
-    }
+    console.log("🔑 Login exitoso desde AuthPage:", userData);
+
+    // Resetear el ref para permitir mostrar el selector
+    roleSelectorShownRef.current = false;
+
+    // Disparar acción de login
+    dispatch({
+      type: types.authLogin,
+      payload: {
+        uid: userData.id || userData.uid,
+        name: userData.full_name || userData.username,
+        role: userData.role || "client",
+      },
+    });
   };
 
-  // ✅ MANEJAR LOGIN
-  const handleLogin = async (username, password) => {
-    try {
-      await dispatch(StartLogin(username, password));
-    } catch (error) {
-      console.error("Error en login:", error);
-    }
+  // ✅ MANEJAR SELECCIÓN DE VISTA CLIENTE DESDE ROLE SELECTOR
+  const handleSelectClient = () => {
+    console.log("👁️ Admin seleccionó Vista Cliente");
+    setShowRoleSelector(false);
+    setCurrentView("client");
+  };
+
+  // ✅ MANEJAR SELECCIÓN DE PANEL ADMIN DESDE ROLE SELECTOR
+  const handleSelectAdmin = () => {
+    console.log("⚙️ Admin seleccionó Panel de Administración");
+    setShowRoleSelector(false);
+    setCurrentView("admin");
   };
 
   // ✅ MANEJAR LOGOUT
   const handleLogout = () => {
     console.log("👋 Cerrando sesión...");
-    dispatch({ type: "[auth] Logout" });
+    dispatch({ type: types.authLogout });
     localStorage.removeItem("token");
     setCurrentView("client");
-    setShowRoleSelector(false); // ✅ Ocultar selector al cerrar sesión
-    setShowAuthPage(true);
+    setShowRoleSelector(false);
+    roleSelectorShownRef.current = false;
   };
 
   // ✅ FUNCIÓN PARA CAMBIAR VISTA
   const handleViewChange = (view) => {
+    console.log("🔄 Cambiando vista a:", view);
     setCurrentView(view);
   };
 
@@ -243,13 +282,12 @@ const AppContent = () => {
   console.log("🔍 Estado App:", {
     isLoading,
     maintenanceMode,
-    hasErrors,
-    dataLoaded,
-    syncCompleted,
-    showAuthPage,
+    authCheckComplete,
+    authIsLoggedIn: auth?.isLoggedIn,
+    authRole: auth?.role,
     showRoleSelector,
-    isLoggedIn: auth.isLoggedIn,
     currentView,
+    roleSelectorShown: roleSelectorShownRef.current,
   });
 
   // ✅ RENDERIZAR MODO MANTENIMIENTO
@@ -263,7 +301,7 @@ const AppContent = () => {
   }
 
   // ✅ RENDERIZAR LOADING
-  if (isLoading && !hasValidCachedData()) {
+  if (isLoading || !authCheckComplete || auth?.checking === true) {
     return (
       <div className="relative">
         <SpiralLoading />
@@ -279,52 +317,45 @@ const AppContent = () => {
     );
   }
 
-  // ✅ RENDERIZAR AUTH PAGE
-  if (showAuthPage && !auth.isLoggedIn && !isLoading && !maintenanceMode) {
+  // ✅ RENDERIZAR AUTH PAGE (NO AUTENTICADO)
+  if (!auth?.isLoggedIn) {
+    console.log("🔒 Usuario no autenticado, mostrando AuthPage");
     return <AuthPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // ✅ RENDERIZAR INTERFAZ PRINCIPAL
+  // ✅ RENDERIZAR ROLE SELECTOR (SOLO PARA ADMIN)
+  if (showRoleSelector && auth?.role === "admin") {
+    console.log("🎭 Mostrando RoleSelector");
+    return (
+      <RoleSelector
+        userData={auth}
+        onSelectClient={handleSelectClient}
+        onSelectAdmin={handleSelectAdmin}
+      />
+    );
+  }
+
+  // ✅ USUARIO AUTENTICADO - MOSTRAR INTERFAZ CORRESPONDIENTE
+  console.log("✅ Usuario autenticado, mostrando interfaz:", currentView);
+
   return (
     <div className="font-sans antialiased">
-      {/* Indicador de datos cacheados */}
+      {/* Indicador de datos cacheados
       {usingCachedData && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-white rounded-full"></div>
+            <span className="text-sm">Usando datos locales</span>
           </div>
         </div>
-      )}
+      )} */}
 
-      {/* Indicador de datos desactualizados */}
-      {hasErrors && !usingCachedData && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white px-4 py-2 rounded-lg shadow-lg z-50">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-          </div>
-        </div>
-      )}
-
-      {/* ✅ ROLE SELECTOR PARA ADMIN */}
-      {showRoleSelector && (
-        <RoleSelector
-          userData={auth}
-          onSelectClient={() => {
-            setShowRoleSelector(false);
-            setCurrentView("client");
-          }}
-          onSelectAdmin={() => {
-            setShowRoleSelector(false);
-            setCurrentView("admin");
-          }}
-        />
-      )}
-
+      {/* Interfaz según vista seleccionada */}
       {currentView === "client" ? (
         <ClientInterface
           currentView={currentView}
           onViewChange={handleViewChange}
-          onShowLoginForm={() => setShowAuthPage(true)}
+          onShowLoginForm={() => {}}
           onLogout={handleLogout}
           isLoggedIn={auth.isLoggedIn}
           userData={auth}
@@ -334,16 +365,6 @@ const AppContent = () => {
           onLogout={handleAdminLogout}
           onSwitchToClient={() => setCurrentView("client")}
         />
-      )}
-
-      {/* Estado de carga global */}
-      {authLoading && (
-        <div className="fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-50">
-          <div className="flex items-center gap-2">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-            <span>Procesando...</span>
-          </div>
-        </div>
       )}
     </div>
   );
