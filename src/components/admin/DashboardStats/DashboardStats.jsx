@@ -1,17 +1,34 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
+import {
+  HiOutlineChartBar,
+  HiOutlineCube,
+  HiOutlineExclamationCircle,
+  HiOutlineStar,
+  HiOutlineTag,
+  HiOutlineCollection,
+  HiOutlineCurrencyDollar,
+  HiOutlinePhotograph,
+  HiOutlineTrendingUp,
+  HiOutlineInformationCircle,
+} from "react-icons/hi";
 import "./DashboardStats.css";
 
 const DashboardStats = ({ products }) => {
   const featuredProducts = useSelector(
-    (state) => state.products.featuredProducts
+    (state) => state.products.featuredProducts,
   );
+  const [expandedCards, setExpandedCards] = useState({});
+
+  const toggleExpand = (cardId) => {
+    setExpandedCards((prev) => ({ ...prev, [cardId]: !prev[cardId] }));
+  };
 
   // Todas las métricas en un solo useMemo para evitar cálculos repetidos
   const metrics = useMemo(() => {
     const totalProducts = products.length;
     const outOfStockCount = products.filter(
-      (p) => p.status === "outOfStock"
+      (p) => p.status === "outOfStock",
     ).length;
     const inStockCount = totalProducts - outOfStockCount;
 
@@ -26,7 +43,7 @@ const DashboardStats = ({ products }) => {
     }, {});
 
     const topCategory = Object.entries(productsByCategory).sort(
-      ([, a], [, b]) => b - a
+      ([, a], [, b]) => b - a,
     )[0] || ["Sin categorías", 0];
     const totalCategories = Object.keys(productsByCategory).length;
 
@@ -38,7 +55,7 @@ const DashboardStats = ({ products }) => {
     }, 0);
 
     const productsWithImages = products.filter(
-      (p) => p.image && p.image !== ""
+      (p) => p.image && p.image !== "",
     ).length;
     const productsWithoutImages = totalProducts - productsWithImages;
 
@@ -83,10 +100,11 @@ const DashboardStats = ({ products }) => {
     };
   }, [products, featuredProducts]);
 
-  // Componente de tarjeta reutilizable
+  // Componente de tarjeta reutilizable con soporte móvil
   const StatCard = ({
+    id,
     type,
-    icon,
+    icon: IconComponent,
     label,
     value,
     percentage,
@@ -94,63 +112,93 @@ const DashboardStats = ({ products }) => {
     trend,
     alert,
     tip,
-  }) => (
-    <div className={`dashboard-stat dashboard-stat--${type}`}>
-      <div className="stat-content">
-        <div className="stat-header">
-          <div className="stat-header-main">
-            <div className="stat-icon">{icon}</div>
-            <div className="stat-label">{label}</div>
+  }) => {
+    const isExpanded = expandedCards[id];
+    const hasExpandableContent =
+      breakdown || percentage !== undefined || trend || alert || tip;
+
+    return (
+      <div className={`dashboard-stat dashboard-stat--${type}`}>
+        <div className="stat-content">
+          <div className="stat-header">
+            <div className="stat-header-main">
+              <div className="stat-icon">
+                <IconComponent size={20} />
+              </div>
+              <div className="stat-label">{label}</div>
+            </div>
+            {hasExpandableContent && (
+              <button
+                className="stat-expand-btn"
+                onClick={() => toggleExpand(id)}
+                aria-label={isExpanded ? "Ver menos" : "Ver más"}
+              >
+                <span className={`expand-icon ${isExpanded ? "expanded" : ""}`}>
+                  ▼
+                </span>
+              </button>
+            )}
+          </div>
+
+          <div className={`stat-value stat-value--${type}`}>{value}</div>
+
+          {/* Contenido expandible para móvil */}
+          <div
+            className={`stat-expandable-content ${isExpanded ? "expanded" : ""}`}
+          >
+            {percentage !== undefined && (
+              <div className="stat-progress">
+                <div className="progress-bar">
+                  <div
+                    className={`progress-fill progress-fill--${type}`}
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+                <div className="progress-label">
+                  {percentage}% del inventario
+                </div>
+              </div>
+            )}
+
+            {breakdown && (
+              <div className="stat-breakdown">
+                {breakdown.map((item, index) => (
+                  <div key={index} className="breakdown-item">
+                    <div className="breakdown-info">
+                      <span
+                        className={`breakdown-dot breakdown-dot--${item.type}`}
+                      />
+                      <span className="breakdown-text">{item.text}</span>
+                    </div>
+                    {item.value !== null && (
+                      <span className="breakdown-value">{item.value}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {trend && (
+              <div className={`stat-trend stat-trend--${trend.type}`}>
+                <span className="trend-icon">{trend.icon}</span>
+                <span className="trend-text">{trend.text}</span>
+              </div>
+            )}
+
+            {alert && <div className="stat-alert">{alert}</div>}
+            {tip && <div className="stat-tip">{tip}</div>}
           </div>
         </div>
-        <div className={`stat-value stat-value--${type}`}>{value}</div>
-
-        {percentage !== undefined && (
-          <div className="stat-progress">
-            <div className="progress-bar">
-              <div
-                className={`progress-fill progress-fill--${type}`}
-                style={{ width: `${percentage}%` }}
-              />
-            </div>
-            <div className="progress-label">{percentage}% del inventario</div>
-          </div>
-        )}
-
-        {breakdown && (
-          <div className="stat-breakdown">
-            {breakdown.map((item, index) => (
-              <div key={index} className="breakdown-item">
-                <div className="breakdown-info">
-                  <span
-                    className={`breakdown-dot breakdown-dot--${item.type}`}
-                  />
-                  <span className="breakdown-text">{item.text}</span>
-                </div>
-                <span className="breakdown-value">{item.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {trend && (
-          <div className={`stat-trend stat-trend--${trend.type}`}>
-            <span className="trend-icon">{trend.icon}</span>
-            <span className="trend-text">{trend.text}</span>
-          </div>
-        )}
-
-        {alert && <div className="stat-alert">{alert}</div>}
-        {tip && <div className="stat-tip">{tip}</div>}
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="dashboard-stats">
       <StatCard
+        id="inventory"
         type="primary"
-        icon="📊"
+        icon={HiOutlineChartBar}
         label="Inventario Total"
         value={metrics.totalProducts}
         breakdown={[
@@ -169,7 +217,7 @@ const DashboardStats = ({ products }) => {
           metrics.recentProducts > 0
             ? {
                 type: "positive",
-                icon: "+",
+                icon: "📈",
                 text: `${metrics.recentProducts} nuevos este mes`,
               }
             : null
@@ -177,16 +225,18 @@ const DashboardStats = ({ products }) => {
       />
 
       <StatCard
+        id="stock"
         type="success"
-        icon="📦"
+        icon={HiOutlineCube}
         label="Stock Disponible"
         value={metrics.inStockCount}
         percentage={metrics.stockPercentage}
       />
 
       <StatCard
+        id="attention"
         type="warning"
-        icon="⚠️"
+        icon={HiOutlineExclamationCircle}
         label="Requiere Atención"
         value={metrics.outOfStockCount}
         percentage={metrics.outOfStockPercentage}
@@ -196,8 +246,9 @@ const DashboardStats = ({ products }) => {
       />
 
       <StatCard
+        id="featured"
         type="featured"
-        icon="⭐"
+        icon={HiOutlineStar}
         label="Destacados"
         value={metrics.featuredProductsCount}
         percentage={metrics.featuredPercentage}
@@ -206,7 +257,7 @@ const DashboardStats = ({ products }) => {
             ? null
             : {
                 type: "positive",
-                icon: "👑",
+                icon: "⭐",
                 text: "Productos populares",
               }
         }
@@ -218,8 +269,9 @@ const DashboardStats = ({ products }) => {
       />
 
       <StatCard
+        id="offers"
         type="danger"
-        icon="🎯"
+        icon={HiOutlineTag}
         label="Ofertas Activas"
         value={metrics.offerProductsCount}
         trend={
@@ -239,13 +291,15 @@ const DashboardStats = ({ products }) => {
       />
 
       <StatCard
+        id="categories"
         type="info"
-        icon="📁"
+        icon={HiOutlineCollection}
         label="Categorías"
         value={metrics.totalCategories}
         breakdown={[
           {
-            text: `Principal: ${metrics.topCategory[1]} productos`,
+            type: "info",
+            text: `Principal: ${metrics.topCategory[0]} (${metrics.topCategory[1]} prod.)`,
             value: null,
           },
         ]}
@@ -253,17 +307,21 @@ const DashboardStats = ({ products }) => {
 
       {metrics.totalInventoryValue > 0 && (
         <StatCard
+          id="inventoryValue"
           type="inventory"
-          icon="💰"
+          icon={HiOutlineCurrencyDollar}
           label="Valor Inventario"
           value={`$${metrics.totalInventoryValue.toLocaleString()}`}
-          breakdown={[{ text: "Basado en precios actuales", value: null }]}
+          breakdown={[
+            { text: "Basado en precios actuales", value: null, type: "info" },
+          ]}
         />
       )}
 
       <StatCard
+        id="images"
         type="media"
-        icon="🖼️"
+        icon={HiOutlinePhotograph}
         label="Imágenes"
         value={metrics.productsWithImages}
         percentage={metrics.imagesPercentage}
@@ -276,9 +334,11 @@ const DashboardStats = ({ products }) => {
 
       {metrics.hasMarketing && (
         <StatCard
+          id="marketing"
           type="summary"
-          icon="🚀"
+          icon={HiOutlineTrendingUp}
           label="Marketing Activo"
+          value="✓"
           breakdown={[
             {
               type: "featured",

@@ -7,15 +7,29 @@
     var(--white) 50%,
     var(--gray-100) 100%
   );
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Header Mejorado - ESTRUCTURA PROFESIONAL */
+.admin-header {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--gray-200);
+  padding: 0.75rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
 .admin-header__content {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 0 0.5rem;
   max-width: 100%;
   margin: 0 auto;
 }
@@ -173,19 +187,15 @@
   transform: translateY(0);
 }
 
-/* Eliminar cualquier estilo de logout del header que pueda interferir */
-.admin-interface__logout-button {
-  display: none !important;
-}
-
-/* Layout Principal */
+/* Layout Principal - con scroll correcto */
 .admin-interface__layout {
   display: flex;
-  min-height: calc(100vh - 80px);
+  flex: 1;
+  overflow: hidden;
   position: relative;
 }
 
-/* Sidebar Navigation - MANTENEMOS LOS ESTILOS EXISTENTES PERO MEJORAMOS */
+/* Sidebar Navigation - con scroll propio */
 .admin-sidebar {
   width: 280px;
   background: linear-gradient(135deg, var(--white) 0%, var(--gray-50) 100%);
@@ -194,12 +204,9 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  position: fixed;
-  top: 80px;
-  left: 0;
-  height: calc(100vh - 80px);
   overflow-y: auto;
-  z-index: 90;
+  overflow-x: hidden;
+  height: 100%;
 }
 
 .admin-sidebar__header {
@@ -330,18 +337,62 @@
   font-weight: 500;
 }
 
-/* Main Content Area */
+.admin-sidebar__badge {
+  background: var(--error);
+  color: white;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: auto;
+  animation: badgePulse 2s infinite;
+}
+
+@keyframes badgePulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+/* Main Content Area - CON SCROLL CORRECTO */
 .admin-main {
   flex: 1;
-  padding: 2rem;
   overflow-y: auto;
-  margin-left: 280px;
-  width: calc(100% - 280px);
+  overflow-x: hidden;
+  padding: 2rem;
+  height: 100%;
 }
 
 .admin-main__content {
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* Scrollbar personalizado para admin-main */
+.admin-main::-webkit-scrollbar {
+  width: 8px;
+}
+
+.admin-main::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: 4px;
+}
+
+.admin-main::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: 4px;
+}
+
+.admin-main::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-500);
 }
 
 /* Section Styles */
@@ -454,13 +505,7 @@
   }
 
   .admin-main {
-    margin-left: 240px;
-    width: calc(100% - 240px);
     padding: 1.5rem;
-  }
-
-  .admin-header__content {
-    padding: 0 1rem;
   }
 }
 
@@ -469,8 +514,8 @@
     display: flex;
   }
 
-  .admin-header__content {
-    padding: 0 1rem;
+  .admin-header {
+    padding: 0.75rem 1rem;
   }
 
   .admin-header__brand {
@@ -505,14 +550,15 @@
 
   .admin-sidebar {
     position: fixed;
-    top: 80px;
-    left: -100%;
+    top: 0;
+    left: -280px;
     width: 280px;
-    height: calc(100vh - 80px);
-    z-index: 100;
+    height: 100vh;
+    z-index: 1000;
     transition: left 0.3s ease;
     box-shadow: var(--shadow-lg);
-    margin-left: 0;
+    margin-top: 0;
+    padding-top: 4rem;
   }
 
   .admin-sidebar--open {
@@ -520,8 +566,6 @@
   }
 
   .admin-main {
-    margin-left: 0;
-    width: 100%;
     padding: 1rem;
   }
 
@@ -545,8 +589,8 @@
     margin-bottom: 1rem;
   }
 
-  .admin-header__content {
-    padding: 0 0.75rem;
+  .admin-header {
+    padding: 0.5rem 0.75rem;
   }
 
   .admin-header__brand {
@@ -601,23 +645,4 @@
 
 .admin-sidebar::-webkit-scrollbar-thumb:hover {
   background: var(--gray-400);
-}
-.admin-sidebar__badge {
-  background: var(--error);
-  color: white;
-  min-width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: 700;
-  margin-left: auto;
-  animation: badgePulse 2s infinite;
-}
-
-@keyframes badgePulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
 }

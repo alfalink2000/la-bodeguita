@@ -311,3 +311,16 @@ body {
     padding-bottom: 85px !important;
   }
 }
+/* Aumentar z-index de SweetAlert para que aparezca encima del modal */
+.swal2-container {
+  z-index: 20000 !important;
+}
+
+.swal2-popup {
+  z-index: 20001 !important;
+}
+
+/* Asegurar que los toasts también estén por encima */
+.swal2-toast {
+  z-index: 20000 !important;
+}

@@ -11,6 +11,8 @@ import {
   HiOutlineChat,
   HiOutlineInformationCircle,
 } from "react-icons/hi";
+import { useDispatch } from "react-redux"; // ✅ Importar useDispatch
+import { resetCart } from "../../../actions/cartActions"; // ✅ Importar resetCart
 import Swal from "sweetalert2";
 import "./SideMenu.css";
 
@@ -23,6 +25,8 @@ const SideMenu = ({
   onShowLogin,
   onProfileClick,
 }) => {
+  const dispatch = useDispatch(); // ✅ Agregar dispatch
+
   // Cerrar con tecla Escape
   const handleKeyDown = useCallback(
     (e) => {
@@ -45,6 +49,74 @@ const SideMenu = ({
   // Cerrar al hacer clic fuera del menú
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) onClose();
+  };
+
+  // ✅ Función mejorada para logout con limpieza completa
+  const handleLogout = () => {
+    Swal.fire({
+      title: "¿Cerrar sesión?",
+      text: "Se cerrará tu sesión actual",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Sí, cerrar sesión",
+      cancelButtonText: "Cancelar",
+      background: "#ffffff",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        // ✅ Mostrar loading
+        Swal.fire({
+          title: "Cerrando sesión...",
+          text: "Limpiando datos",
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+        });
+
+        try {
+          // ✅ 1. Limpiar carrito de Redux
+          dispatch(resetCart());
+
+          // ✅ 2. Limpiar localStorage completamente
+          localStorage.clear();
+
+          // ✅ 3. Limpiar sessionStorage
+          sessionStorage.clear();
+
+          // ✅ 4. Pequeña pausa para asegurar la limpieza
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          // ✅ 5. Cerrar menú
+          onClose();
+
+          // ✅ 6. Llamar al logout del padre
+          onLogout();
+
+          // ✅ 7. Mostrar confirmación
+          Swal.fire({
+            icon: "success",
+            title: "¡Sesión cerrada!",
+            text: "Has cerrado sesión correctamente",
+            confirmButtonColor: "#059669",
+            timer: 1500,
+            timerProgressBar: true,
+            showConfirmButton: false,
+          });
+        } catch (error) {
+          console.error("Error durante logout:", error);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Hubo un problema al cerrar sesión",
+            confirmButtonColor: "#ef4444",
+          });
+          // Forzar logout aunque haya error
+          onLogout();
+        }
+      }
+    });
   };
 
   // Mostrar ayuda informativa
@@ -119,7 +191,6 @@ const SideMenu = ({
         {/* Items del menú */}
         <nav className="sidemenu__nav">
           <ul className="sidemenu__list">
-            {/* ✅ Inicio - solo cierra el menú (ya estamos en la página de inicio) */}
             <li className="sidemenu__item">
               <button className="sidemenu__link" onClick={onClose}>
                 <HiOutlineHome className="sidemenu__link-icon" />
@@ -127,9 +198,6 @@ const SideMenu = ({
               </button>
             </li>
 
-            {/* ✅ ELIMINADO: Productos (es la misma vista que Inicio) */}
-
-            {/* ✅ Ayuda - muestra información de navegación */}
             <li className="sidemenu__item">
               <button className="sidemenu__link" onClick={showHelpInfo}>
                 <HiOutlineQuestionMarkCircle className="sidemenu__link-icon" />
@@ -137,21 +205,19 @@ const SideMenu = ({
               </button>
             </li>
 
-            {/* ✅ Información - muestra información de la tienda */}
             <li className="sidemenu__item">
               <button
                 className="sidemenu__link"
                 onClick={() => {
                   onClose();
-                  // Puedes abrir el modal de información aquí si lo tienes disponible
                   Swal.fire({
                     title: "ℹ Información",
                     html: `
-                     <div style="text-align: left;">                 
-                      <hr style="margin: 1rem 0;">
-                      <p>💬 ¿Necesitas ayuda? Usa el botón flotante de chat (💬) en la esquina inferior derecha para contactar con soporte.</p>
-                    </div>
-                  `,
+                      <div style="text-align: left;">                 
+                        <hr style="margin: 1rem 0;">
+                        <p>💬 ¿Necesitas ayuda? Usa el botón flotante de chat (💬) en la esquina inferior derecha para contactar con soporte.</p>
+                      </div>
+                    `,
                     icon: "info",
                     confirmButtonText: "Cerrar",
                     confirmButtonColor: "#059669",
@@ -188,10 +254,7 @@ const SideMenu = ({
                 <li className="sidemenu__item">
                   <button
                     className="sidemenu__link sidemenu__link--logout"
-                    onClick={() => {
-                      onClose();
-                      onLogout();
-                    }}
+                    onClick={handleLogout} // ✅ Usar la nueva función
                   >
                     <HiOutlineLogout className="sidemenu__link-icon" />
                     <span className="sidemenu__link-text">Cerrar Sesión</span>

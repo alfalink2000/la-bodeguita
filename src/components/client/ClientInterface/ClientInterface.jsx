@@ -80,6 +80,8 @@ const ClientInterface = ({
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [unreadOrders, setUnreadOrders] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   // ✅ NUEVOS ESTADOS PARA TIENDAS
   const [stores, setStores] = useState([]);
@@ -96,6 +98,35 @@ const ClientInterface = ({
   const featuredProducts = useSelector(selectFeaturedProducts);
   const appConfig = useSelector((state) => state.appConfig.config);
 
+  // Función para marcar pedidos como leídos
+  const markOrdersAsRead = () => {
+    setUnreadOrders(0);
+  };
+
+  // Función para cargar mensajes no leídos
+  const loadUnreadMessages = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/chat/unread-count`, {
+        headers: { "x-token": token },
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setUnreadMessages(data.count || 0);
+      }
+    } catch (err) {
+      console.error("Error cargando mensajes no leídos:", err);
+    }
+  }, []);
+  useEffect(() => {
+    if (isLoggedIn) {
+      loadUnreadMessages();
+      const interval = setInterval(loadUnreadMessages, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn, loadUnreadMessages]);
   // ✅ CARGAR TIENDAS
   useEffect(() => {
     const loadStores = async () => {
@@ -742,7 +773,11 @@ const ClientInterface = ({
         </button>
       </Header>
 
-      <CartModal isLoggedIn={isLoggedIn} onShowLogin={onShowLoginForm} />
+      <CartModal
+        isLoggedIn={isLoggedIn}
+        onShowLogin={onShowLoginForm}
+        onOpenChat={() => setIsChatOpen(true)}
+      />
       <InitialInfoModal
         isOpen={showInfoModal}
         onClose={() => setShowInfoModal(false)}
@@ -755,6 +790,8 @@ const ClientInterface = ({
         <UserProfile
           userData={userData}
           onClose={() => setShowProfile(false)}
+          onOrdersViewed={() => setUnreadOrders(0)}
+          unreadOrdersCount={unreadOrders}
         />
       )}
 
@@ -775,13 +812,15 @@ const ClientInterface = ({
           onProfileClick={() => setShowProfile(true)}
         />
       )}
-
       <button
         className="floating-chat-button"
         onClick={() => setIsChatOpen(true)}
         title="Chatear con soporte"
       >
         <HiOutlineChat className="chat-icon" />
+        {unreadMessages > 0 && (
+          <span className="chat-badge">{unreadMessages}</span>
+        )}
         <div className="chat-pulse"></div>
       </button>
 

@@ -47,8 +47,13 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* Búsqueda */
@@ -219,7 +224,11 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.875rem 1rem;
-  background: linear-gradient(135deg, var(--primary-green), var(--primary-green-dark));
+  background: linear-gradient(
+    135deg,
+    var(--primary-green),
+    var(--primary-green-dark)
+  );
   color: white;
   flex-shrink: 0;
 }
@@ -228,7 +237,7 @@
   width: 36px;
   height: 36px;
   border: none;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
   border-radius: var(--radius);
   cursor: pointer;
@@ -240,7 +249,7 @@
 }
 
 .admin-chat__back:hover {
-  background: rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .admin-chat__conv-user {
@@ -253,7 +262,7 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -430,8 +439,185 @@
   .admin-chat__item-address {
     display: none;
   }
-  
+
   .admin-chat__item-preview {
     max-width: 180px;
   }
+}
+/* Agregar al final de AdminChatManager.css */
+
+/* Mensajes automáticos en admin */
+.admin-chat__message--auto .admin-chat__message-bubble {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #f59e0b;
+  color: #92400e;
+}
+
+.admin-chat__auto-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  background: #f59e0b;
+  color: white;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  margin-top: 0.25rem;
+  margin-left: 0.5rem;
+}
+/* Agregar al final de AdminChatManager.css */
+
+/* Chat que necesita atención */
+.admin-chat__item--needs-attention {
+  background: linear-gradient(90deg, #fef3c7 0%, #fffbeb 100%);
+  border-left: 3px solid #f59e0b;
+}
+
+.admin-chat__item-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: #f59e0b;
+  margin-top: 0.25rem;
+  font-weight: 600;
+}
+
+.admin-chat__conv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--gray-500);
+  padding: 2rem;
+}
+
+.admin-chat__conv-empty-icon {
+  font-size: 3rem;
+  color: var(--gray-300);
+  margin-bottom: 1rem;
+}
+
+.admin-chat__conv-empty h4 {
+  font-size: 1rem;
+  color: var(--gray-700);
+  margin: 0 0 0.5rem 0;
+}
+
+.admin-chat__conv-empty p {
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.admin-chat__conv-empty small {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+}
+
+.admin-chat__empty-hint {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  margin-top: 1rem;
+}
+
+/* Badge combinado en menú */
+.admin-sidebar__badge--warning {
+  background: #f59e0b !important;
+  animation: pulse-warning 1.5s infinite;
+}
+
+@keyframes pulse-warning {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+/* Agregar al final de AdminChatManager.css */
+
+/* Chat que necesita atención */
+.admin-chat__item--needs-attention {
+  background: linear-gradient(90deg, #fef3c7 0%, #fffbeb 100%);
+  border-left: 3px solid #f59e0b;
+}
+
+.admin-chat__item-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: #f59e0b;
+  margin-top: 0.25rem;
+  font-weight: 600;
+}
+
+.admin-chat__conv-warning {
+  display: inline-block;
+  font-size: 0.65rem;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  margin-top: 0.25rem;
+}
+
+.admin-chat__conv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--gray-500);
+  padding: 2rem;
+}
+
+.admin-chat__conv-empty-icon {
+  font-size: 3rem;
+  color: var(--gray-300);
+  margin-bottom: 1rem;
+}
+
+.admin-chat__conv-empty h4 {
+  font-size: 1rem;
+  color: var(--gray-700);
+  margin: 0 0 0.5rem 0;
+}
+
+.admin-chat__conv-empty p {
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.admin-chat__conv-empty small {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+}
+
+.admin-chat__empty-hint {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  margin-top: 1rem;
+}
+
+/* Mensajes automáticos */
+.admin-chat__message--auto .admin-chat__message-bubble {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #f59e0b;
+  color: #92400e;
+}
+
+.admin-chat__auto-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  background: #f59e0b;
+  color: white;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  margin-top: 0.25rem;
+  margin-left: 0.5rem;
 }

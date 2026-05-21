@@ -54,6 +54,7 @@ export const types = {
   cartUpdateQuantity: "[cart] Update quantity",
   cartClear: "[cart] Clear cart",
   cartToggleModal: "[cart] Toggle modal",
+  cartReset: "[Cart] Reset", // Agregar esta línea
 
   // ========== ORDERS ==========
   ordersLoad: "[orders] Load orders",

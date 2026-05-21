@@ -389,3 +389,19 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+/* Mensajes automáticos */
+.chat-message--auto .chat-message__bubble {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #f59e0b;
+  color: #92400e;
+}
+
+.chat-message__auto-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  background: #f59e0b;
+  color: white;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  margin-top: 0.25rem;
+}

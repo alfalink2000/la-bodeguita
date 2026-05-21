@@ -1,3 +1,4 @@
+// AdminInterface.jsx - VERSIÓN COMPLETA
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -15,7 +16,9 @@ import {
   HiOutlineChat,
   HiOutlineClipboardList,
   HiOutlineCollection,
+  HiOutlineExclamationCircle,
 } from "react-icons/hi";
+import Swal from "sweetalert2";
 
 // Components
 import AdminHeader from "../AdminHeader/AdminHeader";
@@ -43,6 +46,8 @@ import {
   deleteCategory,
 } from "../../../actions/categoriesActions";
 import { startLogout } from "../../../actions/authActions";
+import { resetCart } from "../../../actions/cartActions";
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 import AdminOrdersManager from "../AdminOrdersManager/AdminOrdersManager";
@@ -57,7 +62,6 @@ const MENU_ITEMS = [
   { id: "stores", label: "Tiendas", icon: HiOutlineCollection },
   { id: "products", label: "Productos", icon: HiOutlineCube },
   { id: "categories", label: "Categorías", icon: HiOutlineTag },
-  { id: "featured", label: "Destacados", icon: HiOutlineStar },
   { id: "users", label: "Usuarios Admin", icon: HiOutlineUsers },
   { id: "config", label: "Configuración App", icon: HiOutlineCog },
 ];
@@ -69,39 +73,51 @@ const AdminInterface = ({ onLogout }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [unreadChats, setUnreadChats] = useState(0);
   const [pendingOrders, setPendingOrders] = useState(0);
+  const [ordersNeedingContact, setOrdersNeedingContact] = useState(0);
+  const [selectedChatUserId, setSelectedChatUserId] = useState(null);
 
   const dispatch = useDispatch();
 
-  // Selectores optimizados con selectores específicos
+  // Selectores
   const products = useSelector((state) => state.products.products);
   const categories = useSelector((state) => state.categories.categories);
   const adminUsers = useSelector((state) => state.adminUsers.users);
 
-  // Efectos agrupados
+  // Cargar datos iniciales
   useEffect(() => {
     dispatch(getFeaturedProducts());
     dispatch(getAdminUsers());
   }, [dispatch]);
 
-  // Cargar pedidos pendientes
+  // Cargar pedidos pendientes y los que necesitan contacto
   useEffect(() => {
-    const loadPending = async () => {
+    const loadOrdersStats = async () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const res = await fetch(`${API_URL}/api/orders/admin/all?status=open`, {
+        const res = await fetch(`${API_URL}/api/orders/admin/all`, {
           headers: { "x-token": token },
         });
         const data = await res.json();
-        if (data.ok) setPendingOrders((data.pedidos || []).length);
+        if (data.ok) {
+          const pedidos = data.pedidos || [];
+          setPendingOrders(pedidos.filter((o) => o.status === "open").length);
+          setOrdersNeedingContact(
+            pedidos.filter(
+              (o) =>
+                o.delivery_needs_manual_contact === true &&
+                o.status !== "cancelled",
+            ).length,
+          );
+        }
       } catch (err) {
-        console.error("Error cargando pedidos:", err);
+        console.error("Error cargando estadísticas:", err);
       }
     };
 
-    loadPending();
-    const interval = setInterval(loadPending, 15000);
+    loadOrdersStats();
+    const interval = setInterval(loadOrdersStats, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -136,7 +152,7 @@ const AdminInterface = ({ onLogout }) => {
     [categories],
   );
 
-  // Handlers optimizados con useCallback
+  // Handlers optimizados
   const handleSubmit = useCallback(
     (formData) => {
       if (editingProduct) {
@@ -158,11 +174,26 @@ const AdminInterface = ({ onLogout }) => {
 
   const handleDelete = useCallback(
     (productId) => {
-      if (
-        window.confirm("¿Estás seguro de que quieres eliminar este producto?")
-      ) {
-        dispatch(deleteProduct(productId));
-      }
+      Swal.fire({
+        title: "¿Eliminar producto?",
+        text: "Esta acción no se puede deshacer",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "Cancelar",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          dispatch(deleteProduct(productId));
+          Swal.fire({
+            icon: "success",
+            title: "Producto eliminado",
+            timer: 1500,
+            showConfirmButton: false,
+          });
+        }
+      });
     },
     [dispatch],
   );
@@ -188,20 +219,44 @@ const AdminInterface = ({ onLogout }) => {
 
   const handleDeleteCategory = useCallback(
     (categoryName) => {
-      if (
-        window.confirm(
-          `¿Estás seguro de que quieres eliminar la categoría "${categoryName}"?`,
-        )
-      ) {
-        dispatch(deleteCategory(categoryName));
-      }
+      Swal.fire({
+        title: `¿Eliminar categoría "${categoryName}"?`,
+        text: "Los productos de esta categoría quedarán sin categoría",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "Cancelar",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          dispatch(deleteCategory(categoryName));
+        }
+      });
     },
     [dispatch],
   );
 
   const handleLogout = useCallback(() => {
-    dispatch(startLogout());
-    onLogout();
+    Swal.fire({
+      title: "¿Cerrar sesión?",
+      text: "Se cerrará tu sesión actual",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Sí, cerrar sesión",
+      cancelButtonText: "Cancelar",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Limpiar carrito
+        dispatch(resetCart());
+        localStorage.clear();
+        sessionStorage.clear();
+        dispatch(startLogout());
+        onLogout();
+      }
+    });
   }, [dispatch, onLogout]);
 
   const handleSectionChange = useCallback((sectionId) => {
@@ -209,11 +264,38 @@ const AdminInterface = ({ onLogout }) => {
     setIsMobileMenuOpen(false);
   }, []);
 
-  // Renderizado de contenido optimizado - CORREGIDO
+  // Función para abrir chat desde pedidos
+  const handleOpenChatFromOrders = useCallback((userId, userName) => {
+    setSelectedChatUserId(userId);
+    setActiveSection("chats");
+    Swal.fire({
+      icon: "info",
+      title: "Chat abierto",
+      text: `Ahora puedes chatear con ${userName || "el cliente"}`,
+      timer: 2000,
+      showConfirmButton: false,
+      toast: true,
+      position: "top-end",
+    });
+  }, []);
+
+  // Función para actualizar badge de chats no leídos
+  const handleChatUnreadCount = useCallback((count) => {
+    setUnreadChats(count);
+  }, []);
+
+  // Renderizado de contenido
   const renderContent = useMemo(() => {
     switch (activeSection) {
       case "dashboard":
-        return <DashboardStats products={products} />;
+        return (
+          <DashboardStats
+            products={products}
+            pendingOrders={pendingOrders}
+            ordersNeedingContact={ordersNeedingContact}
+            unreadChats={unreadChats}
+          />
+        );
 
       case "stores":
         return (
@@ -269,17 +351,19 @@ const AdminInterface = ({ onLogout }) => {
             />
           </div>
         );
+
       case "chats":
         return (
-          <div className="admin-section">
-            <AdminChatManager token={localStorage.getItem("token")} />
-          </div>
-        );
-      case "featured":
-        return (
-          <div className="admin-section">
-            <h2 className="admin-section__title">Productos Destacados</h2>
-            <FeaturedProductsManager />
+          <div
+            className="admin-section"
+            style={{ height: "calc(100vh - 120px)", padding: 0 }}
+          >
+            <AdminChatManager
+              token={localStorage.getItem("token")}
+              selectedUserId={selectedChatUserId}
+              onSelectUser={setSelectedChatUserId}
+              onUnreadCountChange={handleChatUnreadCount}
+            />
           </div>
         );
 
@@ -307,24 +391,43 @@ const AdminInterface = ({ onLogout }) => {
             className="admin-section"
             style={{ height: "calc(100vh - 120px)", padding: 0 }}
           >
-            <AdminOrdersManager token={localStorage.getItem("token")} />
+            <AdminOrdersManager
+              token={localStorage.getItem("token")}
+              onOpenChatWithUser={handleOpenChatFromOrders}
+            />
           </div>
         );
 
       default:
-        return <DashboardStats products={products} />;
+        return (
+          <DashboardStats
+            products={products}
+            pendingOrders={pendingOrders}
+            ordersNeedingContact={ordersNeedingContact}
+            unreadChats={unreadChats}
+          />
+        );
     }
   }, [
     activeSection,
     products,
     categories,
     adminUsers,
+    pendingOrders,
+    ordersNeedingContact,
+    unreadChats,
+    selectedChatUserId,
     handleEdit,
     handleDelete,
     handleAddCategory,
     handleUpdateCategory,
     handleDeleteCategory,
+    handleOpenChatFromOrders,
+    handleChatUnreadCount,
   ]);
+
+  // Calcular badge combinado para chats (incluye pedidos que necesitan contacto)
+  const chatBadgeCount = unreadChats + ordersNeedingContact;
 
   return (
     <div className="admin-interface">
@@ -377,6 +480,14 @@ const AdminInterface = ({ onLogout }) => {
           <div className="admin-sidebar__menu">
             {MENU_ITEMS.map((item) => {
               const Icon = item.icon;
+              let badgeCount = 0;
+
+              if (item.id === "chats") {
+                badgeCount = chatBadgeCount;
+              } else if (item.id === "orders") {
+                badgeCount = pendingOrders;
+              }
+
               return (
                 <button
                   key={item.id}
@@ -389,13 +500,11 @@ const AdminInterface = ({ onLogout }) => {
                 >
                   <Icon className="admin-sidebar__icon" />
                   <span className="admin-sidebar__label">{item.label}</span>
-                  {/* ✅ Badge de notificación para chats */}
-                  {item.id === "chats" && unreadChats > 0 && (
-                    <span className="admin-sidebar__badge">{unreadChats}</span>
-                  )}
-                  {item.id === "orders" && pendingOrders > 0 && (
-                    <span className="admin-sidebar__badge">
-                      {pendingOrders}
+                  {badgeCount > 0 && (
+                    <span
+                      className={`admin-sidebar__badge ${item.id === "chats" && ordersNeedingContact > 0 ? "admin-sidebar__badge--warning" : ""}`}
+                    >
+                      {badgeCount > 99 ? "99+" : badgeCount}
                     </span>
                   )}
                 </button>

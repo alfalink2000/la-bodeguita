@@ -39,6 +39,10 @@ const UserProfile = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
+  // ✅ Estados para badge de pedidos no leídos
+  const [unreadOrdersCount, setUnreadOrdersCount] = useState(0);
+  const [hasViewedOrders, setHasViewedOrders] = useState(false);
+
   // ✅ Estado para el formulario de edición (usando datos de auth)
   const [formData, setFormData] = useState({
     full_name: auth?.full_name || "",
@@ -47,6 +51,38 @@ const UserProfile = ({ onClose }) => {
     lat: auth?.lat || null,
     lng: auth?.lng || null,
   });
+
+  // ✅ Calcular pedidos no leídos cuando cambian los pedidos
+  useEffect(() => {
+    if (orders.length > 0 && !hasViewedOrders) {
+      // Obtener la última vez que el usuario vio sus pedidos
+      const lastViewed = localStorage.getItem(
+        `orders_last_viewed_${auth?.uid}`,
+      );
+
+      if (!lastViewed) {
+        // Nunca ha visto sus pedidos, todos son nuevos
+        setUnreadOrdersCount(orders.length);
+      } else {
+        // Contar pedidos creados después de la última vista
+        const lastViewedDate = new Date(parseInt(lastViewed));
+        const newOrders = orders.filter(
+          (order) => new Date(order.created_at) > lastViewedDate,
+        );
+        setUnreadOrdersCount(newOrders.length);
+      }
+    }
+  }, [orders, auth?.uid, hasViewedOrders]);
+
+  // ✅ Marcar pedidos como vistos cuando se abre la pestaña
+  useEffect(() => {
+    if (activeTab === "orders" && orders.length > 0 && !hasViewedOrders) {
+      // Guardar timestamp de última vista
+      localStorage.setItem(`orders_last_viewed_${auth?.uid}`, Date.now());
+      setHasViewedOrders(true);
+      setUnreadOrdersCount(0);
+    }
+  }, [activeTab, orders.length, hasViewedOrders, auth?.uid]);
 
   // ✅ Cargar perfil desde el backend
   const loadProfile = async () => {
@@ -332,7 +368,7 @@ const UserProfile = ({ onClose }) => {
           </p>
         </div>
 
-        {/* Tabs Fijos */}
+        {/* Tabs Fijos - con badge de pedidos no leídos */}
         <div className="up-tabs">
           <button
             className={`up-tab ${activeTab === "profile" ? "up-tab--active" : ""}`}
@@ -342,11 +378,23 @@ const UserProfile = ({ onClose }) => {
           </button>
           <button
             className={`up-tab ${activeTab === "orders" ? "up-tab--active" : ""}`}
-            onClick={() => setActiveTab("orders")}
+            onClick={() => {
+              setActiveTab("orders");
+              // Al hacer clic, marcar como vistos si no lo estaban
+              if (!hasViewedOrders && orders.length > 0) {
+                localStorage.setItem(
+                  `orders_last_viewed_${auth?.uid}`,
+                  Date.now(),
+                );
+                setHasViewedOrders(true);
+                setUnreadOrdersCount(0);
+              }
+            }}
           >
             <HiOutlineClipboardList /> Mis Pedidos
-            {orders.length > 0 && (
-              <span className="up-tab-badge">{orders.length}</span>
+            {/* ✅ Badge solo se muestra si hay pedidos no leídos */}
+            {unreadOrdersCount > 0 && (
+              <span className="up-tab-badge">{unreadOrdersCount}</span>
             )}
           </button>
         </div>

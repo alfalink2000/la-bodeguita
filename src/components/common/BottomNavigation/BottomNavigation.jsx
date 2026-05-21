@@ -30,6 +30,7 @@ const BottomNavigation = ({
   onLogout,
   onShowLogin,
   onProfileClick,
+  unreadOrdersCount = 0,
 }) => {
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);

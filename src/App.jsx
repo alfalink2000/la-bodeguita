@@ -1,4 +1,4 @@
-// App.js - VERSIÓN CORREGIDA
+// App.js - VERSIÓN CORREGIDA CON TEMA
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
@@ -15,6 +15,7 @@ import { loadAppConfig, loadDefaultConfig } from "./actions/appConfigActions";
 import SpiralLoading from "./components/common/SpiralLoading/SpiralLoading";
 import MaintenanceMode from "./components/common/MaintenanceMode/MaintenanceMode";
 import { types } from "./types/types";
+import { applyTheme } from "./utils/themeManager";
 
 const AppContent = () => {
   const [currentView, setCurrentView] = useState("client");
@@ -27,10 +28,10 @@ const AppContent = () => {
   const [syncCompleted, setSyncCompleted] = useState(false);
   const [authCheckComplete, setAuthCheckComplete] = useState(false);
   const [showRoleSelector, setShowRoleSelector] = useState(false);
+  const [themeApplied, setThemeApplied] = useState(false);
 
   // ✅ REF para evitar bucles y ejecuciones múltiples
   const roleSelectorShownRef = useRef(false);
-  const initialAuthCheckRef = useRef(false);
 
   const dispatch = useDispatch();
   const auth = useSelector((state) => state.auth);
@@ -45,6 +46,19 @@ const AppContent = () => {
     const hasCategories = Array.isArray(categories) && categories.length > 0;
     return hasAppConfig && hasProducts && hasCategories;
   };
+
+  // ✅ APLICAR TEMA CUANDO LA CONFIGURACIÓN ESTÉ DISPONIBLE
+  useEffect(() => {
+    if (appConfig && appConfig.theme && !themeApplied) {
+      console.log("🎨 Aplicando tema desde configuración:", appConfig.theme);
+      applyTheme(appConfig.theme);
+      setThemeApplied(true);
+    } else if (appConfig && !themeApplied) {
+      console.log("🎨 Aplicando tema por defecto: blue");
+      applyTheme("blue");
+      setThemeApplied(true);
+    }
+  }, [appConfig, themeApplied]);
 
   // ✅ CARGAR DATOS INICIALES Y VERIFICAR AUTENTICACIÓN
   const loadInitialData = async () => {
@@ -172,8 +186,6 @@ const AppContent = () => {
 
   // ✅ EFECTO PARA MANEJAR EL ROLE SELECTOR - CORREGIDO
   useEffect(() => {
-    // Solo cuando la autenticación está completa, el usuario está logueado,
-    // y NO hemos mostrado el selector aún
     if (
       !isLoading &&
       authCheckComplete &&
@@ -183,14 +195,11 @@ const AppContent = () => {
       console.log("👤 Usuario autenticado:", auth);
       console.log("Rol del usuario:", auth?.role);
 
-      // ✅ Si es admin y no estamos en medio de una selección
       if (auth?.role === "admin") {
         console.log("🎭 Admin detectado, mostrando RoleSelector");
         roleSelectorShownRef.current = true;
         setShowRoleSelector(true);
-      }
-      // ✅ Si es cliente, ir directo a vista cliente
-      else if (auth?.role === "client") {
+      } else if (auth?.role === "client") {
         console.log("👤 Cliente detectado, mostrando ClientInterface");
         setCurrentView("client");
       }
@@ -221,6 +230,7 @@ const AppContent = () => {
     setAuthCheckComplete(false);
     setShowRoleSelector(false);
     roleSelectorShownRef.current = false;
+    setThemeApplied(false);
     setIsLoading(true);
     loadInitialData();
   };
@@ -229,10 +239,8 @@ const AppContent = () => {
   const handleLoginSuccess = (userData) => {
     console.log("🔑 Login exitoso desde AuthPage:", userData);
 
-    // Resetear el ref para permitir mostrar el selector
     roleSelectorShownRef.current = false;
 
-    // Disparar acción de login
     dispatch({
       type: types.authLogin,
       payload: {
@@ -287,7 +295,8 @@ const AppContent = () => {
     authRole: auth?.role,
     showRoleSelector,
     currentView,
-    roleSelectorShown: roleSelectorShownRef.current,
+    themeApplied,
+    appConfigTheme: appConfig?.theme,
   });
 
   // ✅ RENDERIZAR MODO MANTENIMIENTO
@@ -340,16 +349,6 @@ const AppContent = () => {
 
   return (
     <div className="font-sans antialiased">
-      {/* Indicador de datos cacheados
-      {usingCachedData && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-white rounded-full"></div>
-            <span className="text-sm">Usando datos locales</span>
-          </div>
-        </div>
-      )} */}
-
       {/* Interfaz según vista seleccionada */}
       {currentView === "client" ? (
         <ClientInterface

@@ -1,4 +1,4 @@
-// reduducers/cartReducer.js
+// reducers/cartReducer.js
 import { types } from "../types/types";
 
 const initialState = {
@@ -12,16 +12,15 @@ export const cartReducer = (state = initialState, action) => {
   switch (action.type) {
     case types.cartAddItem:
       const existingItem = state.items.find(
-        (item) => item.id === action.payload.id
+        (item) => item.id === action.payload.id,
       );
 
       if (existingItem) {
         const updatedItems = state.items.map((item) =>
           item.id === action.payload.id
             ? { ...item, quantity: item.quantity + 1 }
-            : item
+            : item,
         );
-
         return calculateTotals({ ...state, items: updatedItems });
       }
 
@@ -33,7 +32,7 @@ export const cartReducer = (state = initialState, action) => {
 
     case types.cartRemoveItem:
       const filteredItems = state.items.filter(
-        (item) => item.id !== action.payload
+        (item) => item.id !== action.payload,
       );
       return calculateTotals({ ...state, items: filteredItems });
 
@@ -42,10 +41,9 @@ export const cartReducer = (state = initialState, action) => {
         .map((item) =>
           item.id === action.payload.id
             ? { ...item, quantity: Math.max(0, action.payload.quantity) }
-            : item
+            : item,
         )
         .filter((item) => item.quantity > 0);
-
       return calculateTotals({ ...state, items: updatedItems });
 
     case types.cartClear:
@@ -57,6 +55,9 @@ export const cartReducer = (state = initialState, action) => {
         isCartOpen: !state.isCartOpen,
       };
 
+    case types.cartReset: // ✅ Manejar reset completo
+      return initialState;
+
     default:
       return state;
   }
@@ -66,11 +67,11 @@ export const cartReducer = (state = initialState, action) => {
 const calculateTotals = (state) => {
   const itemsCount = state.items.reduce(
     (total, item) => total + item.quantity,
-    0
+    0,
   );
   const total = state.items.reduce(
     (sum, item) => sum + parseFloat(item.price) * item.quantity,
-    0
+    0,
   );
 
   return {
