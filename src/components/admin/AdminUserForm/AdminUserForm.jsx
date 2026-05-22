@@ -1,3 +1,4 @@
+// components/admin/AdminUserForm/AdminUserForm.jsx
 import React, { useState, useEffect } from "react";
 import { HiOutlineX, HiOutlineEye, HiOutlineEyeOff } from "react-icons/hi";
 import "./AdminUserForm.css";
@@ -57,9 +58,9 @@ const AdminUserForm = ({ user, onSubmit, onCancel }) => {
           "La contraseña actual es obligatoria para cambiar la contraseña";
       }
 
-      if (formData.newPassword && formData.newPassword.length < 8) {
+      if (formData.newPassword && formData.newPassword.length < 6) {
         newErrors.newPassword =
-          "La nueva contraseña debe tener al menos 8 caracteres";
+          "La nueva contraseña debe tener al menos 6 caracteres";
       }
 
       if (formData.newPassword !== formData.confirmPassword) {
@@ -71,7 +72,8 @@ const AdminUserForm = ({ user, onSubmit, onCancel }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  // ✅ CORREGIDO: handleSubmit ahora llama a onSubmit (prop) en lugar de dispatch directo
+  const handleFormSubmit = (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -80,17 +82,20 @@ const AdminUserForm = ({ user, onSubmit, onCancel }) => {
 
     const submitData = {
       id: user?.id,
-      username: formData.username,
-      email: formData.email,
-      full_name: formData.full_name,
+      username: formData.username.trim(),
+      email: formData.email.trim(),
+      full_name: formData.full_name.trim(),
     };
 
     // Solo incluir campos de contraseña si se están cambiando
-    if (formData.currentPassword) {
+    if (formData.currentPassword && formData.newPassword) {
       submitData.password_user = formData.currentPassword;
       submitData.new_password = formData.newPassword;
     }
 
+    console.log("📤 [AdminUserForm] Datos a enviar:", submitData);
+
+    // ✅ Llamar a la función onSubmit que viene del padre (AdminUsersManager)
     onSubmit(submitData);
   };
 
@@ -142,7 +147,8 @@ const AdminUserForm = ({ user, onSubmit, onCancel }) => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="admin-user-form__content">
+        {/* ✅ CORREGIDO: usa handleFormSubmit */}
+        <form onSubmit={handleFormSubmit} className="admin-user-form__content">
           <div className="admin-user-form__group">
             <label htmlFor="username" className="admin-user-form__label">
               Nombre de Usuario *
@@ -263,7 +269,7 @@ const AdminUserForm = ({ user, onSubmit, onCancel }) => {
                     className={`admin-user-form__input ${
                       errors.newPassword ? "admin-user-form__input--error" : ""
                     }`}
-                    placeholder="Ingresa la nueva contraseña"
+                    placeholder="Ingresa la nueva contraseña (mínimo 6 caracteres)"
                   />
                   <button
                     type="button"

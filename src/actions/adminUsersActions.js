@@ -1,14 +1,19 @@
+// actions/adminUsersActions.js
 import { fetchAPIConfig } from "../helpers/fetchAPIConfig";
 import { types } from "../types/types";
 import Swal from "sweetalert2";
 
+// Cargar todos los usuarios (admin)
 export const getAdminUsers = () => {
   return async (dispatch) => {
     try {
       const body = await fetchAPIConfig("auth/getUsers", {}, "GET");
 
       if (body.ok) {
-        dispatch(loadAdminUsers(body.usuarios));
+        dispatch({
+          type: types.adminUsersLoad,
+          payload: body.usuarios || [],
+        });
       } else {
         Swal.fire("Error", body.msg || "Error al cargar usuarios", "error");
       }
@@ -19,83 +24,76 @@ export const getAdminUsers = () => {
   };
 };
 
+// Actualizar usuario (admin)
 export const updateAdminUser = (userData) => {
   return async (dispatch) => {
     try {
-      Swal.fire({
-        title: "Actualizando usuario...",
-        text: "Por favor espera",
-        allowOutsideClick: false,
-        didOpen: () => {
-          Swal.showLoading();
-        },
-      });
+      console.log("📤 [updateAdminUser] Enviando:", userData);
 
-      console.log("🚀 Enviando datos al servidor:", userData);
+      // ✅ Usar fetchAPIConfig en lugar de fetch directo
+      const data = await fetchAPIConfig(
+        "auth/update", // endpoint (sin /api/ porque fetchAPIConfig ya lo agrega)
+        userData, // datos a enviar
+        "PUT", // método
+      );
 
-      const updateData = {
-        id: userData.id,
-        username: userData.username,
-        email: userData.email,
-        full_name: userData.full_name,
-      };
+      console.log("📥 [updateAdminUser] Respuesta:", data);
 
-      if (userData.password_user && userData.new_password) {
-        updateData.password_user = userData.password_user;
-        updateData.new_password = userData.new_password;
-        console.log("🔐 Incluyendo campos de contraseña");
-      } else {
-        console.log("🔓 Actualizando solo datos básicos (sin contraseña)");
-      }
+      if (data.ok) {
+        dispatch({
+          type: types.adminUserUpdated,
+          payload: data.user,
+        });
 
-      const body = await fetchAPIConfig("auth/update", updateData, "PUT");
+        // Recargar lista de usuarios después de actualizar
+        dispatch(getAdminUsers());
 
-      console.log("📦 Body de respuesta:", body);
-
-      Swal.close();
-
-      if (body.ok) {
-        dispatch(
-          updateAdminUserAction({
-            id: userData.id,
-            username: userData.username,
-            email: userData.email,
-            full_name: userData.full_name,
-          })
-        );
         Swal.fire({
           icon: "success",
           title: "¡Usuario actualizado!",
-          text: "Usuario actualizado correctamente",
+          text: data.msg || "El usuario ha sido actualizado correctamente",
+          timer: 2000,
+          showConfirmButton: false,
         });
+
         return true;
       } else {
-        Swal.fire("Error", body.msg, "error");
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: data.msg || "No se pudo actualizar el usuario",
+        });
         return false;
       }
     } catch (error) {
-      console.error("❌ Error actualizando usuario:", error);
-      Swal.fire("Error", "Error de conexión al actualizar usuario", "error");
+      console.error("Error actualizando usuario:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error de conexión",
+        text: "No se pudo conectar con el servidor",
+      });
       return false;
     }
   };
 };
 
+// Activar/Desactivar usuario
 export const toggleUserStatus = (userId, currentStatus) => {
   return async (dispatch, getState) => {
     try {
       const { adminUsers } = getState();
       const newStatus = !currentStatus;
 
+      // Proteger: no desactivar el último usuario activo
       if (!newStatus) {
         const activeUsersCount = adminUsers.users.filter(
-          (user) => user.is_active
+          (user) => user.is_active,
         ).length;
         if (activeUsersCount <= 1) {
           Swal.fire(
             "Error",
             "No se puede desactivar el último usuario activo",
-            "error"
+            "error",
           );
           return false;
         }
@@ -104,17 +102,20 @@ export const toggleUserStatus = (userId, currentStatus) => {
       const body = await fetchAPIConfig(
         `auth/toggle-status/${userId}`,
         { is_active: newStatus },
-        "PUT"
+        "PUT",
       );
 
       if (body.ok) {
-        dispatch(toggleUserStatusAction(userId, newStatus));
+        dispatch({
+          type: types.adminUserStatusToggled,
+          payload: { userId, isActive: newStatus },
+        });
+
         Swal.fire({
           icon: "success",
           title: `Usuario ${newStatus ? "activado" : "desactivado"}`,
-          text: `Usuario ${
-            newStatus ? "activado" : "desactivado"
-          } correctamente`,
+          timer: 1500,
+          showConfirmButton: false,
         });
         return true;
       } else {
@@ -129,10 +130,12 @@ export const toggleUserStatus = (userId, currentStatus) => {
   };
 };
 
+// Eliminar usuario
 export const deleteAdminUser = (userId) => {
   return async (dispatch, getState) => {
     const { adminUsers } = getState();
 
+    // Proteger: no eliminar el último usuario
     if (adminUsers.users.length <= 1) {
       Swal.fire("Error", "No se puede eliminar el último usuario", "error");
       return false;
@@ -155,7 +158,11 @@ export const deleteAdminUser = (userId) => {
       const body = await fetchAPIConfig(`auth/delete/${userId}`, {}, "DELETE");
 
       if (body.ok) {
-        dispatch(deleteAdminUserAction(userId));
+        dispatch({
+          type: types.adminUserDeleted,
+          payload: userId,
+        });
+
         Swal.fire("Eliminado", "Usuario eliminado correctamente", "success");
         return true;
       } else {
@@ -170,32 +177,13 @@ export const deleteAdminUser = (userId) => {
   };
 };
 
-// Action creators sincrónicos
-const loadAdminUsers = (users) => ({
-  type: types.adminUsersLoad,
-  payload: users,
-});
-
-const updateAdminUserAction = (userData) => ({
-  type: types.adminUserUpdated,
-  payload: userData,
-});
-
-const toggleUserStatusAction = (userId, isActive) => ({
-  type: types.adminUserStatusToggled,
-  payload: { userId, isActive },
-});
-
-const deleteAdminUserAction = (userId) => ({
-  type: types.adminUserDeleted,
-  payload: userId,
-});
-
+// Establecer usuario activo para edición
 export const setActiveAdminUser = (user) => ({
   type: types.adminUserSetActive,
   payload: user,
 });
 
+// Limpiar usuario activo
 export const clearActiveAdminUser = () => ({
   type: types.adminUserClearActive,
 });
