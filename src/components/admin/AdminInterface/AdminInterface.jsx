@@ -1,7 +1,7 @@
 // AdminInterface.jsx - VERSIÓN COMPLETA CON NAVEGACIÓN
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useAppNavigation } from "../../../hooks/useAppNavigation";
+import { useAppNavigation } from "../../../hooks/useNavigationHistory";
 import {
   HiOutlineChartBar,
   HiOutlineTag,
