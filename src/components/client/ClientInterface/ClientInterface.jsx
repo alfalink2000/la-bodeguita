@@ -700,6 +700,7 @@ const ClientInterface = ({
               <HiOutlineTag className="desktop-stores-icon" /> Categorías
             </h3>
             <div className="desktop-stores-list">
+              {/* ✅ Solo UN botón "Todos" */}
               <button
                 className={`desktop-section-button ${
                   selectedCategory === "Todos"
@@ -715,28 +716,37 @@ const ClientInterface = ({
                   {storeFilteredProducts.length}
                 </span>
               </button>
-              {filteredCategories.map((cat) => (
-                <button
-                  key={cat.id || cat}
-                  className={`desktop-section-button ${
-                    selectedCategory === (cat.name || cat)
-                      ? "desktop-section-button--active"
-                      : ""
-                  }`}
-                  onClick={() => setSelectedCategory(cat.name || cat)}
-                >
-                  <span className="desktop-section-text">
-                    {cat.name || cat}
-                  </span>
-                  <span className="desktop-section-badge">
-                    {
-                      storeFilteredProducts.filter(
-                        (p) => p.category?.name === (cat.name || cat),
-                      ).length
-                    }
-                  </span>
-                </button>
-              ))}
+
+              {/* ✅ Asegurar que NO se muestre "Todos" de nuevo */}
+              {filteredCategories
+                .filter((cat) => {
+                  const name = (cat.name || cat).trim();
+                  return (
+                    name !== "Todos" && name !== "todos" && name !== "TODOS"
+                  );
+                })
+                .map((cat) => (
+                  <button
+                    key={cat.id || cat.name || cat}
+                    className={`desktop-section-button ${
+                      selectedCategory === (cat.name || cat)
+                        ? "desktop-section-button--active"
+                        : ""
+                    }`}
+                    onClick={() => setSelectedCategory(cat.name || cat)}
+                  >
+                    <span className="desktop-section-text">
+                      {cat.name || cat}
+                    </span>
+                    <span className="desktop-section-badge">
+                      {
+                        storeFilteredProducts.filter(
+                          (p) => p.category?.name === (cat.name || cat),
+                        ).length
+                      }
+                    </span>
+                  </button>
+                ))}
             </div>
           </div>
         </div>
