@@ -1,5 +1,5 @@
 // components/common/Header/Header.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { HiOutlineInformationCircle, HiOutlineX } from "react-icons/hi";
 import { FiShoppingCart } from "react-icons/fi";
 import { useSelector, useDispatch } from "react-redux";
@@ -27,6 +27,15 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
   const closeHelpModal = () => {
     setShowHelpModal(false);
   };
+  useEffect(() => {
+    const handleOpenHelpModal = () => {
+      setShowHelpModal(true);
+    };
+
+    window.addEventListener("open-help-modal", handleOpenHelpModal);
+    return () =>
+      window.removeEventListener("open-help-modal", handleOpenHelpModal);
+  }, []);
 
   return (
     <>
@@ -66,7 +75,7 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
             {/* Botón de información/ayuda */}
             {showInfoButton && (
               <button
-                className="header__info-btn mobile-only"
+                className="header__info-btn "
                 onClick={handleInfoClick}
                 title="Ayuda - Configuración de ubicación"
               >

@@ -273,9 +273,9 @@
 
 /* ===== DESKTOP ===== */
 @media (min-width: 1024px) {
-  .mobile-only {
+  /* .mobile-only {
     display: none;
-  }
+  } */
 
   .header__cart-btn {
     padding: 12px;
@@ -366,9 +366,9 @@
 }
 
 @media (min-width: 1024px) {
-  .mobile-only {
+  /* .mobile-only {
     display: none;
-  }
+  } */
 }
 
 /* ===== ACCESIBILIDAD ===== */

@@ -429,17 +429,21 @@ const ClientInterface = ({
     [appConfig?.whatsapp_number],
   );
 
+  // En ClientInterface.jsx, cambiar InfoButton:
   const InfoButton = useCallback(
     () => (
       <button
         className="header-action header-action--icon"
         title="Información de la tienda"
-        onClick={handleOpenInfoModal}
+        onClick={() => {
+          // ✅ Disparar evento para que Header abra su modal de ayuda
+          window.dispatchEvent(new CustomEvent("open-help-modal"));
+        }}
       >
         <HiOutlineInformationCircle className="header-action__icon" />
       </button>
     ),
-    [handleOpenInfoModal],
+    [],
   );
 
   const TitleWithIcon = useCallback(() => {
