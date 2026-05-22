@@ -26,7 +26,7 @@ const API_URL =
   import.meta.env.VITE_API_URL ||
   "https://minimarket-backend-6z9m.onrender.com";
 
-const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
+const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
   const dispatch = useDispatch();
   const isOpen = useSelector(selectIsCartOpen);
   const cartItems = useSelector(selectCartItems);
@@ -87,7 +87,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
 
     if (isOpen) {
       loadDeliveryConfig();
-      // Resetear estados de delivery al abrir el carrito
       setWantsDelivery(false);
       setDeliveryInfo(null);
       setNeedsManualContact(false);
@@ -129,7 +128,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
     });
   };
 
-  // Manejar toggle de delivery
   const handleDeliveryToggle = async (checked) => {
     setWantsDelivery(checked);
 
@@ -171,7 +169,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
       const data = await res.json();
 
       if (data.ok) {
-        // ✅ TIENE GPS - Mostrar precio normal
         setDeliveryInfo({
           price: data.price,
           distance: data.distance,
@@ -180,11 +177,9 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
           config: data.config,
         });
       } else if (data.needsManualContact) {
-        // ❌ NO TIENE GPS - Marcar para contacto manual
         setNeedsManualContact(true);
         setDeliveryInfo(null);
 
-        // Mostrar alerta
         Swal.fire({
           icon: "info",
           title: "📍 Necesitamos tu ubicación exacta",
@@ -217,22 +212,28 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
     }
   };
 
-  // Crear pedido
+  // ✅ CORREGIDO: Crear pedido - Cerrar modal ANTES de mostrar SweetAlert
   const handleCreateOrder = async () => {
+    console.log("🔴 [CartModal] handleCreateOrder iniciado");
+
     if (!isLoggedIn) {
+      console.log("🔴 [CartModal] Usuario no logueado, mostrando login");
       dispatch(toggleCartModal());
       onShowLogin?.();
       return;
     }
 
-    if (cartItems.length === 0) return;
+    if (cartItems.length === 0) {
+      console.log("🔴 [CartModal] Carrito vacío");
+      return;
+    }
 
-    // Validar delivery
     if (
       wantsDelivery &&
       (!deliveryInfo || !deliveryInfo.isAvailable) &&
       !needsManualContact
     ) {
+      console.log("🔴 [CartModal] Delivery no disponible");
       Swal.fire({
         icon: "warning",
         title: "Delivery no disponible",
@@ -247,6 +248,8 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
 
     try {
       const token = localStorage.getItem("token");
+      console.log("🔴 [CartModal] Enviando pedido al backend...");
+
       const orderData = {
         items: cartItems.map((item) => ({
           id: item.id,
@@ -277,20 +280,48 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
       });
 
       const data = await res.json();
+      console.log("🔴 [CartModal] Respuesta del backend:", data);
 
       if (data.ok) {
+        console.log(
+          "🔴 [CartModal] Pedido creado exitosamente, ID:",
+          data.pedido.id,
+        );
+
+        // ✅ DISPARAR EVENTO UNA SOLA VEZ
+        console.log("🔴 [CartModal] Disparando evento 'order-created'");
+        window.dispatchEvent(
+          new CustomEvent("order-created", {
+            detail: { orderId: data.pedido.id, timestamp: Date.now() },
+          }),
+        );
+
+        // ✅ Llamar callback si existe
+        if (onOrderCreated) {
+          console.log("🔴 [CartModal] Llamando a onOrderCreated callback");
+          onOrderCreated();
+        }
+
+        // Vaciar carrito
         dispatch(clearCart());
+
+        // Cerrar modal
         dispatch(toggleCartModal());
+
+        setCreatingOrder(false);
+
+        setCreatingOrder(false);
 
         const totalWithDelivery =
           wantsDelivery && deliveryInfo ? total + deliveryInfo.price : total;
 
-        Swal.fire({
+        // Mostrar SweetAlert
+        await Swal.fire({
           icon: "success",
           title: "¡Pedido creado exitosamente!",
           html: `
             <p>Tu pedido <strong>#${data.pedido.id}</strong> ha sido registrado.</p>
-            ${wantsDelivery ? `<p style="margin-top: 0.5rem;">🚚 <strong>Delivery: ${deliveryInfo?.isFree ? "GRATIS" : `$${deliveryInfo?.price?.toFixed(2)}`}</strong></p>` : "<p>📦 Retiro en tienda</p>"}
+            ${wantsDelivery ? `<p style="margin-top: 0.5rem;">🚚 <strong>Delivery: ${deliveryInfo?.isFree ? "GRATIS" : `${getCurrencySymbol()}${deliveryInfo?.price?.toFixed(2)}`}</strong></p>` : "<p>📦 Retiro en tienda</p>"}
             ${needsManualContact ? '<p style="margin-top: 0.5rem; color: #f59e0b;">📞 Un asesor se pondrá en contacto contigo para coordinar el envío.</p>' : ""}
             <p style="margin-top: 0.5rem; color: #6b7280; font-size: 0.9rem;">
               Total: ${getCurrencySymbol()}${totalWithDelivery.toFixed(2)}
@@ -303,6 +334,8 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
           confirmButtonText: "Entendido",
         });
       } else {
+        console.log("🔴 [CartModal] Error del backend:", data.msg);
+        setCreatingOrder(false);
         Swal.fire({
           icon: "error",
           title: "Error al crear pedido",
@@ -311,15 +344,14 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
         });
       }
     } catch (err) {
-      console.error("Error creando pedido:", err);
+      console.error("🔴 [CartModal] Error de conexión:", err);
+      setCreatingOrder(false);
       Swal.fire({
         icon: "error",
         title: "Error de conexión",
         text: "No se pudo conectar con el servidor",
         confirmButtonColor: "#ef4444",
       });
-    } finally {
-      setCreatingOrder(false);
     }
   };
 
@@ -328,7 +360,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
       <div className="cart-modal__overlay" onClick={handleClose} />
 
       <div className="cart-modal__content">
-        {/* Header */}
         <div className="cart-modal__header">
           <div className="cart-modal__title">
             <FiShoppingCart className="cart-modal__icon" />
@@ -342,7 +373,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
           </button>
         </div>
 
-        {/* Body */}
         <div className="cart-modal__body">
           {cartItems.length === 0 ? (
             <div className="cart-modal__empty">
@@ -407,9 +437,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
                 ))}
               </div>
 
-              {/* Footer */}
               <div className="cart-modal__footer">
-                {/* Totales */}
                 <div className="cart-total">
                   <span>Subtotal:</span>
                   <span className="total-amount">
@@ -445,7 +473,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
                     </div>
                   )}
 
-                {/* Delivery Section */}
                 {deliveryConfig && deliveryConfig.isConfigured && (
                   <div className="cart-delivery-section">
                     <label className="cart-delivery-checkbox">
@@ -491,7 +518,8 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
                                 <span>
                                   Costo de envío:{" "}
                                   <strong>
-                                    ${deliveryInfo.price.toFixed(2)}
+                                    {getCurrencySymbol()}
+                                    {deliveryInfo.price.toFixed(2)}
                                   </strong>
                                 </span>
                               )}
@@ -558,7 +586,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
                   </div>
                 )}
 
-                {/* Botones de acción */}
                 <div className="cart-actions">
                   <button className="clear-cart-btn" onClick={handleClearCart}>
                     <FiTrash2 size={14} />
@@ -584,7 +611,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat }) => {
                   </button>
                 </div>
 
-                {/* Aviso si no está logueado */}
                 {!isLoggedIn && (
                   <p className="login-notice">
                     🔒{" "}

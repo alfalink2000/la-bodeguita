@@ -30,11 +30,46 @@ const BottomNavigation = ({
   onShowLogin,
   onProfileClick,
   unreadOrdersCount = 0,
-  currentStoreName = "Tiendas", // Nombre de la tienda actual
+  currentStoreName = "Tiendas",
 }) => {
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
-  const [searchInputFocused, setSearchInputFocused] = useState(false);
+  const [showBadgeAnimation, setShowBadgeAnimation] = useState(false);
+  const [localUnreadCount, setLocalUnreadCount] = useState(unreadOrdersCount);
   const menuRef = useRef(null);
+  const previousOrdersCount = useRef(unreadOrdersCount);
+
+  // Sincronizar con el prop
+  useEffect(() => {
+    console.log(
+      "🔵 [BottomNavigation] unreadOrdersCount recibido:",
+      unreadOrdersCount,
+    );
+    setLocalUnreadCount(unreadOrdersCount);
+  }, [unreadOrdersCount]);
+
+  useEffect(() => {
+    console.log(
+      "🔵 [BottomNavigation] localUnreadCount actualizado:",
+      localUnreadCount,
+    );
+  }, [localUnreadCount]);
+
+  // Detectar nuevos pedidos para animar el badge
+  useEffect(() => {
+    console.log("🔵 [BottomNavigation] Comparando:", {
+      current: unreadOrdersCount,
+      previous: previousOrdersCount.current,
+    });
+
+    if (unreadOrdersCount > previousOrdersCount.current) {
+      console.log(
+        "🔵 [BottomNavigation] 🎉 NUEVO PEDIDO DETECTADO! Animando badge...",
+      );
+      setShowBadgeAnimation(true);
+      setTimeout(() => setShowBadgeAnimation(false), 1000);
+    }
+    previousOrdersCount.current = unreadOrdersCount;
+  }, [unreadOrdersCount]);
 
   // Cerrar menú al hacer click fuera
   useEffect(() => {
@@ -53,12 +88,10 @@ const BottomNavigation = ({
     setShowCategoryMenu(false);
   };
 
-  // Manejar búsqueda - enfocar el input de búsqueda
   const handleSearchPress = () => {
     if (onSearchClick) {
       onSearchClick();
     } else {
-      // Buscar y enfocar el input de búsqueda
       const searchInput = document.querySelector(
         ".search-bar__input, .client-interface__search-section input, .desktop-search input",
       );
@@ -69,7 +102,10 @@ const BottomNavigation = ({
     }
   };
 
-  // Navegación principal
+  const handleProfileClick = () => {
+    onProfileClick();
+  };
+
   const navItems = [
     {
       id: "catalog",
@@ -95,12 +131,10 @@ const BottomNavigation = ({
     },
   ];
 
-  // Categorías filtradas para mostrar en el menú
   const displayCategories = categories.filter((cat) => cat !== "Todos");
 
   return (
     <>
-      {/* Overlay */}
       {showCategoryMenu && (
         <div
           className="bottom-nav-overlay"
@@ -131,15 +165,25 @@ const BottomNavigation = ({
             );
           })}
 
-          {/* Perfil / Entrar */}
+          {/* Perfil con badge de pedidos */}
           {isLoggedIn ? (
             <button
-              onClick={onProfileClick}
+              onClick={handleProfileClick}
               className="bottom-nav__button bottom-nav__button--profile"
               title="Mi perfil"
             >
               <HiOutlineUser className="bottom-nav__icon" />
               <span className="bottom-nav__label">Perfil</span>
+              {localUnreadCount > 0 && (
+                <div
+                  className={`profile-badge ${showBadgeAnimation ? "profile-badge--pulse" : ""}`}
+                >
+                  <span className="profile-badge__number">
+                    {localUnreadCount > 99 ? "99+" : localUnreadCount}
+                  </span>
+                  <div className="profile-badge__ripple"></div>
+                </div>
+              )}
             </button>
           ) : (
             <button
@@ -153,7 +197,7 @@ const BottomNavigation = ({
           )}
         </div>
 
-        {/* Menú de Categorías - Diseño mejorado y funcional */}
+        {/* Menú de Categorías */}
         {showCategoryMenu && (
           <div className="bottom-nav-menu category-menu">
             <div className="menu-header">
@@ -178,7 +222,6 @@ const BottomNavigation = ({
             </div>
 
             <div className="category-list">
-              {/* Opción "Todos" destacada */}
               <button
                 onClick={() => handleCategorySelect("Todos")}
                 className={`category-item category-item--all ${
@@ -194,7 +237,6 @@ const BottomNavigation = ({
                 </div>
               </button>
 
-              {/* Mostrar mensaje si no hay categorías */}
               {displayCategories.length === 0 ? (
                 <div className="category-empty">
                   <HiOutlineTag size={32} />
@@ -203,10 +245,7 @@ const BottomNavigation = ({
                 </div>
               ) : (
                 <>
-                  {/* Separador */}
                   <div className="category-divider"></div>
-
-                  {/* Lista de categorías */}
                   <div className="category-items">
                     {displayCategories.map((category, index) => (
                       <button
@@ -232,7 +271,6 @@ const BottomNavigation = ({
                 </>
               )}
 
-              {/* Footer decorativo */}
               <div className="menu-footer">
                 <div className="menu-footer__dots">
                   <span className="dot"></span>

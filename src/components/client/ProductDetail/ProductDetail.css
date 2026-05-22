@@ -8,7 +8,12 @@
   background: #ffffff;
   z-index: 1000;
   overflow-y: auto;
-  font-family: "Poppins", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    "Poppins",
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
 }
 
 /* Header Flotante */
@@ -984,4 +989,214 @@
 }
 .specs-row > *:nth-child(4) {
   animation-delay: 0.4s;
+}
+/* ============================================
+   NOTIFICACIÓN FLOTANTE DE CARRITO
+   ============================================ */
+
+.cart-notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.cart-notification.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.cart-notification__content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  backdrop-filter: blur(20px);
+  border-radius: 60px;
+  padding: 12px 20px 12px 16px;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  min-width: 280px;
+  max-width: 90vw;
+}
+
+.cart-notification__icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+  animation: checkPop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.cart-notification__text {
+  flex: 1;
+}
+
+.cart-notification__title {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  color: white;
+  margin-bottom: 2px;
+}
+
+.cart-notification__subtitle {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.cart-notification__close {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+}
+
+.cart-notification__close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* ============================================
+   BADGE DE CANTIDAD EN EL BOTÓN
+   ============================================ */
+
+.cart-quantity-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border-radius: 50%;
+  min-width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  animation: badgeBounce 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  padding: 0 5px;
+}
+
+@keyframes badgeBounce {
+  0% {
+    transform: scale(0) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.2) translate(-2px, -2px);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+
+/* Desktop: badge más pequeño */
+@media (min-width: 768px) {
+  .cart-quantity-badge {
+    min-width: 20px;
+    height: 20px;
+    font-size: 10px;
+    top: -6px;
+    right: -6px;
+  }
+
+  .cart-notification {
+    top: 30px;
+  }
+
+  .cart-notification__content {
+    padding: 14px 24px;
+  }
+}
+
+/* Mobile: notificación desde arriba */
+@media (max-width: 480px) {
+  .cart-notification {
+    top: 10px;
+    width: calc(100% - 20px);
+  }
+
+  .cart-notification__content {
+    width: 100%;
+    padding: 10px 16px;
+  }
+
+  .cart-notification__title {
+    font-size: 13px;
+  }
+
+  .cart-notification__subtitle {
+    font-size: 10px;
+  }
+
+  .cart-quantity-badge {
+    min-width: 18px;
+    height: 18px;
+    font-size: 10px;
+    top: -5px;
+    right: -5px;
+  }
+}
+
+/* Toast alternativo para desktop (más elegante) */
+@media (min-width: 768px) {
+  .cart-notification {
+    right: 20px;
+    left: auto;
+    transform: translateX(0) translateX(100px);
+  }
+
+  .cart-notification.show {
+    transform: translateX(0) translateX(0);
+  }
+
+  .cart-notification__content {
+    background: white;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e5e7eb;
+  }
+
+  .cart-notification__title {
+    color: #1f2937;
+  }
+
+  .cart-notification__subtitle {
+    color: #6b7280;
+  }
+}
+
+/* Animación de salida */
+.cart-notification {
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }

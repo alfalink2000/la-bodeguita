@@ -552,3 +552,314 @@
     padding: 0.2rem 0.625rem 0.2rem 0.5rem;
   }
 }
+/* ============================================
+   MODAL DE AYUDA - CONFIGURACIÓN DE UBICACIÓN
+   ============================================ */
+
+.help-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.help-modal {
+  background: white;
+  border-radius: 24px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header del modal */
+.help-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #059669, #047857);
+  color: white;
+  flex-shrink: 0;
+}
+
+.help-modal__title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.help-modal__icon {
+  font-size: 1.5rem;
+}
+
+.help-modal__title h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.help-modal__close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.help-modal__close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+/* Contenido del modal */
+.help-modal__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Tarjetas de información */
+.help-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 16px;
+  background: #f8fafc;
+  border-left: 4px solid;
+}
+
+.help-card--gps {
+  border-left-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff, #f8fafc);
+}
+
+.help-card--warning {
+  border-left-color: #f59e0b;
+  background: linear-gradient(135deg, #fffbeb, #f8fafc);
+}
+
+.help-card--success {
+  border-left-color: #10b981;
+  background: linear-gradient(135deg, #ecfdf5, #f8fafc);
+}
+
+.help-card__icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.help-card__content h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+  color: #1f2937;
+}
+
+.help-card__content p {
+  font-size: 0.75rem;
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Pasos a seguir */
+.help-steps {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 1rem;
+  margin-top: 0.25rem;
+}
+
+.help-steps h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem 0;
+  color: #1f2937;
+}
+
+.help-steps__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.help-step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.help-step__number {
+  width: 24px;
+  height: 24px;
+  background: #059669;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.help-step__text {
+  font-size: 0.75rem;
+  color: #4b5563;
+}
+
+.help-step__text strong {
+  color: #1f2937;
+}
+
+/* Contacto a soporte */
+.help-contact {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border-radius: 16px;
+  border: 1px solid #a7f3d0;
+  margin-top: 0.25rem;
+}
+
+.help-contact__icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.help-contact__content h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+  color: #064e3b;
+}
+
+.help-contact__content p {
+  font-size: 0.75rem;
+  color: #047857;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+.help-contact__btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 40px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.help-contact__btn:hover {
+  background: #047857;
+  transform: scale(1.02);
+}
+
+/* Consejo extra */
+.help-tip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #fef3c7;
+  border-radius: 12px;
+  margin-top: 0.25rem;
+}
+
+.help-tip__icon {
+  font-size: 1.25rem;
+}
+
+.help-tip p {
+  font-size: 0.7rem;
+  color: #92400e;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .help-modal {
+    max-width: 95%;
+    max-height: 90vh;
+  }
+
+  .help-modal__header {
+    padding: 1rem;
+  }
+
+  .help-modal__title h3 {
+    font-size: 0.9rem;
+  }
+
+  .help-modal__icon {
+    font-size: 1.25rem;
+  }
+
+  .help-modal__content {
+    padding: 1rem;
+  }
+
+  .help-card {
+    padding: 0.75rem;
+  }
+
+  .help-card__icon {
+    font-size: 1.5rem;
+  }
+
+  .help-step__number {
+    width: 22px;
+    height: 22px;
+    font-size: 0.65rem;
+  }
+}

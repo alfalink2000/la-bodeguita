@@ -1,5 +1,5 @@
 // components/client/ProductCard/ProductCard.jsx
-import React, { useCallback, memo, useState } from "react";
+import React, { useCallback, memo, useState, useEffect } from "react";
 import { FiPhone, FiPlus, FiMinus, FiShoppingCart } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, updateCartQuantity } from "../../../actions/cartActions";
@@ -12,7 +12,6 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
   const cartItems = useSelector(selectCartItems);
   const [showQuantity, setShowQuantity] = useState(false);
 
-  // ✅ OBTENER LA MONEDA DESDE LA CONFIGURACIÓN
   const currency = useSelector(
     (state) => state.appConfig.config?.currency || "MN",
   );
@@ -22,7 +21,15 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
   const cartItem = cartItems.find((item) => item.id === product.id);
   const currentQuantity = cartItem ? cartItem.quantity : 0;
 
-  // ✅ FUNCIÓN PARA OBTENER EL SÍMBOLO DE MONEDA
+  // ✅ Sincronizar showQuantity con currentQuantity
+  useEffect(() => {
+    if (currentQuantity > 0) {
+      setShowQuantity(true);
+    } else {
+      setShowQuantity(false);
+    }
+  }, [currentQuantity]);
+
   const getCurrencySymbol = useCallback(() => {
     switch (currency) {
       case "USD":
@@ -35,7 +42,6 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
     }
   }, [currency]);
 
-  // ✅ FUNCIÓN PARA FORMATEAR EL PRECIO
   const formatPrice = useCallback((price) => {
     return parseFloat(price).toFixed(2);
   }, []);
@@ -58,7 +64,7 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
       if (!isAvailable) return;
 
       dispatch(addToCart(product));
-      setShowQuantity(true);
+      // ✅ showQuantity se actualizará automáticamente por el useEffect
     },
     [dispatch, product, isAvailable],
   );
@@ -67,10 +73,6 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
     (e, change) => {
       e.stopPropagation();
       const newQuantity = Math.max(0, currentQuantity + change);
-
-      if (newQuantity === 0) {
-        setShowQuantity(false);
-      }
 
       dispatch(updateCartQuantity(product.id, newQuantity));
     },
@@ -100,10 +102,9 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
           {isAvailable ? "🟢 Disponible" : "🔴 Agotado"}
         </div>
 
-        {/* ✅ BADGE DE MONEDA - Agregado aquí */}
         <div className="product-card__currency-badge">{currency}</div>
 
-        {/* Badge de cantidad en carrito */}
+        {/* ✅ Badge de cantidad en carrito - Siempre visible cuando hay cantidad */}
         {currentQuantity > 0 && (
           <div className="product-card__cart-badge">{currentQuantity}</div>
         )}
@@ -124,7 +125,7 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
           {product.description && product.description.length > 80 ? "..." : ""}
         </p>
 
-        {/* Controles de cantidad */}
+        {/* ✅ Controles de cantidad - Sincronizados con el estado */}
         {showQuantity || currentQuantity > 0 ? (
           <div className="product-card__quantity-controls">
             <button
@@ -155,15 +156,6 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
               <FiShoppingCart className="cart-icon" />
               Agregar
             </button>
-
-            {/* <button
-              className="product-card__whatsapp-btn"
-              onClick={handleWhatsAppClick}
-              disabled={!isAvailable}
-            >
-              <FiPhone className="whatsapp-icon" />
-              Info
-            </button> */}
           </div>
         )}
       </div>

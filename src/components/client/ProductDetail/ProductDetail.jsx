@@ -7,7 +7,10 @@ import {
   HiOutlineClock,
 } from "react-icons/hi";
 import { FiPhone } from "react-icons/fi";
-import { FiShoppingCart, FiShare2 } from "react-icons/fi";
+import { FiShoppingCart, FiShare2, FiCheck } from "react-icons/fi";
+import { useDispatch, useSelector } from "react-redux";
+import { addToCart, updateCartQuantity } from "../../../actions/cartActions";
+import { selectCartItems } from "../../../selectors/cartSelectors";
 import "./ProductDetail.css";
 
 // Componente memoizado para evitar re-renders innecesarios
@@ -23,14 +26,32 @@ const Thumbnail = React.memo(({ image, index, isActive, onClick }) => (
 ));
 
 const ProductDetail = ({ product, onBack, onWhatsAppClick }) => {
+  const dispatch = useDispatch();
+  const cartItems = useSelector(selectCartItems);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState("");
+
+  // Obtener cantidad actual en carrito
+  const cartItem = cartItems.find((item) => item.id === product?.id);
+  const currentQuantity = cartItem ? cartItem.quantity : 0;
 
   // Scroll al top con useEffect optimizado
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
+  // Auto-ocultar notificación después de 3 segundos
+  useEffect(() => {
+    if (showNotification) {
+      const timer = setTimeout(() => {
+        setShowNotification(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showNotification]);
 
   // Memoizar valores computados
   const { isAvailable, images, formattedPrice } = useMemo(
@@ -45,10 +66,42 @@ const ProductDetail = ({ product, onBack, onWhatsAppClick }) => {
     [product],
   );
 
+  const getCurrencySymbol = useCallback(() => {
+    const currency = localStorage.getItem("currency") || "MN";
+    switch (currency) {
+      case "USD":
+        return "US$";
+      case "EUR":
+        return "€";
+      default:
+        return "$";
+    }
+  }, []);
+
   // Handlers memoizados
   const handleWhatsAppClick = useCallback(() => {
     onWhatsAppClick(product.name);
   }, [onWhatsAppClick, product?.name]);
+
+  // ✅ Manejar agregar al carrito con notificación
+  const handleAddToCart = useCallback(() => {
+    if (!isAvailable) return;
+
+    dispatch(addToCart(product));
+
+    // Mostrar notificación según plataforma
+    const isDesktop = window.innerWidth >= 768;
+
+    if (isDesktop) {
+      // Desktop: SweetAlert o toast elegante
+      setNotificationMessage("✅ Producto agregado al carrito");
+      setShowNotification(true);
+    } else {
+      // Mobile: Badge flotante o notificación
+      setNotificationMessage("✓ Agregado al carrito");
+      setShowNotification(true);
+    }
+  }, [dispatch, product, isAvailable]);
 
   const handleShare = useCallback(async () => {
     if (navigator.share) {
@@ -63,8 +116,9 @@ const ProductDetail = ({ product, onBack, onWhatsAppClick }) => {
       }
     } else {
       navigator.clipboard.writeText(window.location.href);
-      // Podrías usar un toast en lugar de alert
-      alert("Enlace copiado al portapapeles");
+      setNotificationMessage("🔗 Enlace copiado");
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 2000);
     }
   }, [product]);
 
@@ -82,6 +136,31 @@ const ProductDetail = ({ product, onBack, onWhatsAppClick }) => {
 
   return (
     <div className="product-detail-premium">
+      {/* ✅ NOTIFICACIÓN FLOTANTE - Mobile y Desktop */}
+      {showNotification && (
+        <div className={`cart-notification ${showNotification ? "show" : ""}`}>
+          <div className="cart-notification__content">
+            <div className="cart-notification__icon">
+              <FiCheck />
+            </div>
+            <div className="cart-notification__text">
+              <span className="cart-notification__title">
+                {notificationMessage}
+              </span>
+              <span className="cart-notification__subtitle">
+                {currentQuantity + 1} producto(s) en tu carrito
+              </span>
+            </div>
+            <button
+              className="cart-notification__close"
+              onClick={() => setShowNotification(false)}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Elementos decorativos de fondo */}
       <div className="floating-decoration decoration-1"></div>
       <div className="floating-decoration decoration-2"></div>
@@ -95,6 +174,15 @@ const ProductDetail = ({ product, onBack, onWhatsAppClick }) => {
         >
           <HiOutlineArrowLeft className="back-icon" />
         </button>
+        <div className="floating-actions">
+          <button
+            className="floating-action-btn"
+            onClick={handleShare}
+            aria-label="Compartir"
+          >
+            <FiShare2 className="action-icon" />
+          </button>
+        </div>
       </div>
 
       <main className="product-detail__content-premium">
@@ -113,6 +201,8 @@ const ProductDetail = ({ product, onBack, onWhatsAppClick }) => {
           product={product}
           isAvailable={isAvailable}
           formattedPrice={formattedPrice}
+          currentQuantity={currentQuantity}
+          onAddToCart={handleAddToCart}
           onWhatsAppClick={handleWhatsAppClick}
         />
       </main>
@@ -142,7 +232,7 @@ const GallerySection = React.memo(
               className={`main-image-premium ${imageLoaded ? "loaded" : ""}`}
               onLoad={onImageLoad}
               onError={onImageError}
-              loading="eager" // La imagen principal carga prioritariamente
+              loading="eager"
             />
             {!imageLoaded && <div className="image-skeleton"></div>}
 
@@ -176,7 +266,14 @@ const GallerySection = React.memo(
 
 // Subcomponente para la información
 const InfoSection = React.memo(
-  ({ product, isAvailable, formattedPrice, onAddToCart }) => (
+  ({
+    product,
+    isAvailable,
+    formattedPrice,
+    currentQuantity,
+    onAddToCart,
+    onWhatsAppClick,
+  }) => (
     <section className="info-section-premium">
       <div className="info-content">
         {/* Header Compacto */}
@@ -199,8 +296,12 @@ const InfoSection = React.memo(
         {/* Beneficios */}
         <BenefitsSection />
 
-        {/* Botón de acción */}
-        <ActionSection isAvailable={isAvailable} onAddToCart={onAddToCart} />
+        {/* Botón de acción con badge de cantidad */}
+        <ActionSection
+          isAvailable={isAvailable}
+          currentQuantity={currentQuantity}
+          onAddToCart={onAddToCart}
+        />
 
         {/* Nota de seguridad */}
         <SecurityNotice />
@@ -272,27 +373,33 @@ const BenefitsSection = React.memo(() => (
   </div>
 ));
 
-// Componente para acciones
-const ActionSection = React.memo(({ isAvailable, onAddToCart }) => (
-  <div className="action-section">
-    <button
-      className={`whatsapp-button-premium ${!isAvailable ? "disabled" : ""}`}
-      onClick={onAddToCart}
-      disabled={!isAvailable}
-    >
-      <div className="button-content">
-        <FiShoppingCart className="whatsapp-icon-premium" />
-        <div className="button-text">
-          <span className="button-main-text">
-            {isAvailable ? "Agregar al Carrito" : "Producto Agotado"}
-          </span>
-          <span className="button-sub-text">Compra rápida y segura</span>
+// Componente para acciones CON BADGE
+const ActionSection = React.memo(
+  ({ isAvailable, currentQuantity, onAddToCart }) => (
+    <div className="action-section">
+      <button
+        className={`whatsapp-button-premium ${!isAvailable ? "disabled" : ""}`}
+        onClick={onAddToCart}
+        disabled={!isAvailable}
+      >
+        <div className="button-content">
+          <FiShoppingCart className="whatsapp-icon-premium" />
+          <div className="button-text">
+            <span className="button-main-text">
+              {isAvailable ? "Agregar al Carrito" : "Producto Agotado"}
+            </span>
+            <span className="button-sub-text">Compra rápida y segura</span>
+          </div>
+          {/* ✅ BADGE DE CANTIDAD EN EL BOTÓN (Mobile) */}
+          {currentQuantity > 0 && (
+            <div className="cart-quantity-badge">{currentQuantity}</div>
+          )}
         </div>
-      </div>
-      <div className="button-glow"></div>
-    </button>
-  </div>
-));
+        <div className="button-glow"></div>
+      </button>
+    </div>
+  ),
+);
 
 // Componente para nota de seguridad
 const SecurityNotice = React.memo(() => (

@@ -1,8 +1,14 @@
 // ClientInterface.js - VERSIÓN COMPLETA CON NAVEGACIÓN MEJORADA
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useProductsSync } from "../../../hooks/useProductsSync";
-import { useAppNavigation } from "../../../hooks/useNavigationHistory";
+import { useAppNavigation } from "../../../hooks/useAppNavigation";
 import {
   HiOutlineShoppingBag,
   HiOutlineFire,
@@ -83,8 +89,15 @@ const ClientInterface = ({
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [unreadOrders, setUnreadOrders] = useState(0);
+
+  // ✅ Estado para pedidos no leídos (persistente en localStorage)
+  const [unreadOrders, setUnreadOrders] = useState(() => {
+    const saved = localStorage.getItem("unread_orders_count");
+    return saved ? parseInt(saved) : 0;
+  });
+
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const isListenerRegistered = useRef(false);
 
   // Estados para tiendas
   const [stores, setStores] = useState([]);
@@ -99,6 +112,62 @@ const ClientInterface = ({
   const offerProducts = useSelector(selectOfferProducts);
   const categoryOptions = useSelector(selectCategoryOptions);
   const appConfig = useSelector((state) => state.appConfig.config);
+
+  // ✅ Guardar contador en localStorage cuando cambie
+  useEffect(() => {
+    localStorage.setItem("unread_orders_count", unreadOrders);
+    console.log("🟢 [ClientInterface] unreadOrders guardado:", unreadOrders);
+  }, [unreadOrders]);
+
+  // ✅ Escuchar evento de nuevo pedido (solo una vez)
+  useEffect(() => {
+    if (isListenerRegistered.current) return;
+
+    const handleOrderCreated = (event) => {
+      console.log("🟢 [ClientInterface] Evento 'order-created' RECIBIDO!");
+      console.log("🟢 [ClientInterface] Detalle del evento:", event?.detail);
+
+      setUnreadOrders((prev) => {
+        const newValue = prev + 1;
+        console.log(
+          `🟢 [ClientInterface] unreadOrders actualizado: ${prev} → ${newValue}`,
+        );
+        return newValue;
+      });
+    };
+
+    window.addEventListener("order-created", handleOrderCreated);
+    isListenerRegistered.current = true;
+    console.log("🟢 [ClientInterface] Listener de 'order-created' REGISTRADO");
+
+    return () => {
+      window.removeEventListener("order-created", handleOrderCreated);
+      isListenerRegistered.current = false;
+    };
+  }, []);
+
+  // ✅ Log para ver cambios en unreadOrders
+  useEffect(() => {
+    console.log("🟢 [ClientInterface] unreadOrders cambió a:", unreadOrders);
+  }, [unreadOrders]);
+
+  // ✅ Resetear al hacer logout
+  useEffect(() => {
+    if (!isLoggedIn) {
+      console.log(
+        "🟢 [ClientInterface] Usuario desconectado, resetando contador",
+      );
+      setUnreadOrders(0);
+      localStorage.removeItem("unread_orders_count");
+    }
+  }, [isLoggedIn]);
+
+  // ✅ Función para resetear el contador
+  const resetUnreadOrders = useCallback(() => {
+    console.log("🟢 [ClientInterface] Resetando contador de pedidos no leídos");
+    setUnreadOrders(0);
+    localStorage.setItem("unread_orders_count", "0");
+  }, []);
 
   // ✅ Guardar cambios de sección
   const handleSectionChange = useCallback(
@@ -137,9 +206,13 @@ const ClientInterface = ({
   }, [saveAction]);
 
   const handleOpenProfile = useCallback(() => {
+    console.log(
+      "🟢 [ClientInterface] Abriendo perfil, unreadOrders actual:",
+      unreadOrders,
+    );
     setShowProfile(true);
     saveAction("modal", { type: "profile" });
-  }, [saveAction]);
+  }, [saveAction, unreadOrders]);
 
   const handleOpenInfoModal = useCallback(() => {
     setShowInfoModal(true);
@@ -424,11 +497,10 @@ const ClientInterface = ({
     [InfoButton],
   );
 
-  // Renderizado móvil
+  // Renderizado móvil (compactado)
   const renderMobileLayout = useMemo(
     () => (
       <div className="client-interface__content mobile-layout">
-        {/* Barra de búsqueda */}
         <div className="client-interface__search-section">
           <SearchBar
             searchTerm={searchTerm}
@@ -438,7 +510,6 @@ const ClientInterface = ({
           />
         </div>
 
-        {/* SELECTOR DE TIENDAS CON TÍTULO Y DECORACIÓN */}
         <div className="store-selector-client">
           <div className="selector-header">
             <div className="selector-header__title">
@@ -474,8 +545,6 @@ const ClientInterface = ({
                 <span className="store-chip__text">{store.name}</span>
               </button>
             ))}
-
-            {/* Decoración cuando hay pocas tiendas */}
             {stores.length <= 3 && (
               <div className="chips-decoration">
                 <div className="decoration-dots">
@@ -490,7 +559,6 @@ const ClientInterface = ({
           </div>
         </div>
 
-        {/* SELECTOR DE CATEGORÍAS CON TÍTULO Y DECORACIÓN */}
         <div className="categories-chips">
           <div className="selector-header">
             <div className="selector-header__title">
@@ -538,8 +606,6 @@ const ClientInterface = ({
                   {cat.name || cat}
                 </button>
               ))}
-
-            {/* Decoración cuando hay pocas categorías */}
             {filteredCategories.filter((c) => (c.name || c) !== "Todos")
               .length <= 3 && (
               <div className="chips-decoration">
@@ -555,14 +621,12 @@ const ClientInterface = ({
           </div>
         </div>
 
-        {/* Contador de resultados */}
         <div className="results-info">
           <span className="results-info__text">
             {getProductsCount()} encontrados
           </span>
         </div>
 
-        {/* Grid de productos */}
         <div className="client-interface__products-section">
           <ProductGrid
             products={filteredProducts}
@@ -751,6 +815,16 @@ const ClientInterface = ({
         isLoggedIn={isLoggedIn}
         onShowLogin={onShowLoginForm}
         onOpenChat={handleOpenChat}
+        onOrderCreated={() => {
+          console.log("🟢 [ClientInterface] onOrderCreated callback ejecutado");
+          setUnreadOrders((prev) => {
+            const newValue = prev + 1;
+            console.log(
+              `🟢 [ClientInterface] setUnreadOrders: ${prev} → ${newValue}`,
+            );
+            return newValue;
+          });
+        }}
       />
       <InitialInfoModal
         isOpen={showInfoModal}
@@ -764,7 +838,7 @@ const ClientInterface = ({
         <UserProfile
           userData={userData}
           onClose={() => setShowProfile(false)}
-          onOrdersViewed={() => setUnreadOrders(0)}
+          onOrdersViewed={resetUnreadOrders}
           unreadOrdersCount={unreadOrders}
         />
       )}
@@ -797,6 +871,7 @@ const ClientInterface = ({
             stores.find((s) => s.id.toString() === selectedStoreId)?.name ||
             "Tiendas"
           }
+          unreadOrdersCount={unreadOrders}
         />
       )}
 
