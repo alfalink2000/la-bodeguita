@@ -1,3 +1,4 @@
+// components/admin/DashboardStats/DashboardStats.jsx
 import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import {
@@ -10,21 +11,31 @@ import {
   HiOutlineCurrencyDollar,
   HiOutlinePhotograph,
   HiOutlineTrendingUp,
+  HiOutlineArrowUp,
+  HiOutlineArrowDown,
   HiOutlineInformationCircle,
+  HiOutlineChevronRight,
 } from "react-icons/hi";
 import "./DashboardStats.css";
 
-const DashboardStats = ({ products }) => {
+const DashboardStats = ({ products = [] }) => {
   const featuredProducts = useSelector(
     (state) => state.products.featuredProducts,
   );
-  const [expandedCards, setExpandedCards] = useState({});
+  const [expandedSections, setExpandedSections] = useState({
+    inventory: true,
+    marketing: false,
+    details: false,
+  });
 
-  const toggleExpand = (cardId) => {
-    setExpandedCards((prev) => ({ ...prev, [cardId]: !prev[cardId] }));
+  const toggleSection = (section) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
   };
 
-  // Todas las métricas en un solo useMemo para evitar cálculos repetidos
+  // Todas las métricas en un solo useMemo
   const metrics = useMemo(() => {
     const totalProducts = products.length;
     const outOfStockCount = products.filter(
@@ -35,7 +46,6 @@ const DashboardStats = ({ products }) => {
     const featuredProductsCount = featuredProducts?.popular?.length || 0;
     const offerProductsCount = featuredProducts?.onSale?.length || 0;
 
-    // Agrupar cálculos de categorías
     const productsByCategory = products.reduce((acc, product) => {
       const category = product.category?.name || "Sin categoría";
       acc[category] = (acc[category] || 0) + 1;
@@ -47,7 +57,6 @@ const DashboardStats = ({ products }) => {
     )[0] || ["Sin categorías", 0];
     const totalCategories = Object.keys(productsByCategory).length;
 
-    // Agrupar cálculos de inventario
     const totalInventoryValue = products.reduce((total, product) => {
       const price = parseFloat(product.price) || 0;
       const stock = parseInt(product.stock) || 0;
@@ -66,7 +75,6 @@ const DashboardStats = ({ products }) => {
       return productDate >= monthAgo;
     }).length;
 
-    // Calcular porcentajes una sola vez
     const stockPercentage = totalProducts
       ? Math.round((inStockCount / totalProducts) * 100)
       : 0;
@@ -75,9 +83,6 @@ const DashboardStats = ({ products }) => {
       : 0;
     const outOfStockPercentage = totalProducts
       ? Math.round((outOfStockCount / totalProducts) * 100)
-      : 0;
-    const featuredPercentage = totalProducts
-      ? Math.round((featuredProductsCount / totalProducts) * 100)
       : 0;
 
     return {
@@ -95,269 +100,396 @@ const DashboardStats = ({ products }) => {
       stockPercentage,
       imagesPercentage,
       outOfStockPercentage,
-      featuredPercentage,
       hasMarketing: featuredProductsCount > 0 || offerProductsCount > 0,
     };
   }, [products, featuredProducts]);
 
-  // Componente de tarjeta reutilizable con soporte móvil
-  const StatCard = ({
-    id,
-    type,
-    icon: IconComponent,
+  // Tarjeta de estadística compacta
+  const CompactStat = ({
+    icon: Icon,
     label,
     value,
-    percentage,
-    breakdown,
-    trend,
-    alert,
-    tip,
-  }) => {
-    const isExpanded = expandedCards[id];
-    const hasExpandableContent =
-      breakdown || percentage !== undefined || trend || alert || tip;
-
-    return (
-      <div className={`dashboard-stat dashboard-stat--${type}`}>
-        <div className="stat-content">
-          <div className="stat-header">
-            <div className="stat-header-main">
-              <div className="stat-icon">
-                <IconComponent size={20} />
-              </div>
-              <div className="stat-label">{label}</div>
-            </div>
-            {hasExpandableContent && (
-              <button
-                className="stat-expand-btn"
-                onClick={() => toggleExpand(id)}
-                aria-label={isExpanded ? "Ver menos" : "Ver más"}
-              >
-                <span className={`expand-icon ${isExpanded ? "expanded" : ""}`}>
-                  ▼
-                </span>
-              </button>
-            )}
-          </div>
-
-          <div className={`stat-value stat-value--${type}`}>{value}</div>
-
-          {/* Contenido expandible para móvil */}
-          <div
-            className={`stat-expandable-content ${isExpanded ? "expanded" : ""}`}
-          >
-            {percentage !== undefined && (
-              <div className="stat-progress">
-                <div className="progress-bar">
-                  <div
-                    className={`progress-fill progress-fill--${type}`}
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-                <div className="progress-label">
-                  {percentage}% del inventario
-                </div>
-              </div>
-            )}
-
-            {breakdown && (
-              <div className="stat-breakdown">
-                {breakdown.map((item, index) => (
-                  <div key={index} className="breakdown-item">
-                    <div className="breakdown-info">
-                      <span
-                        className={`breakdown-dot breakdown-dot--${item.type}`}
-                      />
-                      <span className="breakdown-text">{item.text}</span>
-                    </div>
-                    {item.value !== null && (
-                      <span className="breakdown-value">{item.value}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {trend && (
-              <div className={`stat-trend stat-trend--${trend.type}`}>
-                <span className="trend-icon">{trend.icon}</span>
-                <span className="trend-text">{trend.text}</span>
-              </div>
-            )}
-
-            {alert && <div className="stat-alert">{alert}</div>}
-            {tip && <div className="stat-tip">{tip}</div>}
-          </div>
-        </div>
+    color,
+    bgColor,
+    onClick,
+  }) => (
+    <div
+      className="ds-compact-stat"
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+    >
+      <div
+        className="ds-compact-stat__icon"
+        style={{ backgroundColor: bgColor }}
+      >
+        <Icon size={16} color={color} />
       </div>
-    );
-  };
+      <div className="ds-compact-stat__info">
+        <span className="ds-compact-stat__value" style={{ color }}>
+          {value}
+        </span>
+        <span className="ds-compact-stat__label">{label}</span>
+      </div>
+    </div>
+  );
 
   return (
     <div className="dashboard-stats">
-      <StatCard
-        id="inventory"
-        type="primary"
-        icon={HiOutlineChartBar}
-        label="Inventario Total"
-        value={metrics.totalProducts}
-        breakdown={[
-          {
-            type: "success",
-            text: `${metrics.inStockCount} disponibles`,
-            value: metrics.inStockCount,
-          },
-          {
-            type: "warning",
-            text: `${metrics.outOfStockCount} agotados`,
-            value: metrics.outOfStockCount,
-          },
-        ]}
-        trend={
-          metrics.recentProducts > 0
-            ? {
-                type: "positive",
-                icon: "📈",
-                text: `${metrics.recentProducts} nuevos este mes`,
-              }
-            : null
-        }
-      />
+      {/* ===== HEADER DEL DASHBOARD ===== */}
+      <div className="ds-header">
+        <div className="ds-header__greeting">
+          <span className="ds-header__emoji">📊</span>
+          <div>
+            <h2 className="ds-header__title">Panel de Control</h2>
+            <p className="ds-header__subtitle">
+              {metrics.totalProducts} productos · {metrics.totalCategories}{" "}
+              categorías
+            </p>
+          </div>
+        </div>
+        <div className="ds-header__date">
+          {new Date().toLocaleDateString("es-ES", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          })}
+        </div>
+      </div>
 
-      <StatCard
-        id="stock"
-        type="success"
-        icon={HiOutlineCube}
-        label="Stock Disponible"
-        value={metrics.inStockCount}
-        percentage={metrics.stockPercentage}
-      />
-
-      <StatCard
-        id="attention"
-        type="warning"
-        icon={HiOutlineExclamationCircle}
-        label="Requiere Atención"
-        value={metrics.outOfStockCount}
-        percentage={metrics.outOfStockPercentage}
-        alert={
-          metrics.outOfStockCount > 0 ? "Necesitan reposición inmediata" : null
-        }
-      />
-
-      <StatCard
-        id="featured"
-        type="featured"
-        icon={HiOutlineStar}
-        label="Destacados"
-        value={metrics.featuredProductsCount}
-        percentage={metrics.featuredPercentage}
-        trend={
-          metrics.featuredProductsCount === 0
-            ? null
-            : {
-                type: "positive",
-                icon: "⭐",
-                text: "Productos populares",
-              }
-        }
-        tip={
-          metrics.featuredProductsCount === 0
-            ? "Agrega productos destacados"
-            : null
-        }
-      />
-
-      <StatCard
-        id="offers"
-        type="danger"
-        icon={HiOutlineTag}
-        label="Ofertas Activas"
-        value={metrics.offerProductsCount}
-        trend={
-          metrics.offerProductsCount > 0
-            ? {
-                type: "positive",
-                icon: "🔥",
-                text: "Atrayendo clientes",
-              }
-            : null
-        }
-        tip={
-          metrics.offerProductsCount === 0
-            ? "Crea ofertas para aumentar ventas"
-            : null
-        }
-      />
-
-      <StatCard
-        id="categories"
-        type="info"
-        icon={HiOutlineCollection}
-        label="Categorías"
-        value={metrics.totalCategories}
-        breakdown={[
-          {
-            type: "info",
-            text: `Principal: ${metrics.topCategory[0]} (${metrics.topCategory[1]} prod.)`,
-            value: null,
-          },
-        ]}
-      />
-
-      {metrics.totalInventoryValue > 0 && (
-        <StatCard
-          id="inventoryValue"
-          type="inventory"
-          icon={HiOutlineCurrencyDollar}
-          label="Valor Inventario"
-          value={`$${metrics.totalInventoryValue.toLocaleString()}`}
-          breakdown={[
-            { text: "Basado en precios actuales", value: null, type: "info" },
-          ]}
+      {/* ===== RESUMEN RÁPIDO - TARJETAS COMPACTAS ===== */}
+      <div className="ds-quick-stats">
+        <CompactStat
+          icon={HiOutlineCube}
+          label="En stock"
+          value={metrics.inStockCount}
+          color="#059669"
+          bgColor="#d1fae5"
         />
-      )}
-
-      <StatCard
-        id="images"
-        type="media"
-        icon={HiOutlinePhotograph}
-        label="Imágenes"
-        value={metrics.productsWithImages}
-        percentage={metrics.imagesPercentage}
-        tip={
-          metrics.productsWithoutImages > 0
-            ? `${metrics.productsWithoutImages} productos sin imágenes`
-            : null
-        }
-      />
-
-      {metrics.hasMarketing && (
-        <StatCard
-          id="marketing"
-          type="summary"
-          icon={HiOutlineTrendingUp}
-          label="Marketing Activo"
-          value="✓"
-          breakdown={[
-            {
-              type: "featured",
-              text: "Productos destacados",
-              value: metrics.featuredProductsCount,
-            },
-            {
-              type: "danger",
-              text: "Ofertas activas",
-              value: metrics.offerProductsCount,
-            },
-          ]}
-          trend={{
-            type: "positive",
-            icon: "📈",
-            text: "Estrategia de marketing activa",
-          }}
+        <CompactStat
+          icon={HiOutlineExclamationCircle}
+          label="Agotados"
+          value={metrics.outOfStockCount}
+          color={metrics.outOfStockCount > 0 ? "#dc2626" : "#6b7280"}
+          bgColor={metrics.outOfStockCount > 0 ? "#fee2e2" : "#f3f4f6"}
         />
-      )}
+        <CompactStat
+          icon={HiOutlineStar}
+          label="Destacados"
+          value={metrics.featuredProductsCount}
+          color="#d97706"
+          bgColor="#fef3c7"
+        />
+        <CompactStat
+          icon={HiOutlineTag}
+          label="Ofertas"
+          value={metrics.offerProductsCount}
+          color="#dc2626"
+          bgColor="#fee2e2"
+        />
+      </div>
+
+      {/* ===== SECCIÓN: INVENTARIO ===== */}
+      <div className="ds-section">
+        <button
+          className="ds-section__header"
+          onClick={() => toggleSection("inventory")}
+        >
+          <div className="ds-section__header-left">
+            <span className="ds-section__icon">📦</span>
+            <span className="ds-section__title">Estado del Inventario</span>
+          </div>
+          <HiOutlineChevronRight
+            className={`ds-section__arrow ${expandedSections.inventory ? "ds-section__arrow--open" : ""}`}
+            size={18}
+          />
+        </button>
+
+        <div
+          className={`ds-section__content ${expandedSections.inventory ? "ds-section__content--open" : ""}`}
+        >
+          {/* Barra de progreso principal */}
+          <div className="ds-progress-card">
+            <div className="ds-progress-card__header">
+              <span>Productos en stock</span>
+              <span className="ds-progress-card__percentage">
+                {metrics.stockPercentage}%
+              </span>
+            </div>
+            <div className="ds-progress-bar">
+              <div
+                className="ds-progress-bar__fill ds-progress-bar__fill--success"
+                style={{ width: `${metrics.stockPercentage}%` }}
+              />
+            </div>
+            <div className="ds-progress-card__details">
+              <span>
+                {metrics.inStockCount} de {metrics.totalProducts} disponibles
+              </span>
+            </div>
+          </div>
+
+          {/* Grid de métricas de inventario */}
+          <div className="ds-metrics-grid">
+            <div className="ds-metric-item">
+              <div className="ds-metric-item__icon ds-metric-item__icon--blue">
+                <HiOutlineChartBar size={16} />
+              </div>
+              <div className="ds-metric-item__info">
+                <span className="ds-metric-item__value">
+                  {metrics.totalProducts}
+                </span>
+                <span className="ds-metric-item__label">Total productos</span>
+              </div>
+            </div>
+
+            <div className="ds-metric-item">
+              <div className="ds-metric-item__icon ds-metric-item__icon--green">
+                <HiOutlineArrowUp size={16} />
+              </div>
+              <div className="ds-metric-item__info">
+                <span className="ds-metric-item__value">
+                  {metrics.inStockCount}
+                </span>
+                <span className="ds-metric-item__label">Disponibles</span>
+              </div>
+            </div>
+
+            <div className="ds-metric-item">
+              <div className="ds-metric-item__icon ds-metric-item__icon--red">
+                <HiOutlineArrowDown size={16} />
+              </div>
+              <div className="ds-metric-item__info">
+                <span className="ds-metric-item__value">
+                  {metrics.outOfStockCount}
+                </span>
+                <span className="ds-metric-item__label">Agotados</span>
+              </div>
+            </div>
+
+            <div className="ds-metric-item">
+              <div className="ds-metric-item__icon ds-metric-item__icon--purple">
+                <HiOutlineCollection size={16} />
+              </div>
+              <div className="ds-metric-item__info">
+                <span className="ds-metric-item__value">
+                  {metrics.totalCategories}
+                </span>
+                <span className="ds-metric-item__label">Categorías</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Categoría principal */}
+          <div className="ds-info-card">
+            <span className="ds-info-card__icon">🏆</span>
+            <div className="ds-info-card__content">
+              <span className="ds-info-card__title">Categoría principal</span>
+              <span className="ds-info-card__text">
+                {metrics.topCategory[0]} ({metrics.topCategory[1]} productos)
+              </span>
+            </div>
+          </div>
+
+          {/* Nuevos productos este mes */}
+          {metrics.recentProducts > 0 && (
+            <div className="ds-info-card ds-info-card--success">
+              <span className="ds-info-card__icon">🆕</span>
+              <div className="ds-info-card__content">
+                <span className="ds-info-card__title">Nuevos este mes</span>
+                <span className="ds-info-card__text">
+                  {metrics.recentProducts} productos agregados
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Alerta de productos agotados */}
+          {metrics.outOfStockCount > 0 && (
+            <div className="ds-alert">
+              <span className="ds-alert__icon">⚠️</span>
+              <div className="ds-alert__content">
+                <span className="ds-alert__title">Requieren atención</span>
+                <span className="ds-alert__text">
+                  {metrics.outOfStockCount} producto
+                  {metrics.outOfStockCount !== 1 ? "s" : ""} necesita
+                  {metrics.outOfStockCount === 1 ? "" : "n"} reposición
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ===== SECCIÓN: MARKETING =====
+      <div className="ds-section">
+        <button
+          className="ds-section__header"
+          onClick={() => toggleSection("marketing")}
+        >
+          <div className="ds-section__header-left">
+            <span className="ds-section__icon">📈</span>
+            <span className="ds-section__title">Marketing & Promociones</span>
+          </div>
+          <HiOutlineChevronRight
+            className={`ds-section__arrow ${expandedSections.marketing ? "ds-section__arrow--open" : ""}`}
+            size={18}
+          />
+        </button>
+
+        <div
+          className={`ds-section__content ${expandedSections.marketing ? "ds-section__content--open" : ""}`}
+        >
+          {metrics.hasMarketing ? (
+            <>
+              <div className="ds-metrics-grid ds-metrics-grid--two">
+                <div className="ds-metric-item ds-metric-item--featured">
+                  <div className="ds-metric-item__icon ds-metric-item__icon--amber">
+                    <HiOutlineStar size={16} />
+                  </div>
+                  <div className="ds-metric-item__info">
+                    <span className="ds-metric-item__value">
+                      {metrics.featuredProductsCount}
+                    </span>
+                    <span className="ds-metric-item__label">Destacados</span>
+                  </div>
+                </div>
+
+                <div className="ds-metric-item ds-metric-item--offer">
+                  <div className="ds-metric-item__icon ds-metric-item__icon--red">
+                    <HiOutlineTag size={16} />
+                  </div>
+                  <div className="ds-metric-item__info">
+                    <span className="ds-metric-item__value">
+                      {metrics.offerProductsCount}
+                    </span>
+                    <span className="ds-metric-item__label">En oferta</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="ds-info-card ds-info-card--marketing">
+                <span className="ds-info-card__icon">🚀</span>
+                <div className="ds-info-card__content">
+                  <span className="ds-info-card__title">
+                    Estrategia de marketing activa
+                  </span>
+                  <span className="ds-info-card__text">
+                    {metrics.featuredProductsCount > 0 &&
+                    metrics.offerProductsCount > 0
+                      ? "Productos destacados y ofertas activas atrayendo clientes"
+                      : metrics.featuredProductsCount > 0
+                        ? "Productos destacados visibles para los clientes"
+                        : "Ofertas activas aumentando ventas"}
+                  </span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="ds-empty-state">
+              <span className="ds-empty-state__icon">📭</span>
+              <span className="ds-empty-state__title">
+                Sin promociones activas
+              </span>
+              <span className="ds-empty-state__text">
+                Agrega productos destacados u ofertas para atraer más clientes
+              </span>
+            </div>
+          )}
+        </div>
+      </div> */}
+
+      {/* ===== SECCIÓN: DETALLES ADICIONALES ===== */}
+      <div className="ds-section">
+        <button
+          className="ds-section__header"
+          onClick={() => toggleSection("details")}
+        >
+          <div className="ds-section__header-left">
+            <span className="ds-section__icon">ℹ️</span>
+            <span className="ds-section__title">Detalles Adicionales</span>
+          </div>
+          <HiOutlineChevronRight
+            className={`ds-section__arrow ${expandedSections.details ? "ds-section__arrow--open" : ""}`}
+            size={18}
+          />
+        </button>
+
+        <div
+          className={`ds-section__content ${expandedSections.details ? "ds-section__content--open" : ""}`}
+        >
+          {/* Valor del inventario */}
+          {metrics.totalInventoryValue > 0 && (
+            <div className="ds-metric-item ds-metric-item--full">
+              <div className="ds-metric-item__icon ds-metric-item__icon--cyan">
+                <HiOutlineCurrencyDollar size={16} />
+              </div>
+              <div className="ds-metric-item__info">
+                <span className="ds-metric-item__value ds-metric-item__value--large">
+                  ${metrics.totalInventoryValue.toLocaleString()}
+                </span>
+                <span className="ds-metric-item__label">
+                  Valor total del inventario
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Imágenes */}
+          <div className="ds-metrics-grid ds-metrics-grid--two">
+            <div className="ds-metric-item">
+              <div className="ds-metric-item__icon ds-metric-item__icon--purple">
+                <HiOutlinePhotograph size={16} />
+              </div>
+              <div className="ds-metric-item__info">
+                <span className="ds-metric-item__value">
+                  {metrics.productsWithImages}
+                </span>
+                <span className="ds-metric-item__label">Con imágenes</span>
+              </div>
+            </div>
+
+            <div className="ds-metric-item">
+              <div className="ds-metric-item__icon ds-metric-item__icon--gray">
+                <HiOutlineInformationCircle size={16} />
+              </div>
+              <div className="ds-metric-item__info">
+                <span className="ds-metric-item__value">
+                  {metrics.productsWithoutImages}
+                </span>
+                <span className="ds-metric-item__label">Sin imágenes</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Barra de progreso de imágenes */}
+          <div className="ds-progress-card">
+            <div className="ds-progress-card__header">
+              <span>Productos con imágenes</span>
+              <span className="ds-progress-card__percentage">
+                {metrics.imagesPercentage}%
+              </span>
+            </div>
+            <div className="ds-progress-bar">
+              <div
+                className="ds-progress-bar__fill ds-progress-bar__fill--purple"
+                style={{ width: `${metrics.imagesPercentage}%` }}
+              />
+            </div>
+          </div>
+
+          {metrics.productsWithoutImages > 0 && (
+            <div className="ds-tip">
+              <span className="ds-tip__icon">💡</span>
+              <span className="ds-tip__text">
+                {metrics.productsWithoutImages} producto
+                {metrics.productsWithoutImages !== 1 ? "s" : ""} sin imágenes.
+                Agregar imágenes mejora las ventas.
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

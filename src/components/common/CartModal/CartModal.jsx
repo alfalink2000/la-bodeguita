@@ -128,6 +128,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
     });
   };
 
+  // ✅ CORREGIDO: handleDeliveryToggle SIN Swal de "Abrir chat"
   const handleDeliveryToggle = async (checked) => {
     setWantsDelivery(checked);
 
@@ -177,24 +178,10 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
           config: data.config,
         });
       } else if (data.needsManualContact) {
+        // ✅ SOLO marcar que necesita contacto, SIN mostrar Swal
         setNeedsManualContact(true);
         setDeliveryInfo(null);
-
-        Swal.fire({
-          icon: "info",
-          title: "📍 Necesitamos tu ubicación exacta",
-          html: `
-            <p>No tenemos tu ubicación exacta registrada.</p>
-            <p style="margin-top: 0.5rem;">Por favor, abre el <strong>chat de soporte</strong> para coordinar tu entrega.</p>
-            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #6b7280;">Un asesor te contactará para confirmar tu dirección.</p>
-          `,
-          confirmButtonText: "Abrir chat",
-          confirmButtonColor: "#059669",
-        }).then((result) => {
-          if (result.isConfirmed && onOpenChat) {
-            onOpenChat();
-          }
-        });
+        // ❌ ELIMINADO: Swal.fire de "Abrir chat"
       } else {
         setDeliveryInfo({
           error: data.msg || "No es posible realizar el envío",
@@ -212,43 +199,202 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
     }
   };
 
-  // ✅ CORREGIDO: Crear pedido - Cerrar modal ANTES de mostrar SweetAlert
+  // ✅ CORREGIDO: SweetAlerts compactos - sin datos personales
   const handleCreateOrder = async () => {
-    console.log("🔴 [CartModal] handleCreateOrder iniciado");
-
     if (!isLoggedIn) {
-      console.log("🔴 [CartModal] Usuario no logueado, mostrando login");
       dispatch(toggleCartModal());
       onShowLogin?.();
       return;
     }
 
     if (cartItems.length === 0) {
-      console.log("🔴 [CartModal] Carrito vacío");
-      return;
-    }
-
-    if (
-      wantsDelivery &&
-      (!deliveryInfo || !deliveryInfo.isAvailable) &&
-      !needsManualContact
-    ) {
-      console.log("🔴 [CartModal] Delivery no disponible");
       Swal.fire({
         icon: "warning",
-        title: "Delivery no disponible",
-        text:
-          deliveryInfo?.error || "No se puede realizar el envío a tu ubicación",
-        confirmButtonColor: "#ef4444",
+        title: "Carrito vacío",
+        text: "Agrega productos antes de hacer el pedido",
+        confirmButtonColor: "#059669",
       });
       return;
     }
 
+    const subtotal = total;
+    const currencySymbol = getCurrencySymbol();
+
+    // ============================================
+    // CASO 1: NO QUIERE DELIVERY (RETIRO EN TIENDA)
+    // ============================================
+    if (!wantsDelivery) {
+      const result = await Swal.fire({
+        title: "📦 Retiro en tienda",
+        html: `
+        <div style="text-align: center; font-size: 0.95rem;">
+          <p style="margin-bottom: 0.5rem;">Retirarás tu pedido en nuestra tienda.</p>
+          <p style="color: #f59e0b; font-size: 0.85rem;">📞 Soporte te contactará para coordinar el retiro.</p>
+          <p style="font-weight: 700; font-size: 1.1rem; margin-top: 0.75rem; color: #059669;">
+            Total: ${currencySymbol} ${subtotal.toFixed(2)}
+          </p>
+        </div>
+      `,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#059669",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "✅ Confirmar pedido",
+        cancelButtonText: "Cancelar",
+      });
+
+      if (result.isConfirmed) {
+        await submitOrder(false, false, null, null);
+      }
+      return;
+    }
+
+    // ============================================
+    // SI QUIERE DELIVERY: CALCULAR AHORA
+    // ============================================
+    Swal.fire({
+      title: "Calculando delivery...",
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/api/orders/calculate-delivery`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-token": token },
+        body: JSON.stringify({ subtotal }),
+      });
+
+      const data = await res.json();
+      Swal.close();
+
+      // ============================================
+      // CASO 2: DELIVERY PERO SIN UBICACIÓN GPS
+      // ============================================
+      if (data.needsManualContact || !data.ok) {
+        const result = await Swal.fire({
+          title: "📍 Entrega a domicilio",
+          html: `
+          <div style="text-align: center; font-size: 0.95rem;">
+            <p style="margin-bottom: 0.5rem;">Solicitaste <strong>envío a domicilio</strong>.</p>
+            <div style="background: #fef3c7; padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0;">
+              <p style="margin: 0; font-size: 0.85rem;">⚠️ No tienes ubicación GPS. Soporte te contactará para calcular el costo.</p>
+            </div>
+            <p style="font-weight: 700; font-size: 1.1rem; margin-top: 0.5rem; color: #f59e0b;">
+              Total (sin envío): ${currencySymbol} ${subtotal.toFixed(2)}
+            </p>
+            <p style="font-size: 0.75rem; color: #6b7280;">El costo del delivery será informado por soporte.</p>
+          </div>
+        `,
+          icon: "warning",
+          showCancelButton: true,
+          showDenyButton: true,
+          confirmButtonColor: "#f59e0b",
+          cancelButtonColor: "#6b7280",
+          denyButtonColor: "#059669",
+          confirmButtonText: "📞 Continuar (soporte me contacta)",
+          denyButtonText: "📍 Configurar GPS",
+          cancelButtonText: "Cancelar",
+        });
+
+        if (result.isDenied) {
+          dispatch(toggleCartModal());
+          window.dispatchEvent(new CustomEvent("open-profile"));
+          return;
+        }
+
+        if (result.isConfirmed) {
+          await submitOrder(true, true, null, null);
+        }
+        return;
+      }
+
+      // ============================================
+      // CASO 3: DELIVERY CON GPS - TODO CALCULADO
+      // ============================================
+      const { distance, price, isFree, isAvailable } = data;
+
+      if (!isAvailable) {
+        Swal.fire({
+          icon: "error",
+          title: "Delivery no disponible",
+          text: data.msg || "No se puede realizar el envío a tu ubicación",
+          confirmButtonColor: "#059669",
+        });
+        return;
+      }
+
+      const finalTotal = isFree ? subtotal : subtotal + price;
+      const deliveryText = isFree
+        ? "🚚 ¡Delivery GRATIS!"
+        : `🚚 Delivery: ${currencySymbol} ${price?.toFixed(2)} (${distance?.toFixed(1)} km)`;
+
+      const result = await Swal.fire({
+        title: "🚚 Confirmar pedido",
+        html: `
+        <div style="text-align: center; font-size: 0.95rem;">
+          <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">
+            ${
+              isFree
+                ? '<span style="color: #059669; font-weight: 600;">🎉 ¡Delivery GRATIS!</span>'
+                : `<span style="color: #2563eb;">📏 ${distance?.toFixed(1)} km · ${currencySymbol} ${price?.toFixed(2)}</span>`
+            }
+          </p>
+          <div style="background: #f0fdf4; padding: 0.6rem; border-radius: 8px; margin: 0.5rem 0;">
+            <p style="margin: 0; font-size: 0.85rem;">Subtotal: ${currencySymbol} ${subtotal.toFixed(2)}</p>
+            <p style="margin: 0.25rem 0 0; font-size: 0.85rem;">${deliveryText}</p>
+            <p style="margin: 0.5rem 0 0; font-weight: 700; font-size: 1.15rem; color: #059669;">
+              TOTAL: ${currencySymbol} ${finalTotal.toFixed(2)}
+            </p>
+          </div>
+        </div>
+      `,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#059669",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "✅ Confirmar pedido",
+        cancelButtonText: "Cancelar",
+      });
+
+      if (result.isConfirmed) {
+        await submitOrder(true, false, distance, price);
+      }
+    } catch (err) {
+      Swal.close();
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudo calcular el envío. Intenta de nuevo.",
+        confirmButtonColor: "#059669",
+      });
+    }
+  };
+
+  // ✅ Función submitOrder - SweetAlert de éxito COMPACTO
+  // ✅ Función submitOrder - SIN mensaje previo, solo mensaje DESPUÉS del pedido
+  const submitOrder = async (
+    wantsDeliveryFlag,
+    needsManualContact,
+    distance,
+    deliveryPrice,
+  ) => {
     setCreatingOrder(true);
 
     try {
       const token = localStorage.getItem("token");
-      console.log("🔴 [CartModal] Enviando pedido al backend...");
+      if (!token) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Debes iniciar sesión",
+        });
+        setCreatingOrder(false);
+        return;
+      }
 
       const orderData = {
         items: cartItems.map((item) => ({
@@ -259,98 +405,102 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
           image_url: item.image_url || "",
         })),
         subtotal: total,
-        wants_delivery: wantsDelivery,
-        delivery_price: wantsDelivery && deliveryInfo ? deliveryInfo.price : 0,
-        delivery_distance:
-          wantsDelivery && deliveryInfo ? deliveryInfo.distance : null,
-        delivery_needs_manual_contact: wantsDelivery && needsManualContact,
-        notes:
-          wantsDelivery && needsManualContact
-            ? "Requiere contacto manual para dirección"
-            : "",
+        wants_delivery: wantsDeliveryFlag,
+        delivery_price: deliveryPrice || 0,
+        delivery_distance: distance || null,
+        delivery_needs_manual_contact: needsManualContact || false,
+        notes: needsManualContact
+          ? "Requiere contacto manual para dirección"
+          : "",
       };
 
       const res = await fetch(`${API_URL}/api/orders`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-token": token,
-        },
+        headers: { "Content-Type": "application/json", "x-token": token },
         body: JSON.stringify(orderData),
       });
 
       const data = await res.json();
-      console.log("🔴 [CartModal] Respuesta del backend:", data);
 
       if (data.ok) {
-        console.log(
-          "🔴 [CartModal] Pedido creado exitosamente, ID:",
-          data.pedido.id,
-        );
+        // window.dispatchEvent(
+        //   new CustomEvent("order-created", {
+        //     detail: { orderId: data.pedido.id },
+        //   }),
+        // );
+        if (onOrderCreated) onOrderCreated();
 
-        // ✅ DISPARAR EVENTO UNA SOLA VEZ
-        console.log("🔴 [CartModal] Disparando evento 'order-created'");
-        window.dispatchEvent(
-          new CustomEvent("order-created", {
-            detail: { orderId: data.pedido.id, timestamp: Date.now() },
-          }),
-        );
+        dispatch(clearCart());
+        dispatch(toggleCartModal());
+        setCreatingOrder(false);
 
-        // ✅ Llamar callback si existe
-        if (onOrderCreated) {
-          console.log("🔴 [CartModal] Llamando a onOrderCreated callback");
-          onOrderCreated();
+        const finalTotal =
+          wantsDeliveryFlag && deliveryPrice ? total + deliveryPrice : total;
+        const currencySymbol = getCurrencySymbol();
+
+        // ✅ ENVIAR MENSAJE AL CHAT SOLO SI NECESITA CONTACTO MANUAL
+        if (needsManualContact) {
+          try {
+            await fetch(`${API_URL}/api/chat/send`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-token": token,
+              },
+              body: JSON.stringify({
+                message: `🛒 He realizado el pedido #${data.pedido.id} con envío a domicilio.\n\n📋 Necesito que un asesor me contacte para coordinar la dirección de entrega y el costo del envío.\n\n💰 Total del pedido (sin envío): ${currencySymbol} ${total.toFixed(2)}\n\n⏳ Quedo a la espera de su mensaje. Gracias.`,
+              }),
+            });
+            console.log("✅ Mensaje automático enviado al chat");
+          } catch (err) {
+            console.error("Error enviando mensaje automático:", err);
+          }
         }
 
-        // Vaciar carrito
-        dispatch(clearCart());
+        // ✅ SweetAlert de éxito COMPACTO
+        let message = "";
+        if (needsManualContact) {
+          message = "📞 Un asesor te contactará para coordinar el envío.";
+        } else if (wantsDeliveryFlag) {
+          message = "🚚 Recibirás tu pedido en tu domicilio.";
+        } else {
+          message = "📦 Retira tu pedido en nuestra tienda.";
+        }
 
-        // Cerrar modal
-        dispatch(toggleCartModal());
-
-        setCreatingOrder(false);
-
-        setCreatingOrder(false);
-
-        const totalWithDelivery =
-          wantsDelivery && deliveryInfo ? total + deliveryInfo.price : total;
-
-        // Mostrar SweetAlert
         await Swal.fire({
-          icon: "success",
-          title: "¡Pedido creado exitosamente!",
+          title: "✅ ¡Pedido realizado!",
           html: `
-            <p>Tu pedido <strong>#${data.pedido.id}</strong> ha sido registrado.</p>
-            ${wantsDelivery ? `<p style="margin-top: 0.5rem;">🚚 <strong>Delivery: ${deliveryInfo?.isFree ? "GRATIS" : `${getCurrencySymbol()}${deliveryInfo?.price?.toFixed(2)}`}</strong></p>` : "<p>📦 Retiro en tienda</p>"}
-            ${needsManualContact ? '<p style="margin-top: 0.5rem; color: #f59e0b;">📞 Un asesor se pondrá en contacto contigo para coordinar el envío.</p>' : ""}
-            <p style="margin-top: 0.5rem; color: #6b7280; font-size: 0.9rem;">
-              Total: ${getCurrencySymbol()}${totalWithDelivery.toFixed(2)}
-            </p>
-            <p style="margin-top: 0.5rem; color: #6b7280; font-size: 0.9rem;">
-              Puedes ver el estado en <strong>Mi Perfil → Mis Pedidos</strong>
-            </p>
-          `,
-          confirmButtonColor: "#10b981",
+          <div style="text-align: center;">
+            <p style="font-size: 1.1rem; margin-bottom: 0.25rem;"><strong>Pedido #${data.pedido.id}</strong></p>
+            <p style="margin-bottom: 0.5rem;">${message}</p>
+            <p style="font-weight: 700; color: #059669;">Total: ${currencySymbol} ${finalTotal.toFixed(2)}</p>
+            <p style="font-size: 0.8rem; color: #6b7280; margin-top: 0.5rem;">📋 Ver estado en <strong>Perfil > Mis Pedidos</strong></p>
+            ${needsManualContact ? '<p style="font-size: 0.8rem; color: #f59e0b; margin-top: 0.25rem;">💬 También puedes usar el chat de soporte</p>' : ""}
+          </div>
+        `,
+          icon: "success",
+          confirmButtonColor: "#059669",
           confirmButtonText: "Entendido",
         });
+
+        // ✅ NO abrir chat automáticamente, solo si el usuario quiere
+        // (eliminado: if (needsManualContact && onOpenChat) onOpenChat();)
       } else {
-        console.log("🔴 [CartModal] Error del backend:", data.msg);
         setCreatingOrder(false);
         Swal.fire({
           icon: "error",
-          title: "Error al crear pedido",
-          text: data.msg || "Intenta nuevamente",
-          confirmButtonColor: "#ef4444",
+          title: "Error",
+          text: data.msg || "No se pudo crear el pedido",
+          confirmButtonColor: "#059669",
         });
       }
     } catch (err) {
-      console.error("🔴 [CartModal] Error de conexión:", err);
       setCreatingOrder(false);
       Swal.fire({
         icon: "error",
         title: "Error de conexión",
         text: "No se pudo conectar con el servidor",
-        confirmButtonColor: "#ef4444",
+        confirmButtonColor: "#059669",
       });
     }
   };

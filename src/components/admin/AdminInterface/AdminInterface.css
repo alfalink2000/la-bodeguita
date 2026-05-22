@@ -13,7 +13,6 @@
   overflow: hidden;
 }
 
-/* Header Mejorado - ESTRUCTURA PROFESIONAL */
 .admin-header {
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.95);
@@ -34,7 +33,6 @@
   margin: 0 auto;
 }
 
-/* Lado izquierdo - Brand */
 .admin-header__left {
   display: flex;
   align-items: center;
@@ -53,11 +51,7 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  background: linear-gradient(
-    135deg,
-    var(--primary-blue) 0%,
-    var(--accent-teal) 100%
-  );
+  background: linear-gradient(135deg, var(--primary-blue), var(--accent-teal));
   border-radius: 12px;
   box-shadow: var(--shadow-md);
   transition: all 0.3s ease;
@@ -85,11 +79,7 @@
   font-weight: 700;
   color: var(--gray-800);
   margin: 0;
-  background: linear-gradient(
-    135deg,
-    var(--primary-blue) 0%,
-    var(--accent-teal) 100%
-  );
+  background: linear-gradient(135deg, var(--primary-blue), var(--accent-teal));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -104,14 +94,12 @@
   letter-spacing: 0.025em;
 }
 
-/* Lado derecho - User Info y Menu */
 .admin-header__right {
   display: flex;
   align-items: center;
   gap: 1.5rem;
 }
 
-/* Información del usuario mejorada */
 .admin-header__user-info {
   display: flex;
   align-items: center;
@@ -158,7 +146,6 @@
   letter-spacing: 0.05em;
 }
 
-/* Botón de menú móvil mejorado */
 .admin-interface__mobile-menu {
   display: none;
   background: var(--white);
@@ -187,7 +174,6 @@
   transform: translateY(0);
 }
 
-/* Layout Principal - con scroll correcto */
 .admin-interface__layout {
   display: flex;
   flex: 1;
@@ -195,7 +181,6 @@
   position: relative;
 }
 
-/* Sidebar Navigation - con scroll propio */
 .admin-sidebar {
   width: 280px;
   background: linear-gradient(135deg, var(--white) 0%, var(--gray-50) 100%);
@@ -257,11 +242,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    135deg,
-    var(--primary-blue) 0%,
-    var(--accent-teal) 100%
-  );
+  background: linear-gradient(135deg, var(--primary-blue), var(--accent-teal));
   opacity: 0;
   transition: opacity 0.3s ease;
   border-radius: var(--radius-lg);
@@ -275,11 +256,7 @@
 
 .admin-sidebar__item--active {
   color: var(--white);
-  background: linear-gradient(
-    135deg,
-    var(--primary-blue) 0%,
-    var(--accent-teal) 100%
-  );
+  background: linear-gradient(135deg, var(--primary-blue), var(--accent-teal));
   box-shadow: var(--shadow-md);
   transform: translateX(4px);
 }
@@ -292,11 +269,10 @@
   color: var(--white);
 }
 
-/* Estilos específicos para el botón de logout en el sidebar */
 .admin-sidebar__item--logout {
   margin-top: auto;
   margin-bottom: 1rem;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, var(--error), #dc2626);
   color: var(--white);
   border: none;
   padding: 0.875rem 1rem;
@@ -314,7 +290,7 @@
 .admin-sidebar__item--logout:hover {
   transform: translateX(4px);
   box-shadow: var(--shadow);
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
   color: var(--white);
 }
 
@@ -352,6 +328,11 @@
   animation: badgePulse 2s infinite;
 }
 
+.admin-sidebar__badge--warning {
+  background: var(--warning) !important;
+  animation: pulse-warning 1.5s infinite;
+}
+
 @keyframes badgePulse {
   0%,
   100% {
@@ -362,7 +343,18 @@
   }
 }
 
-/* Main Content Area - CON SCROLL CORRECTO */
+@keyframes pulse-warning {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
 .admin-main {
   flex: 1;
   overflow-y: auto;
@@ -376,26 +368,21 @@
   margin: 0 auto;
 }
 
-/* Scrollbar personalizado para admin-main */
 .admin-main::-webkit-scrollbar {
   width: 8px;
 }
-
 .admin-main::-webkit-scrollbar-track {
   background: var(--gray-100);
   border-radius: 4px;
 }
-
 .admin-main::-webkit-scrollbar-thumb {
   background: var(--gray-400);
   border-radius: 4px;
 }
-
 .admin-main::-webkit-scrollbar-thumb:hover {
   background: var(--gray-500);
 }
 
-/* Section Styles */
 .admin-section {
   background: var(--white);
   border-radius: var(--radius-xl);
@@ -419,22 +406,14 @@
   font-weight: 700;
   color: var(--gray-800);
   margin: 0;
-  background: linear-gradient(
-    135deg,
-    var(--primary-blue) 0%,
-    var(--accent-teal) 100%
-  );
+  background: linear-gradient(135deg, var(--primary-blue), var(--accent-teal));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .admin-section__add-button {
-  background: linear-gradient(
-    135deg,
-    var(--primary-green) 0%,
-    var(--accent-teal) 100%
-  );
+  background: linear-gradient(135deg, var(--primary-green), var(--accent-teal));
   color: var(--white);
   border: none;
   padding: 0.75rem 1.5rem;
@@ -451,7 +430,6 @@
   box-shadow: var(--shadow-lg);
 }
 
-/* Empty State */
 .admin-section__empty {
   text-align: center;
   padding: 3rem 2rem;
@@ -478,11 +456,7 @@
 }
 
 .admin-section__empty-button {
-  background: linear-gradient(
-    135deg,
-    var(--primary-blue) 0%,
-    var(--accent-teal) 100%
-  );
+  background: linear-gradient(135deg, var(--primary-blue), var(--accent-teal));
   color: var(--white);
   border: none;
   padding: 0.875rem 2rem;
@@ -498,12 +472,11 @@
   box-shadow: var(--shadow-lg);
 }
 
-/* Responsive Design */
+/* Responsive */
 @media (max-width: 1024px) {
   .admin-sidebar {
     width: 240px;
   }
-
   .admin-main {
     padding: 1.5rem;
   }
@@ -513,41 +486,32 @@
   .admin-interface__mobile-menu {
     display: flex;
   }
-
   .admin-header {
     padding: 0.75rem 1rem;
   }
-
   .admin-header__brand {
     gap: 0.75rem;
   }
-
   .admin-header__icon-wrapper {
     width: 40px;
     height: 40px;
   }
-
   .admin-header__icon {
     width: 20px;
     height: 20px;
   }
-
   .admin-header__title {
     font-size: 1rem;
   }
-
   .admin-header__subtitle {
     font-size: 0.7rem;
   }
-
   .admin-header__user-details {
     display: none;
   }
-
   .admin-header__user-info {
     padding: 0.5rem;
   }
-
   .admin-sidebar {
     position: fixed;
     top: 0;
@@ -560,24 +524,19 @@
     margin-top: 0;
     padding-top: 4rem;
   }
-
   .admin-sidebar--open {
     left: 0;
   }
-
   .admin-main {
     padding: 1rem;
   }
-
   .admin-section {
     padding: 1.5rem;
   }
-
   .admin-section__header {
     flex-direction: column;
     align-items: stretch;
   }
-
   .admin-section__title {
     text-align: center;
   }
@@ -588,39 +547,31 @@
     padding: 1rem;
     margin-bottom: 1rem;
   }
-
   .admin-header {
     padding: 0.5rem 0.75rem;
   }
-
   .admin-header__brand {
     gap: 0.5rem;
   }
-
   .admin-header__icon-wrapper {
     width: 36px;
     height: 36px;
   }
-
   .admin-header__icon {
     width: 18px;
     height: 18px;
   }
-
   .admin-header__title {
     font-size: 0.9rem;
   }
-
   .admin-header__subtitle {
     font-size: 0.65rem;
   }
-
   .admin-header__right {
     gap: 1rem;
   }
 }
 
-/* Estados de focus para accesibilidad */
 .admin-interface__mobile-menu:focus-visible,
 .admin-sidebar__item:focus-visible,
 .admin-section__add-button:focus-visible {
@@ -628,21 +579,34 @@
   outline-offset: 2px;
 }
 
-/* Scrollbar personalizado para sidebar */
 .admin-sidebar::-webkit-scrollbar {
   width: 6px;
 }
-
 .admin-sidebar::-webkit-scrollbar-track {
   background: var(--gray-100);
   border-radius: 3px;
 }
-
 .admin-sidebar::-webkit-scrollbar-thumb {
   background: var(--gray-300);
   border-radius: 3px;
 }
-
 .admin-sidebar::-webkit-scrollbar-thumb:hover {
   background: var(--gray-400);
+}
+
+.ao-header-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.ao-needs-contact-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--warning-light);
+  color: #92400e;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }

@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   HiOutlineCog,
-  HiOutlineColorSwatch,
   HiOutlineInformationCircle,
   HiCheck,
   HiOutlineEye,
@@ -21,7 +20,6 @@ import {
   previewTheme,
   resetTheme,
 } from "../../../actions/appConfigActions";
-import { getThemePreview } from "../../../utils/themeManager";
 import Swal from "sweetalert2";
 import "./AppConfigManager.css";
 
@@ -57,25 +55,18 @@ const AppConfigManager = () => {
   const [saving, setSaving] = useState(false);
   const [gpsLoadingDelivery, setGpsLoadingDelivery] = useState(false);
 
-  // ✅ CORREGIDO: Cargar configuración de delivery (useCallback para evitar recreaciones)
+  // Cargar configuración de delivery
   const loadDeliveryConfig = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) {
-        console.warn("⚠️ No hay token para cargar delivery config");
-        return;
-      }
+      if (!token) return;
 
-      console.log("🔄 Cargando configuración de delivery...");
       const res = await fetch(`${API_URL}/api/delivery/config`, {
         headers: { "x-token": token },
       });
       const data = await res.json();
 
-      console.log("📥 Respuesta delivery config:", data);
-
       if (data.ok && data.config) {
-        console.log("✅ Delivery config cargada correctamente");
         setFormData((prev) => ({
           ...prev,
           delivery_origin_name: data.config.origin_name || "",
@@ -99,26 +90,21 @@ const AppConfigManager = () => {
             ? data.config.max_distance_km.toString()
             : "",
         }));
-      } else {
-        console.warn("⚠️ No se pudo cargar delivery config:", data.msg);
       }
     } catch (err) {
-      console.error("❌ Error cargando delivery config:", err);
+      console.error("Error cargando delivery config:", err);
     }
   }, []);
 
-  // ✅ CORREGIDO: useEffect que carga ambas configuraciones al montar
   useEffect(() => {
-    console.log("🔄 AppConfigManager montado - cargando configuraciones");
     dispatch(loadAppConfig());
     loadDeliveryConfig();
   }, [dispatch, loadDeliveryConfig]);
 
-  // ✅ CORREGIDO: Actualizar solo campos de AppConfig, preservando delivery
   useEffect(() => {
     if (config) {
       setFormData((prev) => ({
-        ...prev, // ✅ Mantener todos los campos existentes (incluyendo delivery)
+        ...prev,
         app_name: config.app_name || "",
         app_description: config.app_description || "",
         theme: config.theme || "blue",
@@ -135,7 +121,6 @@ const AppConfigManager = () => {
 
   const getGPSLocationForDelivery = () => {
     setGpsLoadingDelivery(true);
-
     if (!navigator.geolocation) {
       Swal.fire({
         icon: "error",
@@ -145,12 +130,9 @@ const AppConfigManager = () => {
       setGpsLoadingDelivery(false);
       return;
     }
-
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-
-        // Obtener dirección desde coordenadas
         try {
           const res = await fetch(`${API_URL}/api/geocoding/reverse`, {
             method: "POST",
@@ -158,7 +140,6 @@ const AppConfigManager = () => {
             body: JSON.stringify({ lat: latitude, lng: longitude }),
           });
           const data = await res.json();
-
           setFormData((prev) => ({
             ...prev,
             delivery_origin_lat: latitude.toString(),
@@ -173,12 +154,10 @@ const AppConfigManager = () => {
             delivery_origin_lng: longitude.toString(),
           }));
         }
-
         setGpsLoadingDelivery(false);
         Swal.fire({
           icon: "success",
           title: "¡Ubicación obtenida!",
-          text: "Se ha configurado el punto de partida con tu ubicación actual",
           showConfirmButton: false,
           timer: 1500,
         });
@@ -195,11 +174,9 @@ const AppConfigManager = () => {
     );
   };
 
-  // ✅ Guardar ubicación escrita manualmente
   const handleSaveManualLocation = async () => {
     const lat = parseFloat(formData.delivery_origin_lat);
     const lng = parseFloat(formData.delivery_origin_lng);
-
     if (isNaN(lat) || isNaN(lng)) {
       Swal.fire({
         icon: "warning",
@@ -208,8 +185,6 @@ const AppConfigManager = () => {
       });
       return;
     }
-
-    // Intentar obtener la dirección desde las coordenadas
     try {
       const res = await fetch(`${API_URL}/api/geocoding/reverse`, {
         method: "POST",
@@ -217,7 +192,6 @@ const AppConfigManager = () => {
         body: JSON.stringify({ lat, lng }),
       });
       const data = await res.json();
-
       if (data.ok && data.display_name) {
         setFormData((prev) => ({
           ...prev,
@@ -227,7 +201,6 @@ const AppConfigManager = () => {
     } catch (err) {
       console.error("Error obteniendo dirección:", err);
     }
-
     Swal.fire({
       icon: "success",
       title: "¡Ubicación guardada!",
@@ -237,7 +210,6 @@ const AppConfigManager = () => {
     });
   };
 
-  // ✅ Quitar ubicación (limpiar todo)
   const handleClearLocation = () => {
     Swal.fire({
       title: "¿Quitar ubicación?",
@@ -257,7 +229,6 @@ const AppConfigManager = () => {
           delivery_origin_address: "",
           delivery_origin_name: "",
         }));
-
         Swal.fire({
           icon: "info",
           title: "Ubicación eliminada",
@@ -269,14 +240,11 @@ const AppConfigManager = () => {
     });
   };
 
-  // ✅ ÚNICA función handleSaveDelivery (sin duplicar)
   const handleSaveDelivery = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-
       setSaving(true);
-
       const payload = {
         origin_name: formData.delivery_origin_name || "Punto de partida",
         origin_address: formData.delivery_origin_address || "",
@@ -287,26 +255,16 @@ const AppConfigManager = () => {
         free_delivery_from: parseFloat(formData.delivery_free_from) || 500,
         max_distance_km: parseFloat(formData.delivery_max_distance) || 15,
       };
-
-      console.log("📤 Guardando delivery config:", payload);
-
       const res = await fetch(`${API_URL}/api/delivery/config`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-token": token,
-        },
+        headers: { "Content-Type": "application/json", "x-token": token },
         body: JSON.stringify(payload),
       });
-
       const data = await res.json();
-      console.log("📥 Respuesta guardar delivery:", data);
-
       if (data.ok) {
         Swal.fire({
           icon: "success",
           title: "¡Configuración de delivery guardada!",
-          text: "Los cambios se han aplicado correctamente",
           showConfirmButton: false,
           timer: 2000,
         });
@@ -318,7 +276,6 @@ const AppConfigManager = () => {
         });
       }
     } catch (err) {
-      console.error("❌ Error guardando delivery:", err);
       Swal.fire({
         icon: "error",
         title: "Error de conexión",
@@ -337,23 +294,12 @@ const AppConfigManager = () => {
     }));
   };
 
-  const handleThemeSelect = (themeName) => {
-    setFormData((prev) => ({
-      ...prev,
-      theme: themeName,
-    }));
-  };
-
   const handleCurrencySelect = (currencyCode) => {
-    setFormData((prev) => ({
-      ...prev,
-      currency: currencyCode,
-    }));
+    setFormData((prev) => ({ ...prev, currency: currencyCode }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const result = await Swal.fire({
       title: "¿Guardar cambios?",
       text: "Se aplicarán los cambios a toda la aplicación",
@@ -364,117 +310,16 @@ const AppConfigManager = () => {
       confirmButtonText: "Sí, guardar",
       cancelButtonText: "Cancelar",
     });
-
-    if (!result.isConfirmed) {
-      return;
-    }
-
+    if (!result.isConfirmed) return;
     setSaving(true);
-
     try {
-      const success = await dispatch(updateAppConfig(formData));
-      if (success) {
-        setPreviewingTheme(null);
-      }
+      await dispatch(updateAppConfig(formData));
     } catch (error) {
       console.error("Error guardando configuración:", error);
     } finally {
       setSaving(false);
     }
   };
-
-  const handlePreviewTheme = (themeName) => {
-    setPreviewingTheme(themeName);
-    dispatch(previewTheme(themeName));
-  };
-
-  const handleResetPreview = () => {
-    setPreviewingTheme(null);
-    dispatch(resetTheme());
-  };
-
-  const themeOptions = [
-    {
-      id: "blue",
-      name: "Azul Profesional",
-      description: "Perfecto para negocios serios",
-    },
-    {
-      id: "green",
-      name: "Verde Natural",
-      description: "Ideal para productos orgánicos",
-    },
-    {
-      id: "emerald",
-      name: "Verde Esmeralda",
-      description: "Fresco y moderno",
-    },
-    {
-      id: "lime",
-      name: "Verde Lima",
-      description: "Energético y vibrante",
-    },
-    {
-      id: "purple",
-      name: "Púrpura Creativo",
-      description: "Para marcas innovadoras",
-    },
-    {
-      id: "violet",
-      name: "Violeta Real",
-      description: "Lujo y elegancia",
-    },
-    {
-      id: "indigo",
-      name: "Índigo Profundo",
-      description: "Confiabilidad y estabilidad",
-    },
-    {
-      id: "fuchsia",
-      name: "Fucsia Vibrante",
-      description: "Juvenil y atrevido",
-    },
-    {
-      id: "pink",
-      name: "Rosa Moderno",
-      description: "Amigable y accesible",
-    },
-    {
-      id: "rose",
-      name: "Rosa Elegante",
-      description: "Moderna y sofisticada",
-    },
-    {
-      id: "orange",
-      name: "Naranja Energético",
-      description: "Llama la atención",
-    },
-    {
-      id: "amber",
-      name: "Ámbar Cálido",
-      description: "Acogedor y tradicional",
-    },
-    {
-      id: "cyan",
-      name: "Cyan Refrescante",
-      description: "Tecnológico y limpio",
-    },
-    {
-      id: "sky",
-      name: "Azul Cielo",
-      description: "Sereno y confiable",
-    },
-    {
-      id: "slate",
-      name: "Pizarra Neutral",
-      description: "Minimalista y profesional",
-    },
-    {
-      id: "stone",
-      name: "Piedra Natural",
-      description: "Elegante y discreto",
-    },
-  ];
 
   const currencyOptions = [
     {
@@ -512,47 +357,47 @@ const AppConfigManager = () => {
           className={`tab ${activeTab === "general" ? "active" : ""}`}
           onClick={() => setActiveTab("general")}
         >
-          <HiOutlineInformationCircle />
-          General
+          <HiOutlineInformationCircle /> General
         </button>
-        <button
-          className={`tab ${activeTab === "appearance" ? "active" : ""}`}
-          onClick={() => setActiveTab("appearance")}
-        >
-          <HiOutlineColorSwatch />
-          Apariencia
-        </button>
+
+        {/* ============================================
+             PESTAÑA APARIENCIA - COMENTADA
+             ============================================ */}
+        {/* <button className={`tab ${activeTab === "appearance" ? "active" : ""}`} onClick={() => setActiveTab("appearance")}>
+          <HiOutlineColorSwatch /> Apariencia
+        </button> */}
+
         <button
           className={`tab ${activeTab === "currency" ? "active" : ""}`}
           onClick={() => setActiveTab("currency")}
         >
-          <HiOutlineCurrencyDollar />
-          Moneda
+          <HiOutlineCurrencyDollar /> Moneda
         </button>
-        <button
-          className={`tab ${activeTab === "contact" ? "active" : ""}`}
-          onClick={() => setActiveTab("contact")}
-        >
-          <HiOutlineCog />
-          Contacto
-        </button>
+
+        {/* ============================================
+             PESTAÑA CONTACTO - COMENTADA
+             ============================================ */}
+        {/* <button className={`tab ${activeTab === "contact" ? "active" : ""}`} onClick={() => setActiveTab("contact")}>
+          <HiOutlineCog /> Contacto
+        </button> */}
+
         <button
           className={`tab ${activeTab === "welcome" ? "active" : ""}`}
           onClick={() => setActiveTab("welcome")}
         >
-          <HiOutlineInformationCircle />
-          Mensaje Bienvenida
+          <HiOutlineInformationCircle /> Mensaje Bienvenida
         </button>
+
         <button
           className={`tab ${activeTab === "delivery" ? "active" : ""}`}
           onClick={() => setActiveTab("delivery")}
         >
-          <HiOutlineTruck />
-          Delivery
+          <HiOutlineTruck /> Delivery
         </button>
       </div>
 
       <form onSubmit={handleSubmit} className="config-form">
+        {/* ===== GENERAL ===== */}
         {activeTab === "general" && (
           <div className="tab-content">
             <div className="form-group">
@@ -566,7 +411,6 @@ const AppConfigManager = () => {
                 required
               />
             </div>
-
             <div className="form-group">
               <label>Descripción</label>
               <textarea
@@ -578,7 +422,6 @@ const AppConfigManager = () => {
                 required
               />
             </div>
-
             <div className="form-group">
               <label>URL del Logo</label>
               <input
@@ -595,92 +438,16 @@ const AppConfigManager = () => {
           </div>
         )}
 
-        {activeTab === "appearance" && (
+        {/* ============================================
+             APARIENCIA - COMENTADA
+             ============================================ */}
+        {/* {activeTab === "appearance" && (
           <div className="tab-content">
-            <div className="theme-selection">
-              <h3 className="theme-title">Selecciona un Tema</h3>
-              <p className="theme-subtitle">
-                El tema cambiará los colores de toda la aplicación
-              </p>
-
-              <div className="theme-grid">
-                {themeOptions.map((theme) => {
-                  const themeColors = getThemePreview(theme.id);
-                  return (
-                    <div
-                      key={theme.id}
-                      className={`theme-card ${
-                        formData.theme === theme.id ? "selected" : ""
-                      } ${previewingTheme === theme.id ? "previewing" : ""}`}
-                      onClick={() => handleThemeSelect(theme.id)}
-                    >
-                      <div className="theme-preview">
-                        <div
-                          className="theme-primary"
-                          style={{
-                            backgroundColor: themeColors["--primary-blue"],
-                          }}
-                        />
-                        <div
-                          className="theme-accent"
-                          style={{
-                            backgroundColor: themeColors["--accent-teal"],
-                          }}
-                        />
-                        <div
-                          className="theme-success"
-                          style={{ backgroundColor: themeColors["--success"] }}
-                        />
-                      </div>
-
-                      <div className="theme-info">
-                        <h4 className="theme-name">{theme.name}</h4>
-                        <p className="theme-description">{theme.description}</p>
-                      </div>
-
-                      {formData.theme === theme.id && (
-                        <div className="theme-selected-indicator">
-                          <HiCheck className="check-icon" />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="theme-preview-actions">
-                <button
-                  type="button"
-                  onClick={() => handlePreviewTheme(formData.theme)}
-                  className="preview-btn"
-                  disabled={previewingTheme === formData.theme}
-                >
-                  {previewingTheme ? "Vista Previa Activa" : "Ver Vista Previa"}
-                </button>
-
-                {previewingTheme && (
-                  <button
-                    type="button"
-                    onClick={handleResetPreview}
-                    className="reset-btn"
-                  >
-                    Restablecer
-                  </button>
-                )}
-              </div>
-
-              {previewingTheme && (
-                <div className="preview-notice">
-                  <span>
-                    ⚠️ Vista previa activa - Guarda los cambios para aplicar
-                    permanentemente
-                  </span>
-                </div>
-              )}
-            </div>
+            <div className="theme-selection">...</div>
           </div>
-        )}
+        )} */}
 
+        {/* ===== MONEDA ===== */}
         {activeTab === "currency" && (
           <div className="tab-content">
             <div className="currency-selection">
@@ -688,22 +455,18 @@ const AppConfigManager = () => {
               <p className="currency-subtitle">
                 Esta moneda se mostrará en todos los precios de la aplicación
               </p>
-
               <div className="currency-grid">
                 {currencyOptions.map((currency) => {
                   const IconComponent = currency.icon;
                   return (
                     <div
                       key={currency.code}
-                      className={`currency-card ${
-                        formData.currency === currency.code ? "selected" : ""
-                      }`}
+                      className={`currency-card ${formData.currency === currency.code ? "selected" : ""}`}
                       onClick={() => handleCurrencySelect(currency.code)}
                     >
                       <div className="currency-icon">
                         <IconComponent className="currency-symbol" />
                       </div>
-
                       <div className="currency-info">
                         <h4 className="currency-name">{currency.name}</h4>
                         <p className="currency-description">
@@ -715,7 +478,6 @@ const AppConfigManager = () => {
                           </span>
                         </div>
                       </div>
-
                       {formData.currency === currency.code && (
                         <div className="currency-selected-indicator">
                           <HiCheck className="check-icon" />
@@ -725,7 +487,6 @@ const AppConfigManager = () => {
                   );
                 })}
               </div>
-
               <div className="currency-preview-section">
                 <h4 className="preview-title">Vista Previa</h4>
                 <div className="preview-content">
@@ -749,18 +510,27 @@ const AppConfigManager = () => {
           </div>
         )}
 
+        {/* ============================================
+             CONTACTO - COMENTADA
+             ============================================ */}
+        {/* {activeTab === "contact" && (
+          <div className="tab-content">
+            <div className="form-group">...</div>
+          </div>
+        )} */}
+
+        {/* ===== DELIVERY ===== */}
         {activeTab === "delivery" && (
           <div className="tab-content">
             <div className="delivery-config">
               <h3 className="delivery-title">
-                <HiOutlineTruck className="delivery-title-icon" />
-                Configuración de Delivery
+                <HiOutlineTruck className="delivery-title-icon" /> Configuración
+                de Delivery
               </h3>
               <p className="delivery-subtitle">
                 Configura el punto de partida y las tarifas de envío a domicilio
               </p>
 
-              {/* ✅ INDICADOR DE ESTADO DE CONFIGURACIÓN */}
               <div
                 className={`delivery-status ${formData.delivery_origin_lat && formData.delivery_origin_lng ? "delivery-status--active" : "delivery-status--inactive"}`}
               >
@@ -803,7 +573,6 @@ const AppConfigManager = () => {
                 </div>
               </div>
 
-              {/* Punto de Origen */}
               <div className="delivery-section">
                 <h4 className="delivery-section-title">
                   <HiOutlineLocationMarker /> Punto de Partida (Farmacia)
@@ -840,7 +609,6 @@ const AppConfigManager = () => {
                     />
                   </div>
                 </div>
-                {/* ✅ BOTONES DE GUARDAR Y QUITAR UBICACIÓN MANUAL */}
                 <div className="delivery-location-actions">
                   <button
                     type="button"
@@ -850,12 +618,9 @@ const AppConfigManager = () => {
                       !formData.delivery_origin_lat ||
                       !formData.delivery_origin_lng
                     }
-                    title="Guardar ubicación escrita manualmente"
                   >
-                    <HiOutlineLocationMarker />
-                    Guardar ubicación manual
+                    <HiOutlineLocationMarker /> Guardar ubicación manual
                   </button>
-
                   <button
                     type="button"
                     className="location-btn location-btn--clear"
@@ -865,22 +630,16 @@ const AppConfigManager = () => {
                       !formData.delivery_origin_lng &&
                       !formData.delivery_origin_address
                     }
-                    title="Quitar ubicación configurada"
                   >
-                    <HiOutlineX />
-                    Quitar ubicación
+                    <HiOutlineX /> Quitar ubicación
                   </button>
                 </div>
-                {/* ✅ BOTÓN GPS PARA OBTENER UBICACIÓN ACTUAL */}
                 <button
                   type="button"
                   className="gps-button-delivery"
                   onClick={getGPSLocationForDelivery}
                   disabled={gpsLoadingDelivery}
-                  style={{
-                    width: "100%",
-                    marginTop: "0.5rem",
-                  }}
+                  style={{ width: "100%", marginTop: "0.5rem" }}
                 >
                   {gpsLoadingDelivery ? (
                     <>⏳ Obteniendo ubicación...</>
@@ -894,12 +653,10 @@ const AppConfigManager = () => {
                 </small>
               </div>
 
-              {/* Tarifas */}
               <div className="delivery-section">
                 <h4 className="delivery-section-title">
                   <HiOutlineCurrencyDollar /> Tarifas de Envío
                 </h4>
-
                 <div className="form-group">
                   <label>Precio por kilómetro (CUP)</label>
                   <input
@@ -918,7 +675,6 @@ const AppConfigManager = () => {
                     Costo en CUP por cada kilómetro recorrido
                   </small>
                 </div>
-
                 <div className="form-group">
                   <label>Precio mínimo de delivery (CUP)</label>
                   <input
@@ -937,7 +693,6 @@ const AppConfigManager = () => {
                     Cobro mínimo aunque la distancia sea corta
                   </small>
                 </div>
-
                 <div className="form-group">
                   <label>Delivery gratis desde (CUP)</label>
                   <input
@@ -956,7 +711,6 @@ const AppConfigManager = () => {
                     Si el pedido supera este monto, el delivery es gratis
                   </small>
                 </div>
-
                 <div className="form-group">
                   <label>Distancia máxima (km)</label>
                   <input
@@ -977,7 +731,6 @@ const AppConfigManager = () => {
                 </div>
               </div>
 
-              {/* Ejemplo de cálculo */}
               <div className="delivery-preview">
                 <h4>📊 Ejemplo de Cálculo</h4>
                 <div className="preview-examples">
@@ -986,11 +739,7 @@ const AppConfigManager = () => {
                     <strong>
                       {formData.delivery_price_per_km &&
                       formData.delivery_minimum_price
-                        ? `${formData.delivery_origin_address ? formData.delivery_origin_address.split(",")[0] : "Origen"} → 2km = ${Math.max(
-                            parseFloat(formData.delivery_minimum_price) || 100,
-                            (parseFloat(formData.delivery_price_per_km) || 50) *
-                              2,
-                          ).toFixed(2)} CUP`
+                        ? `${formData.delivery_origin_address ? formData.delivery_origin_address.split(",")[0] : "Origen"} → 2km = ${Math.max(parseFloat(formData.delivery_minimum_price) || 100, (parseFloat(formData.delivery_price_per_km) || 50) * 2).toFixed(2)} CUP`
                         : "Configura las tarifas"}
                     </strong>
                   </div>
@@ -1011,64 +760,21 @@ const AppConfigManager = () => {
                 </div>
               </div>
 
-              {/* Botón guardar */}
               <div className="form-actions" style={{ marginTop: "1.5rem" }}>
                 <button
                   type="button"
                   className="save-btn"
                   onClick={handleSaveDelivery}
                 >
-                  <HiOutlineTruck style={{ marginRight: "0.5rem" }} />
-                  Guardar Configuración de Delivery
+                  <HiOutlineTruck style={{ marginRight: "0.5rem" }} /> Guardar
+                  Configuración de Delivery
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {activeTab === "contact" && (
-          <div className="tab-content">
-            <div className="form-group">
-              <label>Número de WhatsApp</label>
-              <input
-                type="text"
-                name="whatsapp_number"
-                value={formData.whatsapp_number}
-                onChange={handleInputChange}
-                placeholder="+5491112345678"
-                required
-              />
-              <small className="help-text">
-                Incluye el código de país. Ej: +5491112345678
-              </small>
-            </div>
-
-            <div className="form-group">
-              <label>Horario de Atención</label>
-              <input
-                type="text"
-                name="business_hours"
-                value={formData.business_hours}
-                onChange={handleInputChange}
-                placeholder="Lun-Vie: 8:00 - 20:00"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Dirección</label>
-              <textarea
-                name="business_address"
-                value={formData.business_address}
-                onChange={handleInputChange}
-                placeholder="Av. Principal 123"
-                rows="3"
-                required
-              />
-            </div>
-          </div>
-        )}
-
+        {/* ===== MENSAJE BIENVENIDA ===== */}
         {activeTab === "welcome" && (
           <div className="tab-content">
             <div className="form-group">
@@ -1084,13 +790,13 @@ const AppConfigManager = () => {
                 <span className="toggle-text">
                   {formData.show_initialinfo ? (
                     <>
-                      <HiOutlineEye className="toggle-icon" />
-                      Mostrar mensaje al iniciar la app
+                      <HiOutlineEye className="toggle-icon" /> Mostrar mensaje
+                      al iniciar la app
                     </>
                   ) : (
                     <>
-                      <HiOutlineEyeOff className="toggle-icon" />
-                      Ocultar mensaje al iniciar la app
+                      <HiOutlineEyeOff className="toggle-icon" /> Ocultar
+                      mensaje al iniciar la app
                     </>
                   )}
                 </span>
@@ -1100,7 +806,6 @@ const AppConfigManager = () => {
                 vez que abran la aplicación
               </small>
             </div>
-
             <div className="form-group">
               <label>Mensaje de Bienvenida</label>
               <textarea
@@ -1116,7 +821,6 @@ const AppConfigManager = () => {
                 saltos de línea
               </small>
             </div>
-
             <div className="preview-section">
               <h4 className="preview-title">Vista Previa del Mensaje</h4>
               <div className="preview-content">
