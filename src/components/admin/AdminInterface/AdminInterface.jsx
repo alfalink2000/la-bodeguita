@@ -1,4 +1,4 @@
-// AdminInterface.jsx - VERSIÓN COMPLETA CON NAVEGACIÓN
+// AdminInterface.jsx - VERSIÓN COMPLETA CON BADGE DE CHATS CORREGIDO
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useAppNavigation } from "../../../hooks/useNavigationHistory";
@@ -70,7 +70,6 @@ const AdminInterface = ({ onLogout }) => {
     useAppNavigation({
       moduleName: "admin",
       onBack: () => {
-        // Callback personalizado para admin
         if (selectedOrder) {
           setSelectedOrder(null);
           return true;
@@ -127,9 +126,10 @@ const AdminInterface = ({ onLogout }) => {
     [saveAction],
   );
 
-  // ✅ Guardar cuando se abre un chat
+  // ✅ Guardar cuando se abre un chat desde pedidos
   const handleOpenChatFromOrders = useCallback(
     (userId, userName) => {
+      console.log("📌 Abriendo chat desde pedidos para usuario:", userId);
       setSelectedChatUserId(userId);
       setActiveSection("chats");
       saveAction("detail", { type: "chat", userId });
@@ -248,7 +248,7 @@ const AdminInterface = ({ onLogout }) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Cargar contador de chats no leídos
+  // ✅ Cargar contador de chats no leídos (CORREGIDO)
   useEffect(() => {
     const loadUnread = async () => {
       try {
@@ -259,8 +259,25 @@ const AdminInterface = ({ onLogout }) => {
           headers: { "x-token": token },
         });
         const data = await res.json();
+
         if (data.ok) {
-          setUnreadChats(data.unreadCount || 0);
+          const count = data.unreadCount || 0;
+          console.log("📊 [AdminInterface] Chats no leídos desde API:", count);
+          console.log("📊 [AdminInterface] Sección activa:", activeSection);
+
+          // ✅ Solo actualizar si NO estamos en la sección de chats
+          // (porque AdminChatManager maneja su propio contador)
+          if (activeSection !== "chats") {
+            console.log(
+              "📊 [AdminInterface] Actualizando unreadChats a:",
+              count,
+            );
+            setUnreadChats(count);
+          } else {
+            console.log(
+              "📊 [AdminInterface] En sección chats, no se actualiza unreadChats",
+            );
+          }
         }
       } catch (err) {
         console.error("Error cargando no leídos:", err);
@@ -270,7 +287,7 @@ const AdminInterface = ({ onLogout }) => {
     loadUnread();
     const interval = setInterval(loadUnread, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeSection]); // ✅ Dependencia de activeSection
 
   const categoryNames = useMemo(
     () =>
@@ -464,6 +481,10 @@ const AdminInterface = ({ onLogout }) => {
               selectedUserId={selectedChatUserId}
               onSelectUser={setSelectedChatUserId}
               onUnreadCountChange={(count) => {
+                console.log(
+                  "📊 [AdminInterface] onUnreadCountChange recibido:",
+                  count,
+                );
                 setUnreadChats(count);
               }}
             />
@@ -531,7 +552,17 @@ const AdminInterface = ({ onLogout }) => {
     handleOpenProductForm,
   ]);
 
+  // ✅ Badge combinado para chats
   const chatBadgeCount = unreadChats + ordersNeedingContact;
+
+  console.log(
+    "📊 [AdminInterface] Render - chatBadgeCount:",
+    chatBadgeCount,
+    "unreadChats:",
+    unreadChats,
+    "ordersNeedingContact:",
+    ordersNeedingContact,
+  );
 
   return (
     <div className="admin-interface">
@@ -606,7 +637,11 @@ const AdminInterface = ({ onLogout }) => {
                   <span className="admin-sidebar__label">{item.label}</span>
                   {badgeCount > 0 && (
                     <span
-                      className={`admin-sidebar__badge ${item.id === "chats" && ordersNeedingContact > 0 ? "admin-sidebar__badge--warning" : ""}`}
+                      className={`admin-sidebar__badge ${
+                        item.id === "chats" && ordersNeedingContact > 0
+                          ? "admin-sidebar__badge--warning"
+                          : ""
+                      }`}
                     >
                       {badgeCount > 99 ? "99+" : badgeCount}
                     </span>

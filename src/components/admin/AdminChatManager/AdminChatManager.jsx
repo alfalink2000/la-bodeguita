@@ -22,6 +22,10 @@ import {
 } from "../../../actions/chatActions";
 import "./AdminChatManager.css";
 
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://minimarket-backend-6z9m.onrender.com";
+
 const AdminChatManager = ({
   selectedUserId,
   onSelectUser,
@@ -48,6 +52,7 @@ const AdminChatManager = ({
   // Cargar chats al montar
   const loadData = useCallback(async () => {
     try {
+      console.log("🔄 [AdminChatManager] Cargando chats...");
       await dispatch(startLoadChats());
       setIsInitialized(true);
     } catch (error) {
@@ -59,18 +64,18 @@ const AdminChatManager = ({
     loadData();
   }, [loadData]);
 
-  // ✅ CORREGIDO: Seleccionar usuario por ID (desde orders)
+  // ✅ Seleccionar usuario por ID (desde orders)
   useEffect(() => {
     if (!selectedUserId || !isInitialized) return;
 
-    // Evitar seleccionar el mismo usuario múltiples veces
     if (prevSelectedUserIdRef.current === selectedUserId) return;
     prevSelectedUserIdRef.current = selectedUserId;
 
-    console.log("🔍 Buscando chat para usuario ID:", selectedUserId);
-    console.log("📋 Chats disponibles:", chats.length);
+    console.log(
+      "🔍 [AdminChatManager] Buscando chat para usuario ID:",
+      selectedUserId,
+    );
 
-    // Buscar el chat en la lista actual
     const chatToSelect = chats.find(
       (chat) =>
         chat.user?.id === selectedUserId ||
@@ -78,15 +83,14 @@ const AdminChatManager = ({
     );
 
     if (chatToSelect) {
-      console.log("✅ Chat encontrado, seleccionando...");
+      console.log("✅ [AdminChatManager] Chat encontrado, seleccionando...");
       dispatch(selectChat(chatToSelect));
-      // Cargar mensajes del usuario
       dispatch(startLoadMessages(selectedUserId));
     } else {
-      console.warn("⚠️ Chat no encontrado en la lista, buscando usuario...");
-      // Si no se encuentra, intentar cargar todos los usuarios
+      console.warn(
+        "⚠️ [AdminChatManager] Chat no encontrado, cargando todos los usuarios...",
+      );
       dispatch(startLoadAllUsers()).then(() => {
-        // Intentar de nuevo después de cargar
         setTimeout(() => {
           const updatedChat = chats.find(
             (chat) =>
@@ -102,19 +106,54 @@ const AdminChatManager = ({
     }
   }, [selectedUserId, isInitialized, chats, dispatch]);
 
-  // Limpiar cuando se desmonta
+  // Limpiar referencia al desmontar
   useEffect(() => {
     return () => {
       prevSelectedUserIdRef.current = null;
     };
   }, []);
 
-  // Notificar cambios en el contador de no leídos
+  // ✅ Notificar cambios en el contador de no leídos
   useEffect(() => {
     if (onUnreadCountChange && typeof totalUnread === "number") {
+      console.log(
+        "📊 [AdminChatManager] Notificando totalUnread:",
+        totalUnread,
+      );
       onUnreadCountChange(totalUnread);
     }
   }, [totalUnread, onUnreadCountChange]);
+
+  // ✅ Actualizar contador global periódicamente
+  useEffect(() => {
+    const updateGlobalCount = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await fetch(`${API_URL}/api/chat/unread-count`, {
+          headers: { "x-token": token },
+        });
+        const data = await res.json();
+
+        if (data.ok && onUnreadCountChange) {
+          const count = data.unreadCount || 0;
+          console.log(
+            "📊 [AdminChatManager] Contador global actualizado:",
+            count,
+          );
+          onUnreadCountChange(count);
+        }
+      } catch (err) {
+        console.error("Error actualizando contador global:", err);
+      }
+    };
+
+    updateGlobalCount();
+    const interval = setInterval(updateGlobalCount, 10000);
+
+    return () => clearInterval(interval);
+  }, [onUnreadCountChange]);
 
   // Auto-scroll
   useEffect(() => {
@@ -141,7 +180,10 @@ const AdminChatManager = ({
 
   const handleSelectChat = useCallback(
     (chat) => {
-      console.log("📌 Seleccionando chat del cliente:", chat.user?.id);
+      console.log(
+        "📌 [AdminChatManager] Seleccionando chat del cliente:",
+        chat.user?.id,
+      );
       dispatch(selectChat(chat));
       dispatch(startLoadMessages(chat.user.id));
       if (onSelectUser) {
@@ -423,7 +465,7 @@ const AdminChatManager = ({
           </div>
         </>
       ) : (
-        // ✅ VISTA DE CONVERSACIÓN
+        // VISTA DE CONVERSACIÓN
         <div className="admin-chat__conversation">
           <div className="admin-chat__conv-header">
             <button className="admin-chat__back" onClick={handleBack}>

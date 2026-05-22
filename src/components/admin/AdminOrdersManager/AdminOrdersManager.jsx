@@ -155,7 +155,6 @@ const AdminOrdersManager = ({ token, onOpenChatWithUser }) => {
           setSelectedOrder(data.pedido);
         }
 
-        // Mostrar mensaje de éxito
         Swal.fire({
           icon: "success",
           title: "¡Estado actualizado!",
@@ -422,10 +421,11 @@ const AdminOrdersManager = ({ token, onOpenChatWithUser }) => {
                         {wantsDelivery && !needsManualContact && (
                           <span className="delivery-info-tag">
                             <HiOutlineTruck /> Delivery: $
-                            {order.delivery_price || 0} (
-                            {order.delivery_distance
-                              ? `${order.delivery_distance} km`
-                              : "distancia calculada"}
+                            {order.delivery_price || 0}
+                            {/* ✅ CORREGIDO: usar distance_km */}(
+                            {order.distance_km != null
+                              ? `${order.distance_km} km`
+                              : "distancia no calculada"}
                             )
                           </span>
                         )}
@@ -449,7 +449,6 @@ const AdminOrdersManager = ({ token, onOpenChatWithUser }) => {
                           <HiOutlineEye /> Ver detalle
                         </button>
 
-                        {/* Botón para abrir chat */}
                         <button
                           className="ao-action-btn ao-action--chat"
                           onClick={() =>
@@ -459,7 +458,6 @@ const AdminOrdersManager = ({ token, onOpenChatWithUser }) => {
                           <HiOutlineChat /> Chat
                         </button>
 
-                        {/* Botones de cambio de estado mejorados */}
                         {order.status === "open" && (
                           <>
                             <button
@@ -590,7 +588,28 @@ const AdminOrdersManager = ({ token, onOpenChatWithUser }) => {
               </div>
               <div className="ao-detail-field">
                 <label>Dirección</label>
-                <span>{selectedOrder.customer_address || "—"}</span>
+                <span>
+                  {selectedOrder.customer_address ? (
+                    <>
+                      {selectedOrder.customer_address}
+                      {selectedOrder.distance_km != null && (
+                        <small
+                          style={{
+                            display: "block",
+                            color: "#10b981",
+                            marginTop: "0.25rem",
+                          }}
+                        >
+                          📍 Distancia: {selectedOrder.distance_km} km
+                        </small>
+                      )}
+                    </>
+                  ) : (
+                    <span style={{ color: "#ef4444" }}>
+                      — Sin dirección registrada
+                    </span>
+                  )}
+                </span>
               </div>
               <div className="ao-detail-field">
                 <label>Fecha</label>
@@ -631,8 +650,9 @@ const AdminOrdersManager = ({ token, onOpenChatWithUser }) => {
                     <div className="ao-delivery-row">
                       <span>Distancia:</span>
                       <strong>
-                        {selectedOrder.delivery_distance
-                          ? `${selectedOrder.delivery_distance} km`
+                        {/* ✅ CORREGIDO: usar distance_km */}
+                        {selectedOrder.distance_km != null
+                          ? `${selectedOrder.distance_km} km`
                           : "No calculada"}
                       </strong>
                     </div>

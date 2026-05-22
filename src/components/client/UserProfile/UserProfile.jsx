@@ -219,7 +219,7 @@ const UserProfile = ({
     setIsEditing(!isEditing);
   };
 
-  // ✅ Función para obtener ubicación GPS
+  // ✅ FUNCIÓN GPS CORREGIDA - Usa reverse geocoding
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
       Swal.fire({
@@ -243,30 +243,77 @@ const UserProfile = ({
     });
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
+        console.log("📍 GPS: Coordenadas obtenidas:", latitude, longitude);
 
-        setEditForm((prev) => ({
-          ...prev,
-          lat: latitude,
-          lng: longitude,
-          address:
-            prev.address ||
-            `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`,
-        }));
+        try {
+          // ✅ Llamar al endpoint de geocodificación inversa
+          const res = await fetch(`${API_URL}/api/geocoding/reverse`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lat: latitude, lng: longitude }),
+          });
+          const data = await res.json();
+          console.log("📍 Respuesta reverse geocode:", data);
 
-        setGettingLocation(false);
+          let addressText;
 
-        Swal.fire({
-          icon: "success",
-          title: "¡Ubicación obtenida!",
-          text: "Coordenadas GPS registradas correctamente",
-          timer: 2000,
-          showConfirmButton: false,
-        });
+          if (data.ok && data.display_name) {
+            // ✅ Usar la dirección legible obtenida
+            addressText = data.display_name;
+            console.log("✅ Dirección obtenida:", addressText);
+          } else {
+            // Fallback: usar coordenadas como texto
+            addressText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+            console.log("⚠️ Usando coordenadas como texto:", addressText);
+          }
+
+          // ✅ Guardar dirección legible + coordenadas
+          setEditForm((prev) => ({
+            ...prev,
+            lat: latitude,
+            lng: longitude,
+            address: addressText,
+          }));
+
+          setGettingLocation(false);
+
+          Swal.fire({
+            icon: "success",
+            title: "¡Ubicación obtenida!",
+            text:
+              addressText.length > 60
+                ? addressText.substring(0, 60) + "..."
+                : addressText,
+            timer: 2500,
+            showConfirmButton: false,
+          });
+        } catch (err) {
+          console.error("❌ Error en reverse geocoding:", err);
+
+          // Fallback: guardar coordenadas como texto
+          const coordText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+          setEditForm((prev) => ({
+            ...prev,
+            lat: latitude,
+            lng: longitude,
+            address: coordText,
+          }));
+
+          setGettingLocation(false);
+
+          Swal.fire({
+            icon: "success",
+            title: "¡Ubicación obtenida!",
+            text: "Coordenadas GPS registradas correctamente",
+            timer: 2000,
+            showConfirmButton: false,
+          });
+        }
       },
       (error) => {
-        console.error("Error GPS:", error);
+        console.error("❌ Error GPS:", error);
         setGettingLocation(false);
 
         let errorMsg = "No se pudo obtener tu ubicación.";
@@ -293,7 +340,7 @@ const UserProfile = ({
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 15000,
         maximumAge: 0,
       },
     );
@@ -496,7 +543,7 @@ const UserProfile = ({
         <div className="up-content-wrapper">
           {activeTab === "profile" ? (
             <div className="up-profile-section">
-              {/* ✅ CAMPO: Nombre de usuario (NUEVO - EDITABLE) */}
+              {/* ✅ CAMPO: Nombre de usuario */}
               <div className="up-field">
                 <label>
                   <HiOutlineIdentification size={14} /> Usuario de acceso
@@ -528,7 +575,7 @@ const UserProfile = ({
                 )}
               </div>
 
-              {/* ✅ CAMPO: Email (NUEVO - EDITABLE) */}
+              {/* ✅ CAMPO: Email */}
               <div className="up-field">
                 <label>
                   <HiOutlineAtSymbol size={14} /> Correo electrónico

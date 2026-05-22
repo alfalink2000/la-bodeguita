@@ -129,7 +129,6 @@ const AuthPage = ({ onLoginSuccess }) => {
       if (data.ok) {
         localStorage.setItem("token", data.token);
 
-        // Mostrar mensaje diferente si no tiene ubicación
         const successMessage =
           registerForm.lat && registerForm.lng
             ? `Bienvenido/a ${registerForm.username}. Tu ubicación ha sido registrada.`
@@ -191,6 +190,7 @@ const AuthPage = ({ onLoginSuccess }) => {
     setError(null);
   };
 
+  // ✅ FUNCIÓN GPS CORREGIDA - Usa reverse geocoding
   const getGPSLocation = () => {
     setGpsLoading(true);
     setError(null);
@@ -216,38 +216,59 @@ const AuthPage = ({ onLoginSuccess }) => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
+        console.log("📍 GPS: Coordenadas obtenidas:", latitude, longitude);
 
         try {
+          // ✅ Llamar al endpoint de geocodificación inversa
           const res = await fetch(`${API_URL}/api/geocoding/reverse`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ lat: latitude, lng: longitude }),
           });
           const data = await res.json();
+          console.log("📍 Respuesta reverse geocode:", data);
 
+          let addressText;
+
+          if (data.ok && data.display_name) {
+            // ✅ Usar la dirección legible obtenida
+            addressText = data.display_name;
+            console.log("✅ Dirección obtenida:", addressText);
+          } else {
+            // Fallback: usar coordenadas como texto
+            addressText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+            console.log("⚠️ Usando coordenadas como texto:", addressText);
+          }
+
+          // ✅ Guardar dirección legible + coordenadas
           setRegisterForm({
             ...registerForm,
             lat: latitude,
             lng: longitude,
-            address:
-              data.display_name ||
-              `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+            address: addressText,
           });
 
           Swal.fire({
-            title: "📍 Ubicación agregada",
-            text: "Tu dirección ha sido registrada. Puedes cambiarla después en tu perfil.",
+            title: "📍 ¡Ubicación registrada!",
+            text:
+              addressText.length > 60
+                ? addressText.substring(0, 60) + "..."
+                : addressText,
             icon: "success",
             confirmButtonColor: "#059669",
-            timer: 2000,
+            timer: 2500,
             showConfirmButton: false,
           });
         } catch (err) {
+          console.error("❌ Error en reverse geocoding:", err);
+
+          // Fallback: guardar coordenadas como texto
+          const coordText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
           setRegisterForm({
             ...registerForm,
             lat: latitude,
             lng: longitude,
-            address: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+            address: coordText,
           });
 
           Swal.fire({
@@ -262,30 +283,37 @@ const AuthPage = ({ onLoginSuccess }) => {
         setGpsLoading(false);
       },
       (err) => {
+        console.error("❌ Error GPS:", err);
         let errorMsg = "No se pudo obtener tu ubicación. ";
+
         switch (err.code) {
           case err.PERMISSION_DENIED:
             errorMsg =
-              "Permiso denegado. Puedes escribir tu dirección manualmente o agregarla después en tu perfil.";
+              "Permiso de ubicación denegado. Puedes escribir tu dirección manualmente o agregarla después en tu perfil.";
             break;
           case err.POSITION_UNAVAILABLE:
             errorMsg =
-              "Ubicación no disponible. Puedes escribir tu dirección manualmente o agregarla después en tu perfil.";
+              "Ubicación no disponible. Intenta escribir tu dirección o intenta de nuevo más tarde.";
             break;
           case err.TIMEOUT:
             errorMsg =
-              "Tiempo de espera agotado. Puedes escribir tu dirección manualmente o agregarla después en tu perfil.";
+              "Tiempo de espera agotado. Intenta de nuevo o escribe tu dirección manualmente.";
             break;
           default:
             errorMsg =
               "Error obteniendo ubicación. Puedes agregar tu dirección después en tu perfil.";
         }
+
         setError(errorMsg);
         showErrorAlert(errorMsg);
         setGpsLoading(false);
         Swal.close();
       },
-      { enableHighAccuracy: true, timeout: 10000 },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      },
     );
   };
 
