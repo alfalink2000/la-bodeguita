@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useProductsSync } from "../../../hooks/useProductsSync";
-import { useAppNavigation } from "../../../hooks/useAppNavigation";
+import { useAppNavigation } from "../../../hooks/useNavigationHistory";
 import {
   HiOutlineShoppingBag,
   HiOutlineFire,
