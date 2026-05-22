@@ -1,7 +1,8 @@
-// ClientInterface.js - VERSIÓN CON SELECTOR DE TIENDAS MEJORADO
+// ClientInterface.js - VERSIÓN COMPLETA CON NAVEGACIÓN MEJORADA
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useProductsSync } from "../../../hooks/useProductsSync";
+import { useAppNavigation } from "../../../hooks/useAppNavigation";
 import {
   HiOutlineShoppingBag,
   HiOutlineFire,
@@ -22,7 +23,6 @@ import {
 // Components
 import Header from "../../common/Header/Header";
 import SearchBar from "../../common/SearchBar/SearchBar";
-import CategoryFilter from "../../common/CategoryFilter/CategoryFilter";
 import ProductGrid from "../ProductGrid/ProductGrid";
 import ProductDetail from "../ProductDetail/ProductDetail";
 import BottomNavigation from "../../common/BottomNavigation/BottomNavigation";
@@ -40,7 +40,6 @@ import {
   selectPopularProducts,
   selectOfferProducts,
   selectCategoryOptions,
-  selectFeaturedProducts,
 } from "../../../selectors/productSelectors";
 
 import image from "../../../assets/images/shop.png";
@@ -69,6 +68,12 @@ const ClientInterface = ({
 }) => {
   useProductsSync(30000);
 
+  // ✅ Navegación
+  const { saveAction, resetNavigation, canGoBack, getStackInfo } =
+    useAppNavigation({
+      moduleName: "client",
+    });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [activeSection, setActiveSection] = useState(SECTIONS.TODOS);
@@ -95,10 +100,109 @@ const ClientInterface = ({
   const categoryOptions = useSelector(selectCategoryOptions);
   const appConfig = useSelector((state) => state.appConfig.config);
 
-  // Marcar pedidos como leídos
-  const markOrdersAsRead = () => {
-    setUnreadOrders(0);
-  };
+  // ✅ Guardar cambios de sección
+  const handleSectionChange = useCallback(
+    (sectionId) => {
+      if (activeSection !== sectionId) {
+        setActiveSection(sectionId);
+        saveAction("section", { from: activeSection, to: sectionId });
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    },
+    [activeSection, saveAction],
+  );
+
+  // ✅ Guardar cuando se abre un producto
+  const handleProductClick = useCallback(
+    (product) => {
+      setSelectedProduct(product);
+      saveAction("detail", {
+        type: "product",
+        id: product.id,
+        name: product.name,
+      });
+    },
+    [saveAction],
+  );
+
+  // ✅ Guardar cuando se abren modales
+  const handleOpenChat = useCallback(() => {
+    setIsChatOpen(true);
+    saveAction("modal", { type: "chat" });
+  }, [saveAction]);
+
+  const handleOpenSideMenu = useCallback(() => {
+    setIsSideMenuOpen(true);
+    saveAction("modal", { type: "sidemenu" });
+  }, [saveAction]);
+
+  const handleOpenProfile = useCallback(() => {
+    setShowProfile(true);
+    saveAction("modal", { type: "profile" });
+  }, [saveAction]);
+
+  const handleOpenInfoModal = useCallback(() => {
+    setShowInfoModal(true);
+    saveAction("modal", { type: "info" });
+  }, [saveAction]);
+
+  // ✅ Escuchar eventos de navegación
+  useEffect(() => {
+    const handleCloseDetail = () => {
+      setSelectedProduct(null);
+    };
+
+    const handleCloseModal = (event) => {
+      const modalType = event.detail?.data?.type;
+      switch (modalType) {
+        case "chat":
+          setIsChatOpen(false);
+          break;
+        case "sidemenu":
+          setIsSideMenuOpen(false);
+          break;
+        case "profile":
+          setShowProfile(false);
+          break;
+        case "info":
+          setShowInfoModal(false);
+          break;
+        default:
+          setIsChatOpen(false);
+          setIsSideMenuOpen(false);
+          setShowProfile(false);
+          setShowInfoModal(false);
+      }
+    };
+
+    const handleSectionBack = (event) => {
+      const previousSection = event.detail?.data?.to || "todos";
+      setActiveSection(previousSection);
+    };
+
+    window.addEventListener("client:close-detail", handleCloseDetail);
+    window.addEventListener("client:close-modal", handleCloseModal);
+    window.addEventListener("client:section-back", handleSectionBack);
+
+    return () => {
+      window.removeEventListener("client:close-detail", handleCloseDetail);
+      window.removeEventListener("client:close-modal", handleCloseModal);
+      window.removeEventListener("client:section-back", handleSectionBack);
+    };
+  }, []);
+
+  // ✅ Resetear navegación al montar
+  useEffect(() => {
+    resetNavigation();
+    return () => resetNavigation();
+  }, [resetNavigation]);
+
+  // Debug en desarrollo
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log("📊 Estado navegación cliente:", getStackInfo());
+    }
+  }, [getStackInfo, activeSection, selectedProduct, isChatOpen]);
 
   // Cargar mensajes no leídos
   const loadUnreadMessages = useCallback(async () => {
@@ -236,10 +340,6 @@ const ClientInterface = ({
     }`;
   }, [filteredProducts]);
 
-  const handleProductClick = useCallback((product) => {
-    setSelectedProduct(product);
-  }, []);
-
   const handleBackFromDetail = useCallback(() => {
     setSelectedProduct(null);
   }, []);
@@ -261,12 +361,12 @@ const ClientInterface = ({
       <button
         className="header-action header-action--icon"
         title="Información de la tienda"
-        onClick={() => setShowInfoModal(true)}
+        onClick={handleOpenInfoModal}
       >
         <HiOutlineInformationCircle className="header-action__icon" />
       </button>
     ),
-    [],
+    [handleOpenInfoModal],
   );
 
   const TitleWithIcon = useCallback(() => {
@@ -489,7 +589,6 @@ const ClientInterface = ({
   const renderDesktopLayout = useMemo(
     () => (
       <div className="client-interface__content desktop-layout">
-        {/* Barra de búsqueda */}
         <div className="client-interface__search-section desktop-search">
           <SearchBar
             searchTerm={searchTerm}
@@ -499,9 +598,7 @@ const ClientInterface = ({
           />
         </div>
 
-        {/* Sidebar */}
         <div className="desktop-sidebar">
-          {/* Tiendas en sidebar */}
           <div className="desktop-stores-nav">
             <h3 className="desktop-stores-title">
               <HiOutlineCollection className="desktop-stores-icon" /> Tiendas
@@ -534,7 +631,6 @@ const ClientInterface = ({
             </div>
           </div>
 
-          {/* Categorías en sidebar */}
           <div className="desktop-categories-nav">
             <h3 className="desktop-stores-title">
               <HiOutlineTag className="desktop-stores-icon" /> Categorías
@@ -581,7 +677,6 @@ const ClientInterface = ({
           </div>
         </div>
 
-        {/* Contenido principal */}
         <div className="desktop-main-content">
           <div className="results-info results-info--desktop">
             <span className="results-info__text">
@@ -639,13 +734,13 @@ const ClientInterface = ({
     <div className="client-interface">
       <Header
         title={<TitleWithIcon />}
-        onInfoClick={() => setShowInfoModal(true)}
+        onInfoClick={handleOpenInfoModal}
         showInfoButton={!isDesktop}
       >
         <DesktopNavigation />
         <button
           className="header-action header-action--icon sidemenu-trigger"
-          onClick={() => setIsSideMenuOpen(true)}
+          onClick={handleOpenSideMenu}
           title="Menú"
         >
           <HiOutlineMenu className="header-action__icon" />
@@ -655,7 +750,7 @@ const ClientInterface = ({
       <CartModal
         isLoggedIn={isLoggedIn}
         onShowLogin={onShowLoginForm}
-        onOpenChat={() => setIsChatOpen(true)}
+        onOpenChat={handleOpenChat}
       />
       <InitialInfoModal
         isOpen={showInfoModal}
@@ -693,11 +788,11 @@ const ClientInterface = ({
             });
           }}
           activeSection={activeSection}
-          onSectionChange={setActiveSection}
+          onSectionChange={handleSectionChange}
           isLoggedIn={isLoggedIn}
           onLogout={onLogout}
           onShowLogin={onShowLoginForm}
-          onProfileClick={() => setShowProfile(true)}
+          onProfileClick={handleOpenProfile}
           currentStoreName={
             stores.find((s) => s.id.toString() === selectedStoreId)?.name ||
             "Tiendas"
@@ -707,7 +802,7 @@ const ClientInterface = ({
 
       <button
         className="floating-chat-button"
-        onClick={() => setIsChatOpen(true)}
+        onClick={handleOpenChat}
         title="Chatear con soporte"
       >
         <HiOutlineChat className="chat-icon" />
@@ -731,7 +826,7 @@ const ClientInterface = ({
         userData={userData}
         onLogout={onLogout}
         onShowLogin={onShowLoginForm}
-        onProfileClick={() => setShowProfile(true)}
+        onProfileClick={handleOpenProfile}
       />
     </div>
   );

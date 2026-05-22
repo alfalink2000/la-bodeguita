@@ -1,10 +1,10 @@
-// AdminInterface.jsx - VERSIÓN CORREGIDA
+// AdminInterface.jsx - VERSIÓN COMPLETA CON NAVEGACIÓN
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useAppNavigation } from "../../../hooks/useAppNavigation";
 import {
   HiOutlineChartBar,
   HiOutlineTag,
-  HiOutlineStar,
   HiOutlineCube,
   HiOutlineLogout,
   HiOutlineMenu,
@@ -16,7 +16,6 @@ import {
   HiOutlineChat,
   HiOutlineClipboardList,
   HiOutlineCollection,
-  HiOutlineExclamationCircle,
 } from "react-icons/hi";
 import Swal from "sweetalert2";
 
@@ -54,7 +53,6 @@ import AdminOrdersManager from "../AdminOrdersManager/AdminOrdersManager";
 
 import "./AdminInterface.css";
 
-// Constantes para evitar recreación de objetos
 const MENU_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: HiOutlineChartBar },
   { id: "orders", label: "Pedidos", icon: HiOutlineClipboardList, badge: true },
@@ -67,6 +65,29 @@ const MENU_ITEMS = [
 ];
 
 const AdminInterface = ({ onLogout }) => {
+  // ✅ Navegación
+  const { saveAction, resetNavigation, canGoBack, getStackInfo } =
+    useAppNavigation({
+      moduleName: "admin",
+      onBack: () => {
+        // Callback personalizado para admin
+        if (selectedOrder) {
+          setSelectedOrder(null);
+          return true;
+        }
+        if (selectedChatUserId) {
+          setSelectedChatUserId(null);
+          return true;
+        }
+        if (showAddForm) {
+          setShowAddForm(false);
+          setEditingProduct(null);
+          return true;
+        }
+        return false;
+      },
+    });
+
   const [activeSection, setActiveSection] = useState("dashboard");
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -75,13 +96,119 @@ const AdminInterface = ({ onLogout }) => {
   const [pendingOrders, setPendingOrders] = useState(0);
   const [ordersNeedingContact, setOrdersNeedingContact] = useState(0);
   const [selectedChatUserId, setSelectedChatUserId] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const dispatch = useDispatch();
 
-  // Selectores
   const products = useSelector((state) => state.products.products);
   const categories = useSelector((state) => state.categories.categories);
   const adminUsers = useSelector((state) => state.adminUsers.users);
+
+  // ✅ Guardar cambios de sección
+  const handleSectionChange = useCallback(
+    (sectionId) => {
+      if (activeSection !== sectionId) {
+        setActiveSection(sectionId);
+        saveAction("section", { from: activeSection, to: sectionId });
+        setIsMobileMenuOpen(false);
+        setSelectedChatUserId(null);
+        setSelectedOrder(null);
+      }
+    },
+    [activeSection, saveAction],
+  );
+
+  // ✅ Guardar cuando se selecciona un pedido
+  const handleSelectOrder = useCallback(
+    (order) => {
+      setSelectedOrder(order);
+      saveAction("detail", { type: "order", id: order.id });
+    },
+    [saveAction],
+  );
+
+  // ✅ Guardar cuando se abre un chat
+  const handleOpenChatFromOrders = useCallback(
+    (userId, userName) => {
+      setSelectedChatUserId(userId);
+      setActiveSection("chats");
+      saveAction("detail", { type: "chat", userId });
+      Swal.fire({
+        icon: "info",
+        title: "Chat abierto",
+        text: `Ahora puedes chatear con ${userName || "el cliente"}`,
+        timer: 2000,
+        showConfirmButton: false,
+        toast: true,
+        position: "top-end",
+      });
+    },
+    [saveAction],
+  );
+
+  // ✅ Guardar cuando se abre el formulario de producto
+  const handleOpenProductForm = useCallback(
+    (product = null) => {
+      setEditingProduct(product);
+      setShowAddForm(true);
+      saveAction("modal", { type: "product-form", productId: product?.id });
+    },
+    [saveAction],
+  );
+
+  // ✅ Escuchar eventos de navegación
+  useEffect(() => {
+    const handleCloseDetail = (event) => {
+      const detailType = event.detail?.data?.type;
+      if (detailType === "order") {
+        setSelectedOrder(null);
+      } else if (detailType === "chat") {
+        setSelectedChatUserId(null);
+      }
+    };
+
+    const handleCloseModal = (event) => {
+      const modalType = event.detail?.data?.type;
+      if (modalType === "product-form") {
+        setShowAddForm(false);
+        setEditingProduct(null);
+      }
+    };
+
+    const handleSectionBack = (event) => {
+      const previousSection = event.detail?.data?.to || "dashboard";
+      setActiveSection(previousSection);
+    };
+
+    window.addEventListener("admin:close-detail", handleCloseDetail);
+    window.addEventListener("admin:close-modal", handleCloseModal);
+    window.addEventListener("admin:section-back", handleSectionBack);
+
+    return () => {
+      window.removeEventListener("admin:close-detail", handleCloseDetail);
+      window.removeEventListener("admin:close-modal", handleCloseModal);
+      window.removeEventListener("admin:section-back", handleSectionBack);
+    };
+  }, []);
+
+  // ✅ Resetear navegación al montar
+  useEffect(() => {
+    resetNavigation();
+    return () => resetNavigation();
+  }, [resetNavigation]);
+
+  // Debug en desarrollo
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log("📊 Estado navegación admin:", getStackInfo());
+    }
+  }, [
+    getStackInfo,
+    activeSection,
+    selectedOrder,
+    selectedChatUserId,
+    showAddForm,
+  ]);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -89,7 +216,7 @@ const AdminInterface = ({ onLogout }) => {
     dispatch(getAdminUsers());
   }, [dispatch]);
 
-  // Cargar pedidos pendientes y los que necesitan contacto
+  // Cargar pedidos pendientes
   useEffect(() => {
     const loadOrdersStats = async () => {
       try {
@@ -121,14 +248,13 @@ const AdminInterface = ({ onLogout }) => {
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ CORREGIDO: Cargar contador de chats no leídos usando la ruta correcta
+  // Cargar contador de chats no leídos
   useEffect(() => {
     const loadUnread = async () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        // ✅ Usar la ruta correcta /unread-count en lugar de /admin/unread
         const res = await fetch(`${API_URL}/api/chat/unread-count`, {
           headers: { "x-token": token },
         });
@@ -146,7 +272,6 @@ const AdminInterface = ({ onLogout }) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Memoizar valores derivados
   const categoryNames = useMemo(
     () =>
       Array.isArray(categories)
@@ -155,7 +280,6 @@ const AdminInterface = ({ onLogout }) => {
     [categories],
   );
 
-  // Handlers optimizados
   const handleSubmit = useCallback(
     (formData) => {
       if (editingProduct) {
@@ -170,10 +294,12 @@ const AdminInterface = ({ onLogout }) => {
     [editingProduct, dispatch],
   );
 
-  const handleEdit = useCallback((product) => {
-    setEditingProduct(product);
-    setShowAddForm(true);
-  }, []);
+  const handleEdit = useCallback(
+    (product) => {
+      handleOpenProductForm(product);
+    },
+    [handleOpenProductForm],
+  );
 
   const handleDelete = useCallback(
     (productId) => {
@@ -261,27 +387,6 @@ const AdminInterface = ({ onLogout }) => {
     });
   }, [dispatch, onLogout]);
 
-  const handleSectionChange = useCallback((sectionId) => {
-    setActiveSection(sectionId);
-    setIsMobileMenuOpen(false);
-  }, []);
-
-  // Función para abrir chat desde pedidos
-  const handleOpenChatFromOrders = useCallback((userId, userName) => {
-    setSelectedChatUserId(userId);
-    setActiveSection("chats");
-    Swal.fire({
-      icon: "info",
-      title: "Chat abierto",
-      text: `Ahora puedes chatear con ${userName || "el cliente"}`,
-      timer: 2000,
-      showConfirmButton: false,
-      toast: true,
-      position: "top-end",
-    });
-  }, []);
-
-  // Renderizado de contenido
   const renderContent = useMemo(() => {
     switch (activeSection) {
       case "dashboard":
@@ -307,7 +412,7 @@ const AdminInterface = ({ onLogout }) => {
             <div className="admin-section__header">
               <h2 className="admin-section__title">Gestión de Productos</h2>
               <button
-                onClick={() => setShowAddForm(true)}
+                onClick={() => handleOpenProductForm()}
                 className="admin-section__add-button"
               >
                 Agregar Producto
@@ -320,7 +425,7 @@ const AdminInterface = ({ onLogout }) => {
                 <h3>No hay productos</h3>
                 <p>Comienza agregando tu primer producto al catálogo</p>
                 <button
-                  onClick={() => setShowAddForm(true)}
+                  onClick={() => handleOpenProductForm()}
                   className="admin-section__empty-button"
                 >
                   Agregar Primer Producto
@@ -392,6 +497,7 @@ const AdminInterface = ({ onLogout }) => {
             <AdminOrdersManager
               token={localStorage.getItem("token")}
               onOpenChatWithUser={handleOpenChatFromOrders}
+              onSelectOrder={handleSelectOrder}
             />
           </div>
         );
@@ -421,9 +527,10 @@ const AdminInterface = ({ onLogout }) => {
     handleUpdateCategory,
     handleDeleteCategory,
     handleOpenChatFromOrders,
+    handleSelectOrder,
+    handleOpenProductForm,
   ]);
 
-  // Calcular badge combinado para chats
   const chatBadgeCount = unreadChats + ordersNeedingContact;
 
   return (
