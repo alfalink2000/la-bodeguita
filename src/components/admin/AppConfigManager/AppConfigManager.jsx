@@ -119,32 +119,116 @@ const AppConfigManager = () => {
     );
   };
 
-  // Cargar configuración de delivery
+  // ✅ CORREGIDO: Cargar configuración de delivery
   const loadDeliveryConfig = async () => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) return;
+      if (!token) {
+        console.warn("⚠️ No hay token para cargar delivery config");
+        return;
+      }
 
+      console.log("🔄 Cargando configuración de delivery...");
       const res = await fetch(`${API_URL}/api/delivery/config`, {
         headers: { "x-token": token },
       });
       const data = await res.json();
 
+      console.log("📥 Respuesta delivery config:", data);
+
       if (data.ok && data.config) {
+        console.log("✅ Delivery config cargada correctamente");
         setFormData((prev) => ({
           ...prev,
           delivery_origin_name: data.config.origin_name || "",
           delivery_origin_address: data.config.origin_address || "",
-          delivery_origin_lat: data.config.origin_lat?.toString() || "",
-          delivery_origin_lng: data.config.origin_lng?.toString() || "",
-          delivery_price_per_km: data.config.price_per_km?.toString() || "",
-          delivery_minimum_price: data.config.minimum_price?.toString() || "",
-          delivery_free_from: data.config.free_delivery_from?.toString() || "",
-          delivery_max_distance: data.config.max_distance_km?.toString() || "",
+          delivery_origin_lat: data.config.origin_lat
+            ? data.config.origin_lat.toString()
+            : "",
+          delivery_origin_lng: data.config.origin_lng
+            ? data.config.origin_lng.toString()
+            : "",
+          delivery_price_per_km: data.config.price_per_km
+            ? data.config.price_per_km.toString()
+            : "",
+          delivery_minimum_price: data.config.minimum_price
+            ? data.config.minimum_price.toString()
+            : "",
+          delivery_free_from: data.config.free_delivery_from
+            ? data.config.free_delivery_from.toString()
+            : "",
+          delivery_max_distance: data.config.max_distance_km
+            ? data.config.max_distance_km.toString()
+            : "",
         }));
+      } else {
+        console.warn("⚠️ No se pudo cargar delivery config:", data.msg);
       }
     } catch (err) {
-      console.error("Error cargando delivery config:", err);
+      console.error("❌ Error cargando delivery config:", err);
+    }
+  };
+
+  // ✅ CORREGIDO: Guardar configuración de delivery
+  const handleSaveDelivery = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      setSaving(true);
+
+      const payload = {
+        origin_name: formData.delivery_origin_name || "Punto de partida",
+        origin_address: formData.delivery_origin_address || "",
+        origin_lat: parseFloat(formData.delivery_origin_lat) || 23.113592,
+        origin_lng: parseFloat(formData.delivery_origin_lng) || -82.366592,
+        price_per_km: parseFloat(formData.delivery_price_per_km) || 50,
+        minimum_price: parseFloat(formData.delivery_minimum_price) || 100,
+        free_delivery_from: parseFloat(formData.delivery_free_from) || 500,
+        max_distance_km: parseFloat(formData.delivery_max_distance) || 15,
+      };
+
+      console.log("📤 Guardando delivery config:", payload);
+
+      const res = await fetch(`${API_URL}/api/delivery/config`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-token": token,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      console.log("📥 Respuesta guardar delivery:", data);
+
+      if (data.ok) {
+        // ✅ Recargar para obtener los datos actualizados del servidor
+        await loadDeliveryConfig();
+
+        Swal.fire({
+          icon: "success",
+          title: "¡Configuración guardada!",
+          text: "La configuración de delivery se ha guardado correctamente",
+          showConfirmButton: false,
+          timer: 2000,
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: data.msg || "No se pudo guardar la configuración",
+        });
+      }
+    } catch (err) {
+      console.error("❌ Error guardando delivery:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error de conexión",
+        text: "No se pudo conectar con el servidor",
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -223,10 +307,26 @@ const AppConfigManager = () => {
     });
   };
 
+  // ✅ CORREGIDO: handleSaveDelivery con recarga
   const handleSaveDelivery = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
+
+      setSaving(true); // Usar el estado saving existente
+
+      const payload = {
+        origin_name: formData.delivery_origin_name || "Punto de partida",
+        origin_address: formData.delivery_origin_address || "",
+        origin_lat: parseFloat(formData.delivery_origin_lat) || 23.113592,
+        origin_lng: parseFloat(formData.delivery_origin_lng) || -82.366592,
+        price_per_km: parseFloat(formData.delivery_price_per_km) || 50,
+        minimum_price: parseFloat(formData.delivery_minimum_price) || 100,
+        free_delivery_from: parseFloat(formData.delivery_free_from) || 500,
+        max_distance_km: parseFloat(formData.delivery_max_distance) || 15,
+      };
+
+      console.log("📤 Guardando delivery config:", payload);
 
       const res = await fetch(`${API_URL}/api/delivery/config`, {
         method: "PUT",
@@ -234,32 +334,28 @@ const AppConfigManager = () => {
           "Content-Type": "application/json",
           "x-token": token,
         },
-        body: JSON.stringify({
-          origin_name: formData.delivery_origin_name,
-          origin_address: formData.delivery_origin_address,
-          origin_lat: parseFloat(formData.delivery_origin_lat) || 23.113592,
-          origin_lng: parseFloat(formData.delivery_origin_lng) || -82.366592,
-          price_per_km: parseFloat(formData.delivery_price_per_km) || 50,
-          minimum_price: parseFloat(formData.delivery_minimum_price) || 100,
-          free_delivery_from: parseFloat(formData.delivery_free_from) || 500,
-          max_distance_km: parseFloat(formData.delivery_max_distance) || 15,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
+      console.log("📥 Respuesta guardar delivery:", data);
 
       if (data.ok) {
+        // ✅ Recargar la configuración después de guardar
+        await loadDeliveryConfig();
+
         Swal.fire({
           icon: "success",
           title: "¡Configuración de delivery guardada!",
+          text: "Los cambios se han aplicado correctamente",
           showConfirmButton: false,
-          timer: 1500,
+          timer: 2000,
         });
       } else {
         Swal.fire({
           icon: "error",
           title: "Error",
-          text: data.msg || "No se pudo guardar",
+          text: data.msg || "No se pudo guardar la configuración",
         });
       }
     } catch (err) {
@@ -267,15 +363,19 @@ const AppConfigManager = () => {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "Error de conexión",
+        text: "Error de conexión al guardar",
       });
+    } finally {
+      setSaving(false);
     }
   };
 
+  // ✅ CORREGIDO: useEffect con dependencias correctas
   useEffect(() => {
+    console.log("🔄 AppConfigManager montado - cargando configuraciones");
     dispatch(loadAppConfig());
     loadDeliveryConfig();
-  }, [dispatch]);
+  }, [dispatch]); // Solo se ejecuta al montar
 
   useEffect(() => {
     if (config) {
