@@ -32,9 +32,10 @@ const AdminChatManager = ({
   const [newMessage, setNewMessage] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
   const [sending, setSending] = useState(false);
-  const [showAllUsers, setShowAllUsers] = useState(false); // Toggle para mostrar todos los usuarios
+  const [showAllUsers, setShowAllUsers] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const prevSelectedUserIdRef = useRef(null);
 
   const {
     chats = [],
@@ -54,19 +55,59 @@ const AdminChatManager = ({
     }
   }, [dispatch]);
 
-  // Cargar todos los usuarios
-  const loadAllUsers = useCallback(async () => {
-    try {
-      await dispatch(startLoadAllUsers());
-      setIsInitialized(true);
-    } catch (error) {
-      console.error("Error cargando todos los usuarios:", error);
-    }
-  }, [dispatch]);
-
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // ✅ CORREGIDO: Seleccionar usuario por ID (desde orders)
+  useEffect(() => {
+    if (!selectedUserId || !isInitialized) return;
+
+    // Evitar seleccionar el mismo usuario múltiples veces
+    if (prevSelectedUserIdRef.current === selectedUserId) return;
+    prevSelectedUserIdRef.current = selectedUserId;
+
+    console.log("🔍 Buscando chat para usuario ID:", selectedUserId);
+    console.log("📋 Chats disponibles:", chats.length);
+
+    // Buscar el chat en la lista actual
+    const chatToSelect = chats.find(
+      (chat) =>
+        chat.user?.id === selectedUserId ||
+        chat.user?.id === parseInt(selectedUserId),
+    );
+
+    if (chatToSelect) {
+      console.log("✅ Chat encontrado, seleccionando...");
+      dispatch(selectChat(chatToSelect));
+      // Cargar mensajes del usuario
+      dispatch(startLoadMessages(selectedUserId));
+    } else {
+      console.warn("⚠️ Chat no encontrado en la lista, buscando usuario...");
+      // Si no se encuentra, intentar cargar todos los usuarios
+      dispatch(startLoadAllUsers()).then(() => {
+        // Intentar de nuevo después de cargar
+        setTimeout(() => {
+          const updatedChat = chats.find(
+            (chat) =>
+              chat.user?.id === selectedUserId ||
+              chat.user?.id === parseInt(selectedUserId),
+          );
+          if (updatedChat) {
+            dispatch(selectChat(updatedChat));
+            dispatch(startLoadMessages(selectedUserId));
+          }
+        }, 500);
+      });
+    }
+  }, [selectedUserId, isInitialized, chats, dispatch]);
+
+  // Limpiar cuando se desmonta
+  useEffect(() => {
+    return () => {
+      prevSelectedUserIdRef.current = null;
+    };
+  }, []);
 
   // Notificar cambios en el contador de no leídos
   useEffect(() => {
@@ -74,30 +115,6 @@ const AdminChatManager = ({
       onUnreadCountChange(totalUnread);
     }
   }, [totalUnread, onUnreadCountChange]);
-
-  // Seleccionar usuario por ID (desde orders)
-  useEffect(() => {
-    if (!selectedUserId || !dispatch || !isInitialized) return;
-
-    const selectUserById = async () => {
-      let currentChats = chats;
-      if (currentChats.length === 0) {
-        await dispatch(startLoadChats());
-        const state = useSelector((state) => state.chat);
-        currentChats = state.chats;
-      }
-
-      const chatToSelect = currentChats.find(
-        (chat) => chat.user?.id === selectedUserId,
-      );
-      if (chatToSelect) {
-        dispatch(selectChat(chatToSelect));
-        if (onSelectUser) onSelectUser(selectedUserId);
-      }
-    };
-
-    selectUserById();
-  }, [selectedUserId, dispatch, onSelectUser, isInitialized]);
 
   // Auto-scroll
   useEffect(() => {
@@ -111,10 +128,22 @@ const AdminChatManager = ({
     }
   }, [selectedChat]);
 
+  // ✅ Recargar mensajes periódicamente cuando hay un chat seleccionado
+  useEffect(() => {
+    if (!selectedChat?.user?.id) return;
+
+    const interval = setInterval(() => {
+      dispatch(startLoadMessages(selectedChat.user.id));
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [selectedChat, dispatch]);
+
   const handleSelectChat = useCallback(
     (chat) => {
       console.log("📌 Seleccionando chat del cliente:", chat.user?.id);
       dispatch(selectChat(chat));
+      dispatch(startLoadMessages(chat.user.id));
       if (onSelectUser) {
         onSelectUser(chat.user?.id);
       }
@@ -124,6 +153,7 @@ const AdminChatManager = ({
 
   const handleBack = useCallback(() => {
     dispatch(clearSelectedChat());
+    prevSelectedUserIdRef.current = null;
     if (onSelectUser) {
       onSelectUser(null);
     }
@@ -162,23 +192,24 @@ const AdminChatManager = ({
 
   const handleRefresh = useCallback(async () => {
     if (showAllUsers) {
-      await loadAllUsers();
+      await dispatch(startLoadAllUsers());
     } else {
-      await loadData();
+      await dispatch(startLoadChats());
     }
     if (selectedChat?.user?.id) {
       await dispatch(startLoadMessages(selectedChat.user.id));
     }
-  }, [dispatch, loadData, loadAllUsers, selectedChat, showAllUsers]);
+  }, [dispatch, selectedChat, showAllUsers]);
 
   const toggleUserView = useCallback(() => {
-    setShowAllUsers(!showAllUsers);
-    if (!showAllUsers) {
-      loadAllUsers();
+    const newShowAllUsers = !showAllUsers;
+    setShowAllUsers(newShowAllUsers);
+    if (newShowAllUsers) {
+      dispatch(startLoadAllUsers());
     } else {
-      loadData();
+      dispatch(startLoadChats());
     }
-  }, [showAllUsers, loadAllUsers, loadData]);
+  }, [showAllUsers, dispatch]);
 
   const formatTime = (dateString) => {
     if (!dateString) return "";
@@ -202,7 +233,6 @@ const AdminChatManager = ({
     return name.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // Separar chats con mensajes y usuarios nuevos
   const chatsWithMessages = filteredChats.filter(
     (chat) => chat.hasMessages || !chat.isNewUser,
   );
@@ -283,7 +313,6 @@ const AdminChatManager = ({
               </div>
             ) : (
               <>
-                {/* Mostrar chats activos primero */}
                 {chatsWithMessages.length > 0 && !showAllUsers && (
                   <>
                     <div className="admin-chat__section-title">
@@ -339,7 +368,6 @@ const AdminChatManager = ({
                   </>
                 )}
 
-                {/* Mostrar todos los usuarios (modo lista completa) */}
                 {(showAllUsers || newUsers.length > 0) && (
                   <>
                     {!showAllUsers && newUsers.length > 0 && (
@@ -395,7 +423,7 @@ const AdminChatManager = ({
           </div>
         </>
       ) : (
-        // VISTA DE CONVERSACIÓN
+        // ✅ VISTA DE CONVERSACIÓN
         <div className="admin-chat__conversation">
           <div className="admin-chat__conv-header">
             <button className="admin-chat__back" onClick={handleBack}>
@@ -441,6 +469,7 @@ const AdminChatManager = ({
             {loading && messages.length === 0 ? (
               <div className="admin-chat__conv-loading">
                 <div className="admin-chat__conv-spinner"></div>
+                <span>Cargando mensajes...</span>
               </div>
             ) : messages.length === 0 ? (
               <div className="admin-chat__conv-empty">

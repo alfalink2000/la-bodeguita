@@ -13,6 +13,8 @@ import {
   HiOutlineCurrencyDollar,
   HiOutlineShoppingBag,
   HiOutlineLogout,
+  HiOutlineIdentification,
+  HiOutlineAtSymbol,
 } from "react-icons/hi";
 import Swal from "sweetalert2";
 import { startLogout } from "../../../actions/authActions";
@@ -35,13 +37,20 @@ const UserProfile = ({
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
+    username: "",
+    email: "",
     full_name: "",
     phone: "",
     address: "",
+    lat: null,
+    lng: null,
   });
   const [saving, setSaving] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
   const [unreadOrdersCount, setUnreadOrdersCount] =
     useState(initialUnreadOrders);
+  const [emailError, setEmailError] = useState("");
+  const [usernameError, setUsernameError] = useState("");
   const appConfig = useSelector((state) => state.appConfig.config);
   const currency = appConfig?.currency || "CUP";
 
@@ -60,23 +69,20 @@ const UserProfile = ({
   useEffect(() => {
     if (userData) {
       setEditForm({
+        username: userData.username || userData.name || "",
+        email: userData.email || "",
         full_name: userData.full_name || "",
         phone: userData.phone || "",
         address: userData.address || "",
+        lat: userData.lat || null,
+        lng: userData.lng || null,
       });
     }
   }, [userData]);
 
   // ✅ Al abrir el perfil, marcar pedidos como vistos
   useEffect(() => {
-    console.log("👤 [UserProfile] useEffect de unreadOrdersCount ejecutado");
-    console.log("👤 [UserProfile] unreadOrdersCount:", unreadOrdersCount);
-    console.log("👤 [UserProfile] onOrdersViewed existe:", !!onOrdersViewed);
-
     if (unreadOrdersCount > 0 && onOrdersViewed) {
-      console.log(
-        "👤 [UserProfile] 🎯 Resetando contador de pedidos no leídos",
-      );
       onOrdersViewed();
       setUnreadOrdersCount(0);
       localStorage.setItem("unread_orders_count", "0");
@@ -110,10 +116,6 @@ const UserProfile = ({
       loadOrders();
     }
   }, [activeTab, loadOrders]);
-
-  useEffect(() => {
-    console.log("👤 [UserProfile] Tab cambiada a:", activeTab);
-  }, [activeTab]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -161,20 +163,210 @@ const UserProfile = ({
     }
   };
 
+  // ✅ Validar email en tiempo real
+  const validateEmail = (email) => {
+    if (!email || email.trim() === "") {
+      setEmailError("");
+      return true;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError("Formato de email inválido");
+      return false;
+    }
+    setEmailError("");
+    return true;
+  };
+
+  // ✅ Validar username en tiempo real
+  const validateUsername = (username) => {
+    if (!username || username.trim() === "") {
+      setUsernameError("El nombre de usuario es obligatorio");
+      return false;
+    }
+    if (username.trim().length < 3) {
+      setUsernameError("Mínimo 3 caracteres");
+      return false;
+    }
+    if (username.trim().length > 50) {
+      setUsernameError("Máximo 50 caracteres");
+      return false;
+    }
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(username)) {
+      setUsernameError("Solo letras, números y guiones bajos");
+      return false;
+    }
+    setUsernameError("");
+    return true;
+  };
+
   const handleEditToggle = () => {
     if (isEditing) {
+      // Cancelar edición - restaurar valores originales
       setEditForm({
+        username: userData?.username || userData?.name || "",
+        email: userData?.email || "",
         full_name: userData?.full_name || "",
         phone: userData?.phone || "",
         address: userData?.address || "",
+        lat: userData?.lat || null,
+        lng: userData?.lng || null,
       });
+      setEmailError("");
+      setUsernameError("");
     }
     setIsEditing(!isEditing);
   };
 
+  // ✅ Función para obtener ubicación GPS
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      Swal.fire({
+        icon: "error",
+        title: "GPS no disponible",
+        text: "Tu dispositivo no soporta geolocalización",
+        confirmButtonColor: "#059669",
+      });
+      return;
+    }
+
+    setGettingLocation(true);
+
+    Swal.fire({
+      title: "Obteniendo ubicación...",
+      text: "Por favor permite el acceso a tu ubicación",
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+
+        setEditForm((prev) => ({
+          ...prev,
+          lat: latitude,
+          lng: longitude,
+          address:
+            prev.address ||
+            `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`,
+        }));
+
+        setGettingLocation(false);
+
+        Swal.fire({
+          icon: "success",
+          title: "¡Ubicación obtenida!",
+          text: "Coordenadas GPS registradas correctamente",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      },
+      (error) => {
+        console.error("Error GPS:", error);
+        setGettingLocation(false);
+
+        let errorMsg = "No se pudo obtener tu ubicación.";
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMsg =
+              "Permiso de ubicación denegado. Actívalo en la configuración de tu navegador.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMsg = "Información de ubicación no disponible.";
+            break;
+          case error.TIMEOUT:
+            errorMsg = "Tiempo de espera agotado al obtener ubicación.";
+            break;
+        }
+
+        Swal.fire({
+          icon: "error",
+          title: "Error de ubicación",
+          text: errorMsg,
+          confirmButtonColor: "#059669",
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      },
+    );
+  };
+
+  // ✅ Función para guardar perfil
   const handleSaveProfile = async () => {
+    // Validar campos obligatorios
+    if (!editForm.username || editForm.username.trim() === "") {
+      Swal.fire({
+        icon: "error",
+        title: "Campo requerido",
+        text: "El nombre de usuario es obligatorio",
+        confirmButtonColor: "#059669",
+      });
+      return;
+    }
+
+    if (!validateUsername(editForm.username)) {
+      Swal.fire({
+        icon: "error",
+        title: "Usuario inválido",
+        text: usernameError,
+        confirmButtonColor: "#059669",
+      });
+      return;
+    }
+
+    if (editForm.email && editForm.email.trim() !== "") {
+      if (!validateEmail(editForm.email)) {
+        Swal.fire({
+          icon: "error",
+          title: "Email inválido",
+          text: emailError,
+          confirmButtonColor: "#059669",
+        });
+        return;
+      }
+    }
+
     setSaving(true);
     const token = localStorage.getItem("token");
+
+    // Construir el body
+    const bodyData = {
+      username: editForm.username.trim(),
+      full_name: editForm.full_name?.trim() || "",
+      phone: editForm.phone?.trim() || "",
+      address: editForm.address?.trim() || "",
+    };
+
+    // Incluir email solo si tiene valor
+    if (editForm.email && editForm.email.trim() !== "") {
+      bodyData.email = editForm.email.trim();
+    }
+
+    // Solo incluir lat y lng si tienen un valor numérico válido
+    if (
+      editForm.lat !== null &&
+      editForm.lat !== undefined &&
+      !isNaN(parseFloat(editForm.lat))
+    ) {
+      bodyData.lat = parseFloat(editForm.lat);
+    }
+    if (
+      editForm.lng !== null &&
+      editForm.lng !== undefined &&
+      !isNaN(parseFloat(editForm.lng))
+    ) {
+      bodyData.lng = parseFloat(editForm.lng);
+    }
+
+    console.log("📤 Enviando datos al servidor:", bodyData);
 
     try {
       const res = await fetch(`${API_URL}/api/auth/profile`, {
@@ -183,22 +375,41 @@ const UserProfile = ({
           "Content-Type": "application/json",
           "x-token": token,
         },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(bodyData),
       });
+
       const data = await res.json();
+      console.log("📥 Respuesta del servidor:", data);
 
       if (data.ok) {
         Swal.fire({
           icon: "success",
           title: "Perfil actualizado",
-          text: "Tus datos han sido actualizados correctamente",
+          text: "Tus datos han sido actualizados correctamente. Si cambiaste tu usuario, deberás iniciar sesión nuevamente.",
           confirmButtonColor: "#059669",
-          timer: 2000,
-          showConfirmButton: false,
         });
+
         setIsEditing(false);
+
+        // Actualizar datos locales
         if (data.user) {
           Object.assign(userData, data.user);
+
+          // Si cambió el username, actualizar localStorage y recargar
+          if (data.user.username !== userData.username) {
+            setTimeout(() => {
+              Swal.fire({
+                title: "Usuario modificado",
+                text: "Has cambiado tu nombre de usuario. Por seguridad, deberás iniciar sesión nuevamente.",
+                icon: "info",
+                confirmButtonColor: "#059669",
+                confirmButtonText: "Iniciar sesión",
+              }).then(() => {
+                dispatch(startLogout());
+                onClose();
+              });
+            }, 1500);
+          }
         }
       } else {
         Swal.fire({
@@ -209,6 +420,7 @@ const UserProfile = ({
         });
       }
     } catch (err) {
+      console.error("Error al guardar perfil:", err);
       Swal.fire({
         icon: "error",
         title: "Error de conexión",
@@ -256,7 +468,7 @@ const UserProfile = ({
           <h3 className="up-name">
             {userData?.full_name || userData?.username || "Usuario"}
           </h3>
-          <p className="up-role">@{userData?.username}</p>
+          <p className="up-role">@{userData?.username || userData?.name}</p>
         </div>
 
         {/* Tabs */}
@@ -284,6 +496,74 @@ const UserProfile = ({
         <div className="up-content-wrapper">
           {activeTab === "profile" ? (
             <div className="up-profile-section">
+              {/* ✅ CAMPO: Nombre de usuario (NUEVO - EDITABLE) */}
+              <div className="up-field">
+                <label>
+                  <HiOutlineIdentification size={14} /> Usuario de acceso
+                </label>
+                {isEditing ? (
+                  <div>
+                    <input
+                      type="text"
+                      value={editForm.username}
+                      onChange={(e) => {
+                        setEditForm({ ...editForm, username: e.target.value });
+                        validateUsername(e.target.value);
+                      }}
+                      onBlur={(e) => validateUsername(e.target.value)}
+                      placeholder="Tu usuario para iniciar sesión"
+                      className={usernameError ? "up-input-error" : ""}
+                    />
+                    {usernameError && (
+                      <span className="up-error-text">{usernameError}</span>
+                    )}
+                    <small className="up-hint">
+                      Este es el nombre que usas para iniciar sesión
+                    </small>
+                  </div>
+                ) : (
+                  <span>
+                    @{userData?.username || userData?.name || "No registrado"}
+                  </span>
+                )}
+              </div>
+
+              {/* ✅ CAMPO: Email (NUEVO - EDITABLE) */}
+              <div className="up-field">
+                <label>
+                  <HiOutlineAtSymbol size={14} /> Correo electrónico
+                </label>
+                {isEditing ? (
+                  <div>
+                    <input
+                      type="email"
+                      value={editForm.email}
+                      onChange={(e) => {
+                        setEditForm({ ...editForm, email: e.target.value });
+                        if (e.target.value.trim() !== "") {
+                          validateEmail(e.target.value);
+                        } else {
+                          setEmailError("");
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value.trim() !== "") {
+                          validateEmail(e.target.value);
+                        }
+                      }}
+                      placeholder="ejemplo@correo.com"
+                      className={emailError ? "up-input-error" : ""}
+                    />
+                    {emailError && (
+                      <span className="up-error-text">{emailError}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span>{userData?.email || "No registrado"}</span>
+                )}
+              </div>
+
+              {/* Campo: Nombre completo */}
               <div className="up-field">
                 <label>
                   <HiOutlineUser size={14} /> Nombre completo
@@ -302,13 +582,7 @@ const UserProfile = ({
                 )}
               </div>
 
-              <div className="up-field">
-                <label>
-                  <HiOutlineMail size={14} /> Email
-                </label>
-                <span>{userData?.email || "No registrado"}</span>
-              </div>
-
+              {/* Campo: Teléfono */}
               <div className="up-field">
                 <label>
                   <HiOutlinePhone size={14} /> Teléfono
@@ -327,31 +601,59 @@ const UserProfile = ({
                 )}
               </div>
 
+              {/* Campo: Dirección con GPS */}
               <div className="up-field">
                 <label>
                   <HiOutlineLocationMarker size={14} /> Dirección
                 </label>
                 {isEditing ? (
-                  <textarea
-                    rows="2"
-                    value={editForm.address}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, address: e.target.value })
-                    }
-                    placeholder="Tu dirección de entrega"
-                  />
+                  <>
+                    <textarea
+                      rows="2"
+                      value={editForm.address}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, address: e.target.value })
+                      }
+                      placeholder="Tu dirección de entrega"
+                    />
+                    <button
+                      type="button"
+                      className="up-gps-btn"
+                      onClick={handleGetLocation}
+                      disabled={gettingLocation}
+                    >
+                      <HiOutlineLocationMarker size={14} />
+                      {gettingLocation
+                        ? "Obteniendo ubicación..."
+                        : "Usar mi ubicación actual GPS"}
+                    </button>
+                    {editForm.lat && editForm.lng && (
+                      <div className="up-coords-info">
+                        📍 Lat: {Number(editForm.lat).toFixed(6)}, Lng:{" "}
+                        {Number(editForm.lng).toFixed(6)}
+                      </div>
+                    )}
+                  </>
                 ) : (
-                  <span>{userData?.address || "No registrada"}</span>
+                  <span>
+                    {userData?.address || "No registrada"}
+                    {userData?.lat && userData?.lng && (
+                      <div className="up-coords-info">
+                        📍 Ubicación GPS registrada
+                      </div>
+                    )}
+                  </span>
                 )}
               </div>
 
+              {/* Botones de acción */}
               <div className="up-actions">
                 {isEditing ? (
                   <>
                     <button
                       className="up-btn up-btn--save"
                       onClick={handleSaveProfile}
-                      disabled={saving}
+                      disabled={saving || !!usernameError || !!emailError}
                     >
                       {saving ? "Guardando..." : "Guardar Cambios"}
                     </button>

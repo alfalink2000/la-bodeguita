@@ -188,7 +188,8 @@
 }
 
 .up-field span,
-.up-field input {
+.up-field input,
+.up-field textarea {
   display: block;
   padding: 0.625rem 0.75rem;
   background: var(--gray-50);
@@ -198,19 +199,22 @@
   width: 100%;
 }
 
-.up-field input {
+.up-field input,
+.up-field textarea {
   border: 2px solid var(--gray-200);
   background: var(--white);
   outline: none;
 }
 
-.up-field input:focus {
+.up-field input:focus,
+.up-field textarea:focus {
   border-color: var(--primary-green);
 }
 
+/* ✅ Botón GPS mejorado */
 .up-gps-btn {
   margin-top: 0.5rem;
-  padding: 0.5rem;
+  padding: 0.625rem 0.75rem;
   border: 2px dashed var(--primary-green);
   background: var(--primary-green-light);
   color: var(--primary-green-dark);
@@ -219,6 +223,34 @@
   font-weight: 600;
   font-size: 0.85rem;
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.up-gps-btn:hover:not(:disabled) {
+  background: var(--primary-green);
+  color: white;
+  border-style: solid;
+}
+
+.up-gps-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ✅ Información de coordenadas GPS */
+.up-coords-info {
+  font-size: 0.75rem;
+  color: var(--primary-green-dark);
+  margin-top: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  background: var(--primary-green-light);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-weight: 500;
 }
 
 .up-actions {
@@ -239,19 +271,39 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  transition: all 0.2s ease;
 }
 
 .up-btn--edit {
   background: var(--primary-green);
   color: white;
 }
+
+.up-btn--edit:hover {
+  background: var(--primary-green-dark);
+}
+
 .up-btn--save {
   background: var(--primary-blue);
   color: white;
 }
+
+.up-btn--save:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.up-btn--save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .up-btn--cancel {
   background: var(--gray-200);
   color: var(--gray-700);
+}
+
+.up-btn--cancel:hover {
+  background: var(--gray-300);
 }
 
 /* Pedidos */
@@ -277,6 +329,11 @@
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
   padding: 1rem;
+  transition: box-shadow 0.2s ease;
+}
+
+.up-order-card:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .up-order-header {
@@ -333,6 +390,24 @@
   color: var(--primary-blue);
   font-weight: 500;
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.up-order-delivery,
+.up-order-pickup {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.up-order-total {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: var(--gray-800);
 }
 
 .up-order-cancel {
@@ -345,6 +420,12 @@
   cursor: pointer;
   font-weight: 600;
   font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.up-order-cancel:hover {
+  background: var(--error);
+  color: white;
 }
 
 /* ===== RESPONSIVE MÓVIL ===== */
@@ -393,6 +474,7 @@
 
   /* ✅ Prevenir que el teclado tape inputs */
   .up-field input,
+  .up-field textarea,
   .up-gps-btn {
     font-size: 16px;
   }
@@ -404,53 +486,7 @@
     padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
   }
 }
-/* Animación para el spinner */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
 
-.spinning {
-  animation: spin 1s linear infinite;
-}
-
-/* Coordenadas info */
-.up-coords-info {
-  font-size: 0.7rem;
-  color: var(--gray-500);
-  margin-top: -0.5rem;
-  margin-bottom: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  background: var(--gray-50);
-  border-radius: var(--radius-sm);
-  text-align: center;
-}
-
-/* Textarea estilo */
-.up-field textarea {
-  width: 100%;
-  padding: 0.625rem 0.75rem;
-  border: 2px solid var(--gray-200);
-  border-radius: var(--radius);
-  font-size: 0.9rem;
-  font-family: inherit;
-  background: var(--white);
-  outline: none;
-  transition: border-color 0.2s ease;
-}
-
-.up-field textarea:focus {
-  border-color: var(--primary-green);
-}
-
-/* Botón refresh */
-.up-gps-btn svg {
-  margin-right: 0.25rem;
-}
 /* Animación para el spinner */
 @keyframes spin {
   from {
@@ -465,55 +501,77 @@
   animation: spin 1s linear infinite;
   display: inline-block;
 }
+/* Agregar al final del archivo UserProfile.css existente */
 
-/* Coordenadas info */
-.up-coords-info {
+/* ===== NUEVOS ESTILOS PARA USERNAME Y EMAIL ===== */
+
+/* Input con error */
+.up-input-error {
+  border-color: var(--error) !important;
+  background-color: #fff5f5 !important;
+}
+
+.up-input-error:focus {
+  border-color: var(--error) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Texto de error */
+.up-error-text {
+  display: block;
+  color: var(--error);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+/* Texto de ayuda */
+.up-hint {
+  display: block;
+  color: var(--gray-400);
   font-size: 0.7rem;
-  color: var(--gray-500);
-  margin-top: -0.5rem;
-  margin-bottom: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  background: var(--gray-50);
-  border-radius: var(--radius-sm);
-  text-align: center;
+  margin-top: 0.25rem;
+  font-style: italic;
 }
 
-/* Textarea estilo */
-.up-field textarea {
-  width: 100%;
-  padding: 0.625rem 0.75rem;
-  border: 2px solid var(--gray-200);
-  border-radius: var(--radius);
-  font-size: 0.9rem;
-  font-family: inherit;
-  background: var(--white);
-  outline: none;
-  transition: border-color 0.2s ease;
+/* Iconos adicionales */
+.up-field label svg {
+  flex-shrink: 0;
 }
 
-.up-field textarea:focus {
-  border-color: var(--primary-green);
-}
-
-/* Botón GPS */
-.up-gps-btn {
-  margin-top: 0.5rem;
-  padding: 0.5rem;
-  border: 2px dashed var(--primary-green);
-  background: var(--primary-green-light);
-  color: var(--primary-green-dark);
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.85rem;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.up-gps-btn:disabled {
-  opacity: 0.6;
+/* Botón deshabilitado */
+.up-btn--save:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
+  background: var(--gray-400);
+}
+
+/* Mejorar estilos de campos en edición */
+.up-field input,
+.up-field textarea {
+  transition: all 0.2s ease;
+}
+
+.up-field input:focus:not(.up-input-error),
+.up-field textarea:focus:not(.up-input-error) {
+  border-color: var(--primary-green);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+/* Animación para mensajes de error */
+.up-error-text {
+  animation: shakeError 0.3s ease;
+}
+
+@keyframes shakeError {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
 }
