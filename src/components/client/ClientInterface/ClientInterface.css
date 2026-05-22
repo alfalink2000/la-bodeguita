@@ -1961,3 +1961,811 @@
   font-size: 0.75rem;
   font-weight: 600;
 }
+/* ============================================
+   SELECTOR CON TÍTULO Y DECORACIÓN
+   ============================================ */
+
+/* Header del selector */
+.selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.5rem 0.5rem 0.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.selector-header__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.selector-header__icon {
+  font-size: 1rem;
+}
+
+.selector-header__title h3 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.selector-header__count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  background: var(--gray-100);
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+}
+
+.selector-header__count .count-number {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary-green);
+}
+
+.selector-header__count .count-label {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--gray-500);
+}
+
+/* Contenedor de chips con scroll */
+.store-selector-client,
+.categories-chips {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 0.75rem 0;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.store-selector-client__scroll,
+.categories-chips__scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.25rem 0.75rem 0.5rem 0.75rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.store-selector-client__scroll::-webkit-scrollbar,
+.categories-chips__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ===== DECORACIÓN PARA POCOS ELEMENTOS ===== */
+.chips-decoration {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+  padding-left: 1rem;
+  border-left: 2px dashed var(--gray-200);
+}
+
+.decoration-dots {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.decoration-dots .dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gray-300);
+  animation: dotPulse 1.5s ease-in-out infinite;
+}
+
+.decoration-dots .dot:nth-child(1) {
+  animation-delay: 0s;
+}
+.decoration-dots .dot:nth-child(2) {
+  animation-delay: 0.3s;
+}
+.decoration-dots .dot:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes dotPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.decoration-sparkle {
+  font-size: 0.8rem;
+  animation: sparkleRotate 2s ease-in-out infinite;
+}
+
+@keyframes sparkleRotate {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: rotate(15deg) scale(1.1);
+    opacity: 1;
+  }
+}
+
+.decoration-line {
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gray-200), transparent);
+  border-radius: 2px;
+}
+
+/* ===== STORE CHIPS ===== */
+.store-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: 1.5px solid var(--gray-200);
+  background: var(--white);
+  border-radius: 40px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--gray-600);
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+
+.store-chip:hover {
+  border-color: var(--primary-green);
+  color: var(--primary-green);
+  background: var(--primary-green-light);
+  transform: translateY(-1px);
+}
+
+.store-chip--active {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.store-chip__icon {
+  font-size: 0.9rem;
+}
+
+.store-chip__text {
+  font-size: 0.8rem;
+}
+
+/* ===== CATEGORY CHIPS ===== */
+.category-chip {
+  padding: 0.45rem 1rem;
+  border: 1.5px solid var(--gray-200);
+  background: var(--white);
+  border-radius: 40px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--gray-600);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.category-chip:hover {
+  border-color: var(--primary-green);
+  color: var(--primary-green);
+  background: var(--primary-green-light);
+}
+
+.category-chip--active {
+  background: var(--primary-green);
+  color: white;
+  border-color: var(--primary-green);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+}
+
+/* ===== RESPONSIVE MÓVIL ===== */
+@media (max-width: 768px) {
+  .selector-header {
+    padding: 0 0.5rem 0.35rem 0.5rem;
+  }
+
+  .selector-header__title h3 {
+    font-size: 0.7rem;
+  }
+
+  .selector-header__icon {
+    font-size: 0.85rem;
+  }
+
+  .selector-header__count .count-number {
+    font-size: 0.7rem;
+  }
+
+  .selector-header__count .count-label {
+    font-size: 0.55rem;
+  }
+
+  .store-chip {
+    padding: 0.4rem 0.85rem;
+    font-size: 0.75rem;
+  }
+
+  .store-chip__text {
+    font-size: 0.75rem;
+  }
+
+  .category-chip {
+    padding: 0.35rem 0.85rem;
+    font-size: 0.7rem;
+  }
+
+  /* Ocultar decoración en móvil */
+  .chips-decoration {
+    display: none;
+  }
+
+  .store-selector-client,
+  .categories-chips {
+    padding: 0.5rem 0;
+    margin-bottom: 0.75rem;
+  }
+}
+/* ============================================
+   SELECTOR CON DECORACIÓN ENTRE ICONO Y TEXTO
+   ============================================ */
+
+.selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.selector-header__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.selector-header__icon {
+  font-size: 1rem;
+  color: var(--primary-green);
+}
+
+.selector-header__title h3 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== OPCIÓN 1: PUNTOS DECORATIVOS ===== */
+.decorative-divider {
+  display: flex;
+  gap: 0.2rem;
+  align-items: center;
+}
+
+.decorative-divider .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--gray-400);
+  animation: dotFade 1.5s ease-in-out infinite;
+}
+
+.decorative-divider .dot:nth-child(1) {
+  animation-delay: 0s;
+}
+.decorative-divider .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.decorative-divider .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dotFade {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ===== OPCIÓN 2: LÍNEA DECORATIVA ===== */
+.decorative-divider-line {
+  width: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--gray-300), var(--gray-400));
+  border-radius: 1px;
+}
+
+/* ===== OPCIÓN 3: FLECHA DECORATIVA ===== */
+.decorative-arrow {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  transition: transform 0.2s ease;
+}
+
+.selector-header:hover .decorative-arrow {
+  transform: translateX(2px);
+  color: var(--primary-green);
+}
+
+/* ===== OPCIÓN 4: ICONO REACT ===== */
+.decorative-icon {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  transition: all 0.2s ease;
+}
+
+.selector-header:hover .decorative-icon {
+  color: var(--primary-green);
+  transform: translateX(2px);
+}
+
+/* ===== OPCIÓN 5: SEPARADOR ELEGANTE ===== */
+.decorative-separator {
+  font-size: 0.7rem;
+  color: var(--gray-300);
+  font-weight: 300;
+}
+
+/* ===== OPCIÓN 6: DIAMANTE ===== */
+.decorative-diamond {
+  font-size: 0.6rem;
+  color: var(--primary-green);
+  opacity: 0.6;
+  animation: diamondGlow 2s ease-in-out infinite;
+}
+
+@keyframes diamondGlow {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: rotate(180deg);
+  }
+}
+
+/* ===== OPCIÓN 7: CÍRCULO ===== */
+.decorative-circle {
+  font-size: 0.5rem;
+  color: var(--primary-green);
+  animation: circlePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes circlePulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* Contador */
+.selector-header__count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  background: var(--gray-100);
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+}
+
+.count-number {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary-green);
+}
+
+.count-label {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--gray-500);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .selector-header {
+    padding: 0 0.75rem 0.35rem 0.75rem;
+  }
+
+  .selector-header__title {
+    gap: 0.35rem;
+  }
+
+  .selector-header__icon {
+    font-size: 0.85rem;
+  }
+
+  .selector-header__title h3 {
+    font-size: 0.7rem;
+  }
+
+  .decorative-divider .dot {
+    width: 2px;
+    height: 2px;
+  }
+
+  .decorative-divider-line {
+    width: 15px;
+  }
+
+  .decorative-arrow,
+  .decorative-icon,
+  .decorative-separator {
+    font-size: 0.6rem;
+  }
+
+  .decorative-diamond,
+  .decorative-circle {
+    font-size: 0.5rem;
+  }
+}
+/* ============================================
+   SELECTOR CON TÍTULO Y DECORACIÓN
+   ============================================ */
+
+/* Header del selector */
+.selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.selector-header__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.selector-header__icon {
+  font-size: 1rem;
+  color: var(--primary-green);
+}
+
+.selector-header__title h3 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Decoración de puntos animados */
+.decorative-divider {
+  display: flex;
+  gap: 0.2rem;
+  align-items: center;
+}
+
+.decorative-divider .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--gray-400);
+  animation: dotFade 1.5s ease-in-out infinite;
+}
+
+.decorative-divider .dot:nth-child(1) {
+  animation-delay: 0s;
+}
+.decorative-divider .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.decorative-divider .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dotFade {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Contador */
+.selector-header__count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  background: var(--gray-100);
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+}
+
+.count-number {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary-green);
+}
+
+.count-label {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--gray-500);
+}
+
+/* Contenedores principales */
+.store-selector-client,
+.categories-chips {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 0.75rem 0;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.store-selector-client__scroll,
+.categories-chips__scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.25rem 1rem 0.5rem 1rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.store-selector-client__scroll::-webkit-scrollbar,
+.categories-chips__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Decoración para pocos elementos */
+.chips-decoration {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+  padding-left: 1rem;
+  border-left: 2px dashed var(--gray-200);
+}
+
+.decoration-dots {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.decoration-dots .dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gray-300);
+  animation: dotPulse 1.5s ease-in-out infinite;
+}
+
+.decoration-dots .dot:nth-child(1) {
+  animation-delay: 0s;
+}
+.decoration-dots .dot:nth-child(2) {
+  animation-delay: 0.3s;
+}
+.decoration-dots .dot:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes dotPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.decoration-sparkle {
+  font-size: 0.8rem;
+  animation: sparkleRotate 2s ease-in-out infinite;
+}
+
+@keyframes sparkleRotate {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: rotate(15deg) scale(1.1);
+    opacity: 1;
+  }
+}
+
+.decoration-line {
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gray-200), transparent);
+  border-radius: 2px;
+}
+
+/* Store Chips */
+.store-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: 1.5px solid var(--gray-200);
+  background: var(--white);
+  border-radius: 40px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--gray-600);
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+
+.store-chip:hover {
+  border-color: var(--primary-green);
+  color: var(--primary-green);
+  background: var(--primary-green-light);
+  transform: translateY(-1px);
+}
+
+.store-chip--active {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.store-chip__icon {
+  font-size: 0.9rem;
+}
+
+.store-chip__text {
+  font-size: 0.8rem;
+}
+
+/* Category Chips */
+.category-chip {
+  padding: 0.45rem 1rem;
+  border: 1.5px solid var(--gray-200);
+  background: var(--white);
+  border-radius: 40px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--gray-600);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.category-chip:hover {
+  border-color: var(--primary-green);
+  color: var(--primary-green);
+  background: var(--primary-green-light);
+}
+
+.category-chip--active {
+  background: var(--primary-green);
+  color: white;
+  border-color: var(--primary-green);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+}
+
+/* Results info */
+.results-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  padding: 0 0.25rem;
+}
+
+.results-info__text {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  font-weight: 500;
+}
+
+/* Responsive móvil */
+@media (max-width: 768px) {
+  .selector-header {
+    padding: 0 0.75rem 0.35rem 0.75rem;
+  }
+
+  .selector-header__title {
+    gap: 0.35rem;
+  }
+
+  .selector-header__icon {
+    font-size: 0.85rem;
+  }
+
+  .selector-header__title h3 {
+    font-size: 0.7rem;
+  }
+
+  .decorative-divider .dot {
+    width: 2px;
+    height: 2px;
+  }
+
+  .selector-header__count {
+    padding: 0.15rem 0.5rem;
+  }
+
+  .count-number {
+    font-size: 0.7rem;
+  }
+
+  .count-label {
+    font-size: 0.55rem;
+  }
+
+  .store-chip {
+    padding: 0.4rem 0.85rem;
+    font-size: 0.75rem;
+  }
+
+  .store-chip__text {
+    font-size: 0.75rem;
+  }
+
+  .category-chip {
+    padding: 0.35rem 0.85rem;
+    font-size: 0.7rem;
+  }
+
+  /* Ocultar decoración en móvil cuando hay poco espacio */
+  .chips-decoration {
+    display: none;
+  }
+
+  .store-selector-client,
+  .categories-chips {
+    padding: 0.5rem 0;
+    margin-bottom: 0.75rem;
+  }
+
+  .store-selector-client__scroll,
+  .categories-chips__scroll {
+    padding: 0.25rem 0.75rem 0.5rem 0.75rem;
+  }
+}

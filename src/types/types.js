@@ -78,4 +78,14 @@ export const types = {
   storeUpdated: "[stores] Updated store",
   storeDeleted: "[stores] Deleted store",
   storeSetActive: "[stores] Set active store",
+
+  // ========== CHAT TYPES ==========
+  chatSetLoading: "[chat] Set loading",
+  chatLoadChats: "[chat] Load chats",
+  chatLoadMessages: "[chat] Load messages",
+  chatSelectChat: "[chat] Select chat",
+  chatClearSelected: "[chat] Clear selected chat",
+  chatAddMessage: "[chat] Add message",
+  chatUpdateUnreadCount: "[chat] Update unread count",
+  chatReset: "[chat] Reset",
 };

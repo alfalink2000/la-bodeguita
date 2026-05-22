@@ -1,4 +1,4 @@
-// AdminInterface.jsx - VERSIÓN COMPLETA
+// AdminInterface.jsx - VERSIÓN CORREGIDA
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -121,18 +121,21 @@ const AdminInterface = ({ onLogout }) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Cargar contador de chats no leídos
+  // ✅ CORREGIDO: Cargar contador de chats no leídos usando la ruta correcta
   useEffect(() => {
     const loadUnread = async () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const res = await fetch(`${API_URL}/api/chat/admin/unread`, {
+        // ✅ Usar la ruta correcta /unread-count en lugar de /admin/unread
+        const res = await fetch(`${API_URL}/api/chat/unread-count`, {
           headers: { "x-token": token },
         });
         const data = await res.json();
-        if (data.ok) setUnreadChats(data.noLeidos);
+        if (data.ok) {
+          setUnreadChats(data.unreadCount || 0);
+        }
       } catch (err) {
         console.error("Error cargando no leídos:", err);
       }
@@ -249,7 +252,6 @@ const AdminInterface = ({ onLogout }) => {
       cancelButtonText: "Cancelar",
     }).then((result) => {
       if (result.isConfirmed) {
-        // Limpiar carrito
         dispatch(resetCart());
         localStorage.clear();
         sessionStorage.clear();
@@ -277,11 +279,6 @@ const AdminInterface = ({ onLogout }) => {
       toast: true,
       position: "top-end",
     });
-  }, []);
-
-  // Función para actualizar badge de chats no leídos
-  const handleChatUnreadCount = useCallback((count) => {
-    setUnreadChats(count);
   }, []);
 
   // Renderizado de contenido
@@ -359,10 +356,11 @@ const AdminInterface = ({ onLogout }) => {
             style={{ height: "calc(100vh - 120px)", padding: 0 }}
           >
             <AdminChatManager
-              token={localStorage.getItem("token")}
               selectedUserId={selectedChatUserId}
               onSelectUser={setSelectedChatUserId}
-              onUnreadCountChange={handleChatUnreadCount}
+              onUnreadCountChange={(count) => {
+                setUnreadChats(count);
+              }}
             />
           </div>
         );
@@ -423,10 +421,9 @@ const AdminInterface = ({ onLogout }) => {
     handleUpdateCategory,
     handleDeleteCategory,
     handleOpenChatFromOrders,
-    handleChatUnreadCount,
   ]);
 
-  // Calcular badge combinado para chats (incluye pedidos que necesitan contacto)
+  // Calcular badge combinado para chats
   const chatBadgeCount = unreadChats + ordersNeedingContact;
 
   return (

@@ -84,6 +84,9 @@ body {
   font-feature-settings:
     "kern" 1,
     "liga" 1;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Tipografía mejorada */
@@ -216,9 +219,14 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-/* Scrollbar mejorado */
+/* ============================================
+   SCROLLBAR - VERSIÓN MEJORADA
+   ============================================ */
+
+/* Scrollbar por defecto - visible solo en desktop */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -236,6 +244,81 @@ body {
   background: var(--gray-500);
 }
 
+/* ===== EN MÓVIL: OCULTAR SCROLLBARS COMPLETAMENTE ===== */
+@media (max-width: 768px) {
+  /* Ocultar scrollbars en todos los elementos en móvil */
+  ::-webkit-scrollbar {
+    width: 0px !important;
+    height: 0px !important;
+    display: none !important;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: transparent !important;
+  }
+
+  /* Para Firefox */
+  * {
+    scrollbar-width: none !important;
+  }
+
+  /* Para IE/Edge */
+  * {
+    -ms-overflow-style: none !important;
+  }
+}
+
+/* ===== EXCEPCIONES: Mostrar scrollbar solo en elementos específicos en desktop ===== */
+@media (min-width: 769px) {
+  /* Solo estos elementos pueden tener scrollbar visible en desktop */
+  .desktop-main-content,
+  .desktop-sidebar,
+  .admin-chat__list,
+  .admin-chat__conv-messages,
+  .address-suggestions,
+  .ao-list,
+  .admin-orders .ao-list {
+    scrollbar-width: thin;
+  }
+
+  .desktop-main-content::-webkit-scrollbar,
+  .desktop-sidebar::-webkit-scrollbar,
+  .admin-chat__list::-webkit-scrollbar,
+  .admin-chat__conv-messages::-webkit-scrollbar,
+  .address-suggestions::-webkit-scrollbar,
+  .ao-list::-webkit-scrollbar,
+  .admin-orders .ao-list::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+    display: block;
+  }
+}
+
+/* ============================================
+   OCULTAR SCROLLBAR EN SELECTORES DE TIENDAS Y CATEGORÍAS
+   ============================================ */
+
+/* Ocultar scrollbar en los contenedores de chips en todos los dispositivos */
+.store-selector-client__scroll,
+.categories-chips__scroll,
+.category-filter {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge */
+}
+
+.store-selector-client__scroll::-webkit-scrollbar,
+.categories-chips__scroll::-webkit-scrollbar,
+.category-filter::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
 /* Focus states para accesibilidad */
 .focus-ring {
   outline: 2px solid transparent;
@@ -246,6 +329,7 @@ body {
   outline: 2px solid var(--primary-blue);
   outline-offset: 2px;
 }
+
 /* Transiciones para el contenido principal */
 .content-hidden {
   opacity: 0;
@@ -258,7 +342,10 @@ body {
   transform: translateY(0);
   transition: all 0.8s ease-out 0.3s;
 }
-/* ===== CORRECCIÓN PARA MÓVIL - ELIMINAR SCROLL HORIZONTAL Y FIJAR BOTTOM NAV ===== */
+
+/* ============================================
+   CORRECCIÓN PARA MÓVIL
+   ============================================ */
 
 /* Asegurar que no haya scroll horizontal en ningún dispositivo */
 html,
@@ -297,7 +384,6 @@ body {
     overflow-x: auto !important;
     overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
   }
 
   /* Asegurar que los chips no desborden el contenedor */
@@ -311,6 +397,11 @@ body {
     padding-bottom: 85px !important;
   }
 }
+
+/* ============================================
+   SWEETALERT Z-INDEX
+   ============================================ */
+
 /* Aumentar z-index de SweetAlert para que aparezca encima del modal */
 .swal2-container {
   z-index: 20000 !important;
@@ -323,4 +414,57 @@ body {
 /* Asegurar que los toasts también estén por encima */
 .swal2-toast {
   z-index: 20000 !important;
+}
+
+/* ============================================
+   UTILIDADES ADICIONALES
+   ============================================ */
+
+/* Ocultar scrollbar en elementos específicos en desktop también */
+.no-scrollbar {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Scroll suave para toda la aplicación */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Reducir movimiento para usuarios que lo prefieran */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Mejoras de accesibilidad */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--primary-green);
+  outline-offset: 2px;
+}
+
+/* Deshabilitar outline para clics de mouse, mantener para teclado */
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
 }

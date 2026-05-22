@@ -1,8 +1,7 @@
-// components/auth/AuthPage.jsx - VERSIÓN CORREGIDA
+// components/auth/AuthPage.jsx
 import { useState } from "react";
 import Swal from "sweetalert2";
 import {
-  FaStore,
   FaUser,
   FaLock,
   FaUserPlus,
@@ -10,7 +9,6 @@ import {
   FaMapMarkerAlt,
   FaLocationArrow,
 } from "react-icons/fa";
-import { MdEmail, MdStorefront } from "react-icons/md";
 import { HiShoppingBag } from "react-icons/hi";
 import "./Auth.css";
 
@@ -35,45 +33,31 @@ const AuthPage = ({ onLoginSuccess }) => {
   const [registerForm, setRegisterForm] = useState({
     username: "",
     password: "",
-    full_name: "",
     phone: "",
     address: "",
     lat: null,
     lng: null,
   });
 
-  // ✅ Función para mostrar alerta de éxito con retraso antes de redirigir
   const showSuccessAlertAndRedirect = async (title, message, userData) => {
-    // Mostrar alerta
     await Swal.fire({
       title: title,
       text: message,
       icon: "success",
       confirmButtonText: "¡Continuar!",
-      confirmButtonColor: "#2563eb",
+      confirmButtonColor: "#059669",
       background: "#ffffff",
       iconColor: "#059669",
-      timer: 2500,
+      timer: 2000,
       timerProgressBar: true,
       showConfirmButton: false,
       allowOutsideClick: false,
-      allowEscapeKey: false,
-      showClass: {
-        popup: "animate__animated animate__fadeInDown",
-      },
-      hideClass: {
-        popup: "animate__animated animate__fadeOutUp",
-      },
     });
 
-    // ✅ Esperar un momento extra para que la animación termine
     await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // ✅ Ahora sí redirigir
     onLoginSuccess(userData);
   };
 
-  // Función para mostrar alertas de error
   const showErrorAlert = (message) => {
     Swal.fire({
       title: "¡Error!",
@@ -81,15 +65,9 @@ const AuthPage = ({ onLoginSuccess }) => {
       icon: "error",
       confirmButtonText: "Intentar de nuevo",
       confirmButtonColor: "#ef4444",
-      background: "#ffffff",
-      iconColor: "#ef4444",
-      showClass: {
-        popup: "animate__animated animate__shakeX",
-      },
     });
   };
 
-  // Manejar login
   const handleLogin = async (e) => {
     e.preventDefault();
     setError(null);
@@ -108,11 +86,9 @@ const AuthPage = ({ onLoginSuccess }) => {
 
       if (data.ok) {
         localStorage.setItem("token", data.token);
-
-        // ✅ Usar la nueva función que espera antes de redirigir
         await showSuccessAlertAndRedirect(
           "¡Bienvenido!",
-          `Has iniciado sesión correctamente como ${loginForm.username}`,
+          `Has iniciado sesión correctamente`,
           data,
         );
       } else {
@@ -129,7 +105,6 @@ const AuthPage = ({ onLoginSuccess }) => {
     }
   };
 
-  // Manejar registro
   const handleRegister = async (e) => {
     e.preventDefault();
     setError(null);
@@ -142,9 +117,9 @@ const AuthPage = ({ onLoginSuccess }) => {
         body: JSON.stringify({
           username: registerForm.username,
           password_hash: registerForm.password,
-          full_name: registerForm.full_name,
+          full_name: registerForm.username,
           phone: registerForm.phone,
-          address: registerForm.address,
+          address: registerForm.address || "",
           lat: registerForm.lat,
           lng: registerForm.lng,
         }),
@@ -154,10 +129,15 @@ const AuthPage = ({ onLoginSuccess }) => {
       if (data.ok) {
         localStorage.setItem("token", data.token);
 
-        // ✅ Usar la nueva función que espera antes de redirigir
+        // Mostrar mensaje diferente si no tiene ubicación
+        const successMessage =
+          registerForm.lat && registerForm.lng
+            ? `Bienvenido/a ${registerForm.username}. Tu ubicación ha sido registrada.`
+            : `Bienvenido/a ${registerForm.username}. Recuerda que puedes agregar tu dirección de entrega en tu perfil.`;
+
         await showSuccessAlertAndRedirect(
           "¡Registro exitoso! 🎊",
-          `Bienvenido/a ${registerForm.full_name || registerForm.username}. Tu cuenta ha sido creada correctamente.`,
+          successMessage,
           data,
         );
       } else {
@@ -174,7 +154,6 @@ const AuthPage = ({ onLoginSuccess }) => {
     }
   };
 
-  // Buscar dirección (geocodificación)
   const handleAddressSearch = async (address) => {
     setRegisterForm({ ...registerForm, address });
 
@@ -201,7 +180,6 @@ const AuthPage = ({ onLoginSuccess }) => {
     }
   };
 
-  // Seleccionar sugerencia de dirección
   const selectAddress = (suggestion) => {
     setRegisterForm({
       ...registerForm,
@@ -210,20 +188,30 @@ const AuthPage = ({ onLoginSuccess }) => {
       lng: suggestion.lng,
     });
     setAddressSuggestions([]);
+    setError(null);
   };
 
-  // Obtener ubicación GPS
   const getGPSLocation = () => {
     setGpsLoading(true);
     setError(null);
 
     if (!navigator.geolocation) {
-      const errorMsg = "Tu navegador no soporta geolocalización";
+      const errorMsg =
+        "Tu navegador no soporta geolocalización. Puedes escribir tu dirección manualmente o agregarla después en tu perfil.";
       setError(errorMsg);
       showErrorAlert(errorMsg);
       setGpsLoading(false);
       return;
     }
+
+    Swal.fire({
+      title: "Obteniendo ubicación",
+      text: "Por favor espera...",
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -241,16 +229,17 @@ const AuthPage = ({ onLoginSuccess }) => {
             ...registerForm,
             lat: latitude,
             lng: longitude,
-            address: data.display_name || `Lat: ${latitude}, Lng: ${longitude}`,
+            address:
+              data.display_name ||
+              `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
           });
 
           Swal.fire({
-            title: "📍 Ubicación obtenida",
-            text: "Tu ubicación ha sido registrada correctamente",
+            title: "📍 Ubicación agregada",
+            text: "Tu dirección ha sido registrada. Puedes cambiarla después en tu perfil.",
             icon: "success",
-            confirmButtonColor: "#2563eb",
-            timer: 1500,
-            timerProgressBar: true,
+            confirmButtonColor: "#059669",
+            timer: 2000,
             showConfirmButton: false,
           });
         } catch (err) {
@@ -258,16 +247,43 @@ const AuthPage = ({ onLoginSuccess }) => {
             ...registerForm,
             lat: latitude,
             lng: longitude,
+            address: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+          });
+
+          Swal.fire({
+            title: "📍 Ubicación registrada",
+            text: "Coordenadas guardadas. Puedes editar la dirección después.",
+            icon: "success",
+            confirmButtonColor: "#059669",
+            timer: 2000,
+            showConfirmButton: false,
           });
         }
-
         setGpsLoading(false);
       },
       (err) => {
-        const errorMsg = "Error obteniendo ubicación: " + err.message;
+        let errorMsg = "No se pudo obtener tu ubicación. ";
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            errorMsg =
+              "Permiso denegado. Puedes escribir tu dirección manualmente o agregarla después en tu perfil.";
+            break;
+          case err.POSITION_UNAVAILABLE:
+            errorMsg =
+              "Ubicación no disponible. Puedes escribir tu dirección manualmente o agregarla después en tu perfil.";
+            break;
+          case err.TIMEOUT:
+            errorMsg =
+              "Tiempo de espera agotado. Puedes escribir tu dirección manualmente o agregarla después en tu perfil.";
+            break;
+          default:
+            errorMsg =
+              "Error obteniendo ubicación. Puedes agregar tu dirección después en tu perfil.";
+        }
         setError(errorMsg);
         showErrorAlert(errorMsg);
         setGpsLoading(false);
+        Swal.close();
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
@@ -275,17 +291,23 @@ const AuthPage = ({ onLoginSuccess }) => {
 
   return (
     <div className="auth-container">
+      <div className="auth-bg-particles">
+        <div className="particle particle-1"></div>
+        <div className="particle particle-2"></div>
+        <div className="particle particle-3"></div>
+        <div className="particle particle-4"></div>
+        <div className="particle particle-5"></div>
+      </div>
+
       <div className="auth-card">
-        {/* Logo con icono de React */}
         <div className="auth-logo">
           <div className="auth-logo-icon">
-            <HiShoppingBag size={32} color="white" />
+            <HiShoppingBag size={28} />
           </div>
-          <h1>Minimarket</h1>
-          <p>Tu tienda de confianza</p>
+          <h1>FarmaExpress</h1>
+          <p>Tu salud, nuestra prioridad</p>
         </div>
 
-        {/* Tabs */}
         <div className="auth-tabs">
           <button
             className={`auth-tab ${activeTab === "login" ? "active" : ""}`}
@@ -294,7 +316,7 @@ const AuthPage = ({ onLoginSuccess }) => {
               setError(null);
             }}
           >
-            <FaUser size={14} /> Iniciar Sesión
+            <FaUser size={12} /> Iniciar
           </button>
           <button
             className={`auth-tab ${activeTab === "register" ? "active" : ""}`}
@@ -303,89 +325,83 @@ const AuthPage = ({ onLoginSuccess }) => {
               setError(null);
             }}
           >
-            <FaUserPlus size={14} /> Registrarse
+            <FaUserPlus size={12} /> Registrarse
           </button>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="form-error">
             <span>⚠️</span> {error}
           </div>
         )}
 
-        {/* Formulario Login */}
         {activeTab === "login" && (
           <form className="auth-form" onSubmit={handleLogin}>
             <div className="form-group">
               <label className="form-label">
-                <FaUser size={12} /> Usuario
+                <FaUser size={10} /> Usuario
               </label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="Ingresa tu usuario"
+                placeholder="Usuario"
                 value={loginForm.username}
                 onChange={(e) =>
                   setLoginForm({ ...loginForm, username: e.target.value })
                 }
                 required
-                autoComplete="username"
               />
             </div>
 
             <div className="form-group">
               <label className="form-label">
-                <FaLock size={12} /> Contraseña
+                <FaLock size={10} /> Contraseña
               </label>
               <input
                 type="password"
                 className="form-input"
-                placeholder="Ingresa tu contraseña"
+                placeholder="Contraseña"
                 value={loginForm.password}
                 onChange={(e) =>
                   setLoginForm({ ...loginForm, password: e.target.value })
                 }
                 required
-                autoComplete="current-password"
               />
             </div>
 
             <button type="submit" className="auth-submit" disabled={loading}>
               {loading ? (
                 <span className="auth-loading">
-                  <span className="auth-spinner"></span> Iniciando sesión...
+                  <span className="auth-spinner"></span>
                 </span>
               ) : (
-                <>Iniciar Sesión</>
+                "Ingresar"
               )}
             </button>
           </form>
         )}
 
-        {/* Formulario Registro */}
         {activeTab === "register" && (
           <form className="auth-form" onSubmit={handleRegister}>
             <div className="form-group">
               <label className="form-label">
-                <FaUser size={12} /> Usuario *
+                <FaUser size={10} /> Usuario *
               </label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="Elige un nombre de usuario"
+                placeholder="Nombre de usuario"
                 value={registerForm.username}
                 onChange={(e) =>
                   setRegisterForm({ ...registerForm, username: e.target.value })
                 }
                 required
-                autoComplete="username"
               />
             </div>
 
             <div className="form-group">
               <label className="form-label">
-                <FaLock size={12} /> Contraseña *
+                <FaLock size={10} /> Contraseña *
               </label>
               <input
                 type="password"
@@ -397,32 +413,12 @@ const AuthPage = ({ onLoginSuccess }) => {
                 }
                 required
                 minLength={6}
-                autoComplete="new-password"
               />
             </div>
 
             <div className="form-group">
               <label className="form-label">
-                <FaUser size={12} /> Nombre completo
-              </label>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Tu nombre y apellidos"
-                value={registerForm.full_name}
-                onChange={(e) =>
-                  setRegisterForm({
-                    ...registerForm,
-                    full_name: e.target.value,
-                  })
-                }
-                autoComplete="name"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">
-                <FaPhone size={12} /> Teléfono
+                <FaPhone size={10} /> Teléfono
               </label>
               <input
                 type="tel"
@@ -432,23 +428,64 @@ const AuthPage = ({ onLoginSuccess }) => {
                 onChange={(e) =>
                   setRegisterForm({ ...registerForm, phone: e.target.value })
                 }
-                autoComplete="tel"
               />
             </div>
 
-            {/* Dirección */}
-            <div className="form-group address-search-group">
+            {/* SECCIÓN DE UBICACIÓN MEJORADA */}
+            <div className="form-group location-section">
               <label className="form-label">
-                <FaMapMarkerAlt size={12} /> Dirección de entrega *
+                <FaMapMarkerAlt size={10} /> Dirección de entrega
+                <span className="optional-badge">Opcional</span>
               </label>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Ej: Calle 23 #456, Vedado, La Habana"
-                value={registerForm.address}
-                onChange={(e) => handleAddressSearch(e.target.value)}
-                required
-              />
+
+              {/* Botón GPS grande y visible */}
+              <button
+                type="button"
+                className="gps-main-btn"
+                onClick={getGPSLocation}
+                disabled={gpsLoading}
+              >
+                {gpsLoading ? (
+                  <>
+                    <div className="gps-spinner"></div>
+                    <span>Obteniendo ubicación...</span>
+                  </>
+                ) : (
+                  <>
+                    <FaLocationArrow size={18} />
+                    <span>Usar mi ubicación actual</span>
+                  </>
+                )}
+              </button>
+
+              {/* Info de beneficios */}
+              <div className="gps-info-card">
+                <div className="gps-info-icon">📍</div>
+                <div className="gps-info-text">
+                  <strong>¡Mejor experiencia con GPS!</strong>
+                  <p>
+                    Usar tu ubicación actual permite entregas más rápidas y
+                    precisas. Las direcciones manuales pueden generar demoras y
+                    necesitan verificación por soporte.
+                  </p>
+                </div>
+              </div>
+
+              {/* Separador o */}
+              <div className="location-divider">
+                <span>o escribe tu dirección manualmente</span>
+              </div>
+
+              {/* Campo de dirección manual */}
+              <div className="address-input-wrapper">
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Ej: Calle 23 #456, Vedado, La Habana"
+                  value={registerForm.address}
+                  onChange={(e) => handleAddressSearch(e.target.value)}
+                />
+              </div>
 
               {/* Sugerencias */}
               {addressSuggestions.length > 0 && (
@@ -459,58 +496,49 @@ const AuthPage = ({ onLoginSuccess }) => {
                       className="address-suggestion-item"
                       onClick={() => selectAddress(suggestion)}
                     >
-                      📍 {suggestion.display_name}
+                      📍 {suggestion.display_name.substring(0, 60)}
                     </div>
                   ))}
                 </div>
               )}
+
+              {/* Indicador de ubicación registrada */}
+              {registerForm.lat && registerForm.lng && (
+                <div className="location-confirmed">
+                  <span>✅</span> Ubicación registrada correctamente
+                </div>
+              )}
             </div>
 
-            {/* Botón GPS */}
-            <button
-              type="button"
-              className="gps-button"
-              onClick={getGPSLocation}
-              disabled={gpsLoading}
-            >
-              <FaLocationArrow size={14} />
-              {gpsLoading ? (
-                <> Obteniendo ubicación...</>
-              ) : (
-                <> Usar mi ubicación actual (GPS)</>
-              )}
-            </button>
-
-            {registerForm.lat && registerForm.lng && (
-              <div
-                style={{
-                  fontSize: "0.75rem",
-                  color: "var(--primary-green)",
-                  textAlign: "center",
-                  marginTop: "0.25rem",
-                }}
-              >
-                ✅ Ubicación registrada correctamente
-              </div>
-            )}
-
-            <div className="auth-divider">
-              <span>
-                Al registrarte aceptas nuestros términos y condiciones
-              </span>
+            <div className="auth-terms">
+              <span>Al registrarte aceptas nuestros términos</span>
             </div>
 
             <button type="submit" className="auth-submit" disabled={loading}>
               {loading ? (
                 <span className="auth-loading">
-                  <span className="auth-spinner"></span> Registrando...
+                  <span className="auth-spinner"></span>
                 </span>
               ) : (
-                "Crear Cuenta"
+                "Crear cuenta"
               )}
             </button>
           </form>
         )}
+        <div className="auth-footer">
+          <p>
+            {activeTab === "login" ? "¿Sin cuenta? " : "¿Ya tienes cuenta? "}
+            <button
+              className="auth-switch-btn"
+              onClick={() => {
+                setActiveTab(activeTab === "login" ? "register" : "login");
+                setError(null);
+              }}
+            >
+              {activeTab === "login" ? "Regístrate" : "Inicia sesión"}
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );

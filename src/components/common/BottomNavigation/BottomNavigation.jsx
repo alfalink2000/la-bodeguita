@@ -2,9 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import {
   HiOutlineEye,
-  HiOutlineLogout,
   HiOutlineUser,
-  HiOutlineFilter,
   HiOutlineSearch,
   HiOutlineHome,
   HiOutlineTag,
@@ -12,6 +10,8 @@ import {
   HiOutlinePhone,
   HiOutlineX,
   HiOutlineSparkles,
+  HiOutlineHeart,
+  HiOutlineShoppingBag,
 } from "react-icons/hi";
 import "./BottomNavigation.css";
 import "./BottomNavigation.desktop.css";
@@ -19,7 +19,6 @@ import "./BottomNavigation.desktop.css";
 const BottomNavigation = ({
   currentView,
   onViewChange,
-  onAdminClick,
   categories = [],
   selectedCategory,
   onCategoryChange,
@@ -31,17 +30,17 @@ const BottomNavigation = ({
   onShowLogin,
   onProfileClick,
   unreadOrdersCount = 0,
+  currentStoreName = "Tiendas", // Nombre de la tienda actual
 }) => {
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
-  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [searchInputFocused, setSearchInputFocused] = useState(false);
   const menuRef = useRef(null);
 
-  // Cerrar menús al hacer click fuera
+  // Cerrar menú al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowCategoryMenu(false);
-        setShowQuickActions(false);
       }
     };
 
@@ -49,108 +48,93 @@ const BottomNavigation = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Navegación rápida por secciones
-  const quickSections = [
-    {
-      id: "todos",
-      icon: HiOutlineHome,
-      label: "Inicio",
-      color: "var(--primary-blue)",
-    },
-    {
-      id: "populares",
-      icon: HiOutlineStar,
-      label: "Populares",
-      color: "var(--accent-orange)",
-    },
-    {
-      id: "ofertas",
-      icon: HiOutlineTag,
-      label: "Ofertas",
-      color: "var(--accent-green)",
-    },
-    {
-      id: "contacto",
-      icon: HiOutlinePhone,
-      label: "Contacto",
-      color: "var(--accent-purple)",
-    },
-  ];
-
   const handleCategorySelect = (category) => {
     onCategoryChange(category);
     setShowCategoryMenu(false);
   };
 
-  const handleSectionSelect = (sectionId) => {
-    onSectionChange(sectionId);
-    setShowQuickActions(false);
+  // Manejar búsqueda - enfocar el input de búsqueda
+  const handleSearchPress = () => {
+    if (onSearchClick) {
+      onSearchClick();
+    } else {
+      // Buscar y enfocar el input de búsqueda
+      const searchInput = document.querySelector(
+        ".search-bar__input, .client-interface__search-section input, .desktop-search input",
+      );
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
   };
+
+  // Navegación principal
+  const navItems = [
+    {
+      id: "catalog",
+      icon: HiOutlineHome,
+      label: "Inicio",
+      action: () => onViewChange("client"),
+      isActive: currentView === "client",
+    },
+    {
+      id: "search",
+      icon: HiOutlineSearch,
+      label: "Buscar",
+      action: handleSearchPress,
+      isActive: false,
+    },
+    {
+      id: "categories",
+      icon: HiOutlineTag,
+      label: selectedCategory !== "Todos" ? selectedCategory : "Categorías",
+      action: () => setShowCategoryMenu(!showCategoryMenu),
+      isActive: selectedCategory !== "Todos",
+      hasMenu: true,
+    },
+  ];
+
+  // Categorías filtradas para mostrar en el menú
+  const displayCategories = categories.filter((cat) => cat !== "Todos");
 
   return (
     <>
-      {/* Overlay para menús */}
-      {(showCategoryMenu || showQuickActions) && (
-        <div className="bottom-nav-overlay" />
+      {/* Overlay */}
+      {showCategoryMenu && (
+        <div
+          className="bottom-nav-overlay"
+          onClick={() => setShowCategoryMenu(false)}
+        />
       )}
 
       <nav className="bottom-nav" ref={menuRef}>
         <div className="bottom-nav__container">
-          {/* Botón Catálogo/Inicio */}
-          <button
-            onClick={() => onViewChange("client")}
-            className={`bottom-nav__button ${
-              currentView === "client"
-                ? "bottom-nav__button--active"
-                : "bottom-nav__button--inactive"
-            }`}
-          >
-            <HiOutlineEye className="bottom-nav__icon" />
-            <span className="bottom-nav__label">Catálogo</span>
-          </button>
+          {navItems.map((item) => {
+            const IconComponent = item.icon;
+            return (
+              <button
+                key={item.id}
+                onClick={item.action}
+                className={`bottom-nav__button ${
+                  item.isActive
+                    ? "bottom-nav__button--active"
+                    : "bottom-nav__button--inactive"
+                }`}
+              >
+                <IconComponent className="bottom-nav__icon" />
+                <span className="bottom-nav__label">{item.label}</span>
+                {item.hasMenu && (
+                  <span className="bottom-nav__indicator"></span>
+                )}
+              </button>
+            );
+          })}
 
-          {/* Botón Búsqueda */}
-          <button
-            onClick={onSearchClick}
-            className="bottom-nav__button bottom-nav__button--inactive"
-          >
-            <HiOutlineSearch className="bottom-nav__icon" />
-            <span className="bottom-nav__label">Buscar</span>
-          </button>
-
-          {/* Botón Principal - Acciones Rápidas */}
-          <div className="bottom-nav__center">
-            <button
-              onClick={() => setShowQuickActions(!showQuickActions)}
-              className="bottom-nav__main-button"
-              aria-label="Acciones rápidas"
-            >
-              <div className="main-button-content">
-                <HiOutlineSparkles className="main-button-icon main-button-icon--sparkle" />
-                <HiOutlineFilter className="main-button-icon main-button-icon--filter" />
-              </div>
-            </button>
-          </div>
-
-          {/* Botón Categorías */}
-          <button
-            onClick={() => setShowCategoryMenu(!showCategoryMenu)}
-            className={`bottom-nav__button ${
-              selectedCategory !== "Todos"
-                ? "bottom-nav__button--active"
-                : "bottom-nav__button--inactive"
-            }`}
-          >
-            <HiOutlineTag className="bottom-nav__icon" />
-            <span className="bottom-nav__label">
-              {selectedCategory !== "Todos" ? selectedCategory : "Categorías"}
-            </span>
-          </button>
-
-          {/* ✅ BOTÓN MODIFICADO: Perfil / Entrar */}
+          {/* Perfil / Entrar */}
           {isLoggedIn ? (
             <button
-              onClick={onProfileClick} // ✅ NUEVA PROP
+              onClick={onProfileClick}
               className="bottom-nav__button bottom-nav__button--profile"
               title="Mi perfil"
             >
@@ -169,11 +153,22 @@ const BottomNavigation = ({
           )}
         </div>
 
-        {/* Menú de Categorías */}
+        {/* Menú de Categorías - Diseño mejorado y funcional */}
         {showCategoryMenu && (
           <div className="bottom-nav-menu category-menu">
             <div className="menu-header">
-              <h3 className="menu-title">Filtrar por Categoría</h3>
+              <div className="menu-header__left">
+                <HiOutlineTag className="menu-header__icon" />
+                <h3 className="menu-title">
+                  Filtrar por categoría
+                  {currentStoreName && currentStoreName !== "Tiendas" && (
+                    <span className="menu-subtitle">
+                      {" "}
+                      en {currentStoreName}
+                    </span>
+                  )}
+                </h3>
+              </div>
               <button
                 onClick={() => setShowCategoryMenu(false)}
                 className="menu-close"
@@ -181,66 +176,73 @@ const BottomNavigation = ({
                 <HiOutlineX size={18} />
               </button>
             </div>
+
             <div className="category-list">
+              {/* Opción "Todos" destacada */}
               <button
                 onClick={() => handleCategorySelect("Todos")}
-                className={`category-item ${
+                className={`category-item category-item--all ${
                   selectedCategory === "Todos" ? "category-item--active" : ""
                 }`}
               >
+                <div className="category-item__icon">
+                  <HiOutlineSparkles size={16} />
+                </div>
                 <span className="category-name">Todos los productos</span>
-                <div className="category-dot"></div>
+                <div className="category-item__check">
+                  {selectedCategory === "Todos" && <span>✓</span>}
+                </div>
               </button>
 
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => handleCategorySelect(category)}
-                  className={`category-item ${
-                    selectedCategory === category ? "category-item--active" : ""
-                  }`}
-                >
-                  <span className="category-name">{category}</span>
-                  <div className="category-dot"></div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+              {/* Mostrar mensaje si no hay categorías */}
+              {displayCategories.length === 0 ? (
+                <div className="category-empty">
+                  <HiOutlineTag size={32} />
+                  <p>No hay categorías disponibles</p>
+                  <span>Selecciona una tienda para ver sus categorías</span>
+                </div>
+              ) : (
+                <>
+                  {/* Separador */}
+                  <div className="category-divider"></div>
 
-        {/* Menú de Navegación Rápida */}
-        {showQuickActions && (
-          <div className="bottom-nav-menu quick-actions-menu">
-            <div className="menu-header">
-              <h3 className="menu-title">Navegación Rápida</h3>
-              <button
-                onClick={() => setShowQuickActions(false)}
-                className="menu-close"
-              >
-                <HiOutlineX size={18} />
-              </button>
-            </div>
-            <div className="quick-actions-grid">
-              {quickSections.map((section) => {
-                const IconComponent = section.icon;
-                return (
-                  <button
-                    key={section.id}
-                    onClick={() => handleSectionSelect(section.id)}
-                    className={`quick-action-item ${
-                      activeSection === section.id
-                        ? "quick-action-item--active"
-                        : ""
-                    }`}
-                    style={{ "--accent-color": section.color }}
-                  >
-                    <div className="quick-action-icon">
-                      <IconComponent size={20} />
-                    </div>
-                    <span className="quick-action-label">{section.label}</span>
-                  </button>
-                );
-              })}
+                  {/* Lista de categorías */}
+                  <div className="category-items">
+                    {displayCategories.map((category, index) => (
+                      <button
+                        key={category}
+                        onClick={() => handleCategorySelect(category)}
+                        className={`category-item ${
+                          selectedCategory === category
+                            ? "category-item--active"
+                            : ""
+                        }`}
+                        style={{ animationDelay: `${index * 0.03}s` }}
+                      >
+                        <div className="category-item__icon">
+                          <HiOutlineTag size={14} />
+                        </div>
+                        <span className="category-name">{category}</span>
+                        <div className="category-item__check">
+                          {selectedCategory === category && <span>✓</span>}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Footer decorativo */}
+              <div className="menu-footer">
+                <div className="menu-footer__dots">
+                  <span className="dot"></span>
+                  <span className="dot"></span>
+                  <span className="dot"></span>
+                </div>
+                <span className="menu-footer__text">
+                  {displayCategories.length} categorías disponibles
+                </span>
+              </div>
             </div>
           </div>
         )}

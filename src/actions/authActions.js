@@ -1,7 +1,11 @@
-// actions/authActions.js - VERSIÓN CORREGIDA (guarda todos los datos)
+// actions/authActions.js - CORREGIDO
 import { fetchConToken, fetchSinToken } from "../helpers/fetchAdmin";
 import { types } from "../types/types";
 import Swal from "sweetalert2";
+
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://minimarket-backend-6z9m.onrender.com";
 
 export const checkingFinish = () => ({
   type: types.authCheckingFinish,
@@ -32,8 +36,9 @@ export const StartLogin = (username, password) => {
       );
 
       console.log("📦 Body completo recibido del backend:", body);
-      console.log("📞 Teléfono recibido en login:", body?.phone);
-      console.log("👤 Nombre recibido en login:", body?.full_name);
+      console.log("👤 Role recibido:", body?.user?.role);
+      console.log("📞 Teléfono recibido:", body?.user?.phone);
+      console.log("👤 Nombre recibido:", body?.user?.full_name);
 
       if (!body) {
         throw new Error("El servidor no respondió correctamente");
@@ -43,7 +48,7 @@ export const StartLogin = (username, password) => {
         Swal.fire({
           icon: "success",
           title: "¡Login exitoso!",
-          text: "Bienvenido al panel de administración",
+          text: "Bienvenido al sistema",
           showConfirmButton: false,
           timer: 1500,
           background: "#f0f9ff",
@@ -53,19 +58,29 @@ export const StartLogin = (username, password) => {
         localStorage.setItem("token", body.token);
         localStorage.setItem("token-init-date", new Date().getTime());
 
+        // ✅ EXTRAER EL USUARIO CORRECTAMENTE (body.user existe)
+        const userData = body.user || body; // Algunas respuestas pueden tener user anidado
+
+        console.log("📝 Datos del usuario a guardar:", {
+          uid: userData.id || userData.uid,
+          name: userData.username || userData.name,
+          role: userData.role,
+          full_name: userData.full_name,
+        });
+
         // ✅ GUARDAR TODOS LOS DATOS DEL USUARIO
         dispatch(
           login({
-            uid: body.id,
-            name: body.username,
-            role: body.role,
-            full_name: body.full_name || "",
-            email: body.email || "",
-            address: body.address || "",
-            city: body.city || "",
-            lat: body.lat || null,
-            lng: body.lng || null,
-            phone: body.phone || "", //
+            uid: userData.id || userData.uid,
+            name: userData.username || userData.name,
+            role: userData.role || "customer",
+            full_name: userData.full_name || "",
+            email: userData.email || "",
+            address: userData.address || "",
+            city: userData.city || "",
+            lat: userData.lat || null,
+            lng: userData.lng || null,
+            phone: userData.phone || "",
           }),
         );
       } else {
@@ -107,9 +122,6 @@ export const StartLogin = (username, password) => {
       } else if (error.message.includes("respuesta no es JSON")) {
         errorTitle = "Error del servidor";
         errorMessage = "El servidor respondió con un formato inválido.";
-      } else if (error.message.includes("Timeout")) {
-        errorTitle = "Tiempo de espera agotado";
-        errorMessage = "La petición tardó demasiado. Intenta nuevamente.";
       } else {
         errorMessage = error.message || errorMessage;
       }
@@ -143,7 +155,6 @@ export const startLoadUserProfile = () => {
       console.log("📦 Respuesta del perfil:", body);
 
       if (body.ok && body.user) {
-        // ✅ Actualizar el estado de auth con los datos del perfil
         dispatch({
           type: types.authUpdateProfile,
           payload: body.user,
@@ -167,22 +178,26 @@ export const StartChecking = () => {
 
       const body = await fetchConToken("auth/renew");
 
+      console.log("📦 Respuesta de renew:", body);
+
       if (body && body.ok) {
         localStorage.setItem("token", body.token);
         localStorage.setItem("token-init-date", new Date().getTime());
 
+        const userData = body.user || body;
+
         dispatch(
           login({
-            uid: body.uid || body.id,
-            name: body.name || body.username,
-            role: body.role,
-            full_name: body.full_name || "",
-            email: body.email || "",
-            address: body.address || "",
-            city: body.city || "",
-            lat: body.lat || null,
-            lng: body.lng || null,
-            phone: body.phone || "",
+            uid: userData.id || userData.uid,
+            name: userData.username || userData.name,
+            role: userData.role || "customer",
+            full_name: userData.full_name || "",
+            email: userData.email || "",
+            address: userData.address || "",
+            city: userData.city || "",
+            lat: userData.lat || null,
+            lng: userData.lng || null,
+            phone: userData.phone || "",
           }),
         );
       } else {
@@ -217,7 +232,6 @@ export const startLogout = () => {
 
 const logout = () => ({ type: types.authLogout });
 
-// ✅ LOGIN ACTUALIZADO - guarda todos los campos
 const login = (user) => ({
   type: types.authLogin,
   payload: user,

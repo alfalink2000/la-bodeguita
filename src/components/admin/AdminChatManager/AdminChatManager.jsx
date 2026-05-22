@@ -1,5 +1,6 @@
 // components/admin/AdminChatManager/AdminChatManager.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   HiOutlineUserCircle,
   HiOutlinePaperAirplane,
@@ -8,263 +9,179 @@ import {
   HiOutlineSearch,
   HiOutlineCheck,
   HiOutlineExclamationCircle,
+  HiOutlineRefresh,
+  HiOutlineUserAdd,
 } from "react-icons/hi";
-import Swal from "sweetalert2";
+import {
+  startLoadChats,
+  selectChat,
+  clearSelectedChat,
+  startLoadMessages,
+  startSendAdminMessage,
+  startLoadAllUsers,
+} from "../../../actions/chatActions";
 import "./AdminChatManager.css";
 
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "https://minimarket-backend-6z9m.onrender.com";
-
 const AdminChatManager = ({
-  token,
   selectedUserId,
   onSelectUser,
   onUnreadCountChange,
 }) => {
-  const [chats, setChats] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
   const [searchTerm, setSearchTerm] = useState("");
-  const [totalUnread, setTotalUnread] = useState(0);
+  const [newMessage, setNewMessage] = useState("");
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [showAllUsers, setShowAllUsers] = useState(false); // Toggle para mostrar todos los usuarios
   const messagesEndRef = useRef(null);
-  const intervalRef = useRef(null);
+  const inputRef = useRef(null);
 
-  // Cargar lista de chats (incluyendo los que necesitan atención)
-  const loadChats = useCallback(async () => {
-    if (!token) return;
+  const {
+    chats = [],
+    selectedChat = null,
+    messages = [],
+    loading = false,
+    totalUnread = 0,
+  } = useSelector((state) => state.chat) || {};
 
+  // Cargar chats al montar
+  const loadData = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/api/chat/admin/chats-with-orders`, {
-        headers: { "x-token": token },
-      });
-      const data = await res.json();
-
-      if (data.ok) {
-        setChats(data.chats || []);
-        const unread = (data.chats || []).reduce(
-          (sum, chat) => sum + (chat.noLeidos || 0),
-          0,
-        );
-        setTotalUnread(unread);
-        if (onUnreadCountChange) {
-          onUnreadCountChange(unread);
-        }
-      }
-    } catch (err) {
-      console.error("Error cargando chats:", err);
+      await dispatch(startLoadChats());
+      setIsInitialized(true);
+    } catch (error) {
+      console.error("Error cargando chats:", error);
     }
-  }, [token, onUnreadCountChange]);
+  }, [dispatch]);
 
-  // Cargar mensajes de un usuario
-  const loadMessages = useCallback(
-    async (userId) => {
-      if (!token || !userId) return;
-
-      try {
-        setLoading(true);
-        const res = await fetch(
-          `${API_URL}/api/chat/admin/messages/${userId}`,
-          {
-            headers: { "x-token": token },
-          },
-        );
-        const data = await res.json();
-
-        if (data.ok) {
-          setMessages(data.mensajes || []);
-          setChats((prev) =>
-            prev.map((chat) =>
-              chat.user?.id === userId ? { ...chat, noLeidos: 0 } : chat,
-            ),
-          );
-          const remainingUnread = chats.reduce(
-            (sum, chat) =>
-              chat.user?.id === userId ? sum : sum + (chat.noLeidos || 0),
-            0,
-          );
-          setTotalUnread(remainingUnread);
-          if (onUnreadCountChange) {
-            onUnreadCountChange(remainingUnread);
-          }
-        }
-      } catch (err) {
-        console.error("Error cargando mensajes:", err);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [token, chats, onUnreadCountChange],
-  );
-
-  // Crear chat desde pedido (cuando no existe)
-  const createChatFromOrder = async (userId) => {
+  // Cargar todos los usuarios
+  const loadAllUsers = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/api/chat/create-from-order`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-token": token,
-        },
-        body: JSON.stringify({ user_id: userId }),
-      });
-      const data = await res.json();
-
-      if (data.ok) {
-        await loadChats();
-        return data.userName;
-      }
-      return null;
-    } catch (err) {
-      console.error("Error creando chat:", err);
-      return null;
+      await dispatch(startLoadAllUsers());
+      setIsInitialized(true);
+    } catch (error) {
+      console.error("Error cargando todos los usuarios:", error);
     }
-  };
+  }, [dispatch]);
 
-  // Enviar primer mensaje (cuando no hay conversación previa)
-  const handleSendFirstMessage = async (userId, message) => {
-    if (!message.trim()) return false;
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
-    try {
-      const res = await fetch(`${API_URL}/api/chat/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-token": token,
-        },
-        body: JSON.stringify({
-          message: message.trim(),
-          receiver_id: userId,
-        }),
-      });
-      const data = await res.json();
-
-      if (data.ok) {
-        setNewMessage("");
-        await loadMessages(userId);
-        await loadChats();
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.error("Error enviando mensaje:", err);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "No se pudo enviar el mensaje",
-      });
-      return false;
+  // Notificar cambios en el contador de no leídos
+  useEffect(() => {
+    if (onUnreadCountChange && typeof totalUnread === "number") {
+      onUnreadCountChange(totalUnread);
     }
-  };
-
-  // Enviar mensaje normal
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedChat?.user?.id) return;
-
-    // Si es el primer mensaje y no hay mensajes previos
-    if (messages.length === 0 && selectedChat.needsFirstMessage) {
-      await handleSendFirstMessage(selectedChat.user.id, newMessage);
-    } else {
-      try {
-        const res = await fetch(`${API_URL}/api/chat/send`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-token": token,
-          },
-          body: JSON.stringify({
-            message: newMessage.trim(),
-            receiver_id: selectedChat.user.id,
-          }),
-        });
-        const data = await res.json();
-
-        if (data.ok) {
-          setNewMessage("");
-          loadMessages(selectedChat.user.id);
-          loadChats();
-        }
-      } catch (err) {
-        console.error("Error enviando mensaje:", err);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "No se pudo enviar el mensaje",
-        });
-      }
-    }
-  };
+  }, [totalUnread, onUnreadCountChange]);
 
   // Seleccionar usuario por ID (desde orders)
   useEffect(() => {
-    const selectUser = async () => {
-      if (selectedUserId && chats.length > 0) {
-        let chatToSelect = chats.find(
-          (chat) => chat.user?.id === selectedUserId,
-        );
+    if (!selectedUserId || !dispatch || !isInitialized) return;
 
-        if (!chatToSelect) {
-          // Si no existe el chat, crearlo automáticamente
-          const userName = await createChatFromOrder(selectedUserId);
-          if (userName) {
-            // Recargar chats después de crear
-            await loadChats();
-            // Buscar nuevamente
-            chatToSelect = chats.find(
-              (chat) => chat.user?.id === selectedUserId,
-            );
-          }
-        }
+    const selectUserById = async () => {
+      let currentChats = chats;
+      if (currentChats.length === 0) {
+        await dispatch(startLoadChats());
+        const state = useSelector((state) => state.chat);
+        currentChats = state.chats;
+      }
 
-        if (chatToSelect) {
-          setSelectedChat(chatToSelect);
-          loadMessages(selectedUserId);
-        }
+      const chatToSelect = currentChats.find(
+        (chat) => chat.user?.id === selectedUserId,
+      );
+      if (chatToSelect) {
+        dispatch(selectChat(chatToSelect));
+        if (onSelectUser) onSelectUser(selectedUserId);
       }
     };
 
-    selectUser();
-  }, [selectedUserId, chats, loadMessages, loadChats]);
-
-  // Polling
-  useEffect(() => {
-    loadChats();
-
-    intervalRef.current = setInterval(() => {
-      loadChats();
-      if (selectedChat?.user?.id) {
-        loadMessages(selectedChat.user.id);
-      }
-    }, 5000);
-
-    return () => clearInterval(intervalRef.current);
-  }, [loadChats, loadMessages, selectedChat]);
+    selectUserById();
+  }, [selectedUserId, dispatch, onSelectUser, isInitialized]);
 
   // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSelectChat = (chat) => {
-    setSelectedChat(chat);
-    loadMessages(chat.user?.id);
-    if (onSelectUser) {
-      onSelectUser(chat.user?.id);
+  // Enfocar input al seleccionar chat
+  useEffect(() => {
+    if (selectedChat && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-  };
+  }, [selectedChat]);
 
-  const handleBack = () => {
-    setSelectedChat(null);
+  const handleSelectChat = useCallback(
+    (chat) => {
+      console.log("📌 Seleccionando chat del cliente:", chat.user?.id);
+      dispatch(selectChat(chat));
+      if (onSelectUser) {
+        onSelectUser(chat.user?.id);
+      }
+    },
+    [dispatch, onSelectUser],
+  );
+
+  const handleBack = useCallback(() => {
+    dispatch(clearSelectedChat());
     if (onSelectUser) {
       onSelectUser(null);
     }
-    setMessages([]);
-  };
+  }, [dispatch, onSelectUser]);
+
+  const handleSend = useCallback(
+    async (e) => {
+      e.preventDefault();
+
+      if (!newMessage.trim() || !selectedChat?.user?.id || sending) return;
+
+      setSending(true);
+      const messageToSend = newMessage.trim();
+      setNewMessage("");
+
+      try {
+        const success = await dispatch(
+          startSendAdminMessage(selectedChat.user.id, messageToSend),
+        );
+
+        if (success) {
+          await dispatch(startLoadMessages(selectedChat.user.id));
+          await dispatch(startLoadChats());
+        } else {
+          setNewMessage(messageToSend);
+        }
+      } catch (error) {
+        console.error("Error enviando mensaje:", error);
+        setNewMessage(messageToSend);
+      } finally {
+        setSending(false);
+      }
+    },
+    [newMessage, selectedChat, sending, dispatch],
+  );
+
+  const handleRefresh = useCallback(async () => {
+    if (showAllUsers) {
+      await loadAllUsers();
+    } else {
+      await loadData();
+    }
+    if (selectedChat?.user?.id) {
+      await dispatch(startLoadMessages(selectedChat.user.id));
+    }
+  }, [dispatch, loadData, loadAllUsers, selectedChat, showAllUsers]);
+
+  const toggleUserView = useCallback(() => {
+    setShowAllUsers(!showAllUsers);
+    if (!showAllUsers) {
+      loadAllUsers();
+    } else {
+      loadData();
+    }
+  }, [showAllUsers, loadAllUsers, loadData]);
 
   const formatTime = (dateString) => {
+    if (!dateString) return "";
     const date = new Date(dateString);
     const now = new Date();
     const diff = now - date;
@@ -276,12 +193,7 @@ const AdminChatManager = ({
         hour: "2-digit",
         minute: "2-digit",
       });
-    return date.toLocaleDateString([], {
-      day: "2-digit",
-      month: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return date.toLocaleDateString([], { day: "2-digit", month: "2-digit" });
   };
 
   const filteredChats = chats.filter((chat) => {
@@ -290,16 +202,56 @@ const AdminChatManager = ({
     return name.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
+  // Separar chats con mensajes y usuarios nuevos
+  const chatsWithMessages = filteredChats.filter(
+    (chat) => chat.hasMessages || !chat.isNewUser,
+  );
+  const newUsers = filteredChats.filter(
+    (chat) => !chat.hasMessages && chat.isNewUser,
+  );
+
+  if (!isInitialized && loading) {
+    return (
+      <div className="admin-chat__loading-state">
+        <div className="admin-chat__spinner"></div>
+        <p>Cargando conversaciones...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="admin-chat">
-      {!selectedChat && (
+      {!selectedChat ? (
         <>
           <div className="admin-chat__header">
             <h2 className="admin-chat__title">
               <HiOutlineChat className="admin-chat__title-icon" />
-              Chats de Soporte
+              {showAllUsers ? "Todos los Usuarios" : "Chats de Soporte"}
             </h2>
-            {totalUnread > 0 && (
+            <div className="admin-chat__header-actions">
+              <button
+                className={`admin-chat__view-toggle ${showAllUsers ? "active" : ""}`}
+                onClick={toggleUserView}
+                title={
+                  showAllUsers
+                    ? "Ver solo chats activos"
+                    : "Ver todos los usuarios"
+                }
+              >
+                <HiOutlineUserAdd />
+              </button>
+              <button
+                className="admin-chat__refresh-btn"
+                onClick={handleRefresh}
+                disabled={loading}
+                title="Actualizar"
+              >
+                <HiOutlineRefresh
+                  className={loading ? "admin-chat__refresh-spin" : ""}
+                />
+              </button>
+            </div>
+            {totalUnread > 0 && !showAllUsers && (
               <span className="admin-chat__unread-badge">
                 {totalUnread} no leídos
               </span>
@@ -311,82 +263,139 @@ const AdminChatManager = ({
             <input
               type="text"
               className="admin-chat__search-input"
-              placeholder="Buscar cliente..."
+              placeholder="Buscar por nombre o teléfono..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
           <div className="admin-chat__list">
-            {filteredChats.length === 0 ? (
+            {loading && chats.length === 0 ? (
+              <div className="admin-chat__loading">
+                <div className="admin-chat__spinner"></div>
+                <p>Cargando...</p>
+              </div>
+            ) : filteredChats.length === 0 ? (
               <div className="admin-chat__empty">
                 <HiOutlineChat className="admin-chat__empty-icon" />
-                <h3>No hay conversaciones</h3>
-                <p>Los mensajes de los clientes aparecerán aquí</p>
-                <p className="admin-chat__empty-hint">
-                  💡 Los pedidos sin ubicación GPS crearán automáticamente un
-                  chat
-                </p>
+                <h3>No hay usuarios registrados</h3>
+                <p>Los clientes aparecerán aquí cuando se registren</p>
               </div>
             ) : (
-              filteredChats.map((chat) => (
-                <button
-                  key={chat.user?.id}
-                  className={`admin-chat__item ${
-                    chat.noLeidos > 0 ? "admin-chat__item--unread" : ""
-                  } ${
-                    chat.needsFirstMessage
-                      ? "admin-chat__item--needs-attention"
-                      : ""
-                  }`}
-                  onClick={() => handleSelectChat(chat)}
-                >
-                  <div className="admin-chat__item-avatar">
-                    <HiOutlineUserCircle />
-                  </div>
-                  <div className="admin-chat__item-content">
-                    <div className="admin-chat__item-header">
-                      <span className="admin-chat__item-name">
-                        {chat.user?.full_name ||
-                          chat.user?.username ||
-                          "Cliente"}
-                      </span>
-                      <span className="admin-chat__item-time">
-                        {chat.ultimoMensaje
-                          ? formatTime(chat.ultimoMensaje.created_at)
-                          : "Nuevo"}
-                      </span>
+              <>
+                {/* Mostrar chats activos primero */}
+                {chatsWithMessages.length > 0 && !showAllUsers && (
+                  <>
+                    <div className="admin-chat__section-title">
+                      <span>Conversaciones activas</span>
                     </div>
-                    <div className="admin-chat__item-footer">
-                      <span className="admin-chat__item-preview">
-                        {chat.ultimoMensaje?.message ||
-                          "🆕 Pedido sin ubicación - Requiere contacto"}
-                      </span>
-                      {chat.noLeidos > 0 && (
-                        <span className="admin-chat__item-badge">
-                          {chat.noLeidos}
-                        </span>
-                      )}
-                    </div>
-                    {chat.needsFirstMessage && (
-                      <div className="admin-chat__item-warning">
-                        <HiOutlineExclamationCircle /> Requiere atención
+                    {chatsWithMessages.map((chat) => (
+                      <button
+                        key={chat.user?.id}
+                        className={`admin-chat__item ${
+                          chat.unreadCount > 0 ? "admin-chat__item--unread" : ""
+                        } ${chat.needsAttention ? "admin-chat__item--needs-attention" : ""}`}
+                        onClick={() => handleSelectChat(chat)}
+                      >
+                        <div className="admin-chat__item-avatar">
+                          <HiOutlineUserCircle />
+                        </div>
+                        <div className="admin-chat__item-content">
+                          <div className="admin-chat__item-header">
+                            <span className="admin-chat__item-name">
+                              {chat.user?.full_name ||
+                                chat.user?.username ||
+                                "Cliente"}
+                            </span>
+                            <span className="admin-chat__item-time">
+                              {chat.lastMessage
+                                ? formatTime(chat.lastMessage.created_at)
+                                : "Nuevo"}
+                            </span>
+                          </div>
+                          <div className="admin-chat__item-footer">
+                            <span className="admin-chat__item-preview">
+                              {chat.lastMessage?.message || "Sin mensajes aún"}
+                            </span>
+                            {chat.unreadCount > 0 && (
+                              <span className="admin-chat__item-badge">
+                                {chat.unreadCount}
+                              </span>
+                            )}
+                          </div>
+                          {chat.needsAttention && (
+                            <div className="admin-chat__item-warning">
+                              <HiOutlineExclamationCircle /> Pedido pendiente
+                            </div>
+                          )}
+                          {chat.user?.phone && (
+                            <span className="admin-chat__item-address">
+                              📱 {chat.user.phone}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </>
+                )}
+
+                {/* Mostrar todos los usuarios (modo lista completa) */}
+                {(showAllUsers || newUsers.length > 0) && (
+                  <>
+                    {!showAllUsers && newUsers.length > 0 && (
+                      <div className="admin-chat__section-title">
+                        <span>Usuarios sin conversación</span>
                       </div>
                     )}
-                    {chat.user?.address && (
-                      <span className="admin-chat__item-address">
-                        📍 {chat.user.address}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              ))
+                    {(showAllUsers ? filteredChats : newUsers).map((chat) => (
+                      <button
+                        key={chat.user?.id}
+                        className={`admin-chat__item admin-chat__item--new ${
+                          chat.needsAttention
+                            ? "admin-chat__item--needs-attention"
+                            : ""
+                        }`}
+                        onClick={() => handleSelectChat(chat)}
+                      >
+                        <div className="admin-chat__item-avatar">
+                          <HiOutlineUserCircle />
+                        </div>
+                        <div className="admin-chat__item-content">
+                          <div className="admin-chat__item-header">
+                            <span className="admin-chat__item-name">
+                              {chat.user?.full_name ||
+                                chat.user?.username ||
+                                "Cliente"}
+                            </span>
+                          </div>
+                          <div className="admin-chat__item-footer">
+                            <span className="admin-chat__item-preview">
+                              {chat.needsAttention
+                                ? "⚠️ Pedido sin ubicación - Requiere contacto"
+                                : "📝 Nuevo usuario - Inicia una conversación"}
+                            </span>
+                          </div>
+                          {chat.user?.phone && (
+                            <span className="admin-chat__item-address">
+                              📱 {chat.user.phone}
+                            </span>
+                          )}
+                          {chat.user?.address && (
+                            <span className="admin-chat__item-address">
+                              📍 {chat.user.address}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </>
+                )}
+              </>
             )}
           </div>
         </>
-      )}
-
-      {selectedChat && (
+      ) : (
+        // VISTA DE CONVERSACIÓN
         <div className="admin-chat__conversation">
           <div className="admin-chat__conv-header">
             <button className="admin-chat__back" onClick={handleBack}>
@@ -412,13 +421,20 @@ const AdminChatManager = ({
                     📍 {selectedChat.user.address}
                   </span>
                 )}
-                {selectedChat.needsFirstMessage && (
-                  <span className="admin-chat__conv-warning">
-                    ⚠️ Pedido pendiente de coordinación
+                {selectedChat.user?.email && (
+                  <span className="admin-chat__conv-email">
+                    ✉️ {selectedChat.user.email}
                   </span>
                 )}
               </div>
             </div>
+            <button
+              className="admin-chat__refresh-small"
+              onClick={handleRefresh}
+              title="Actualizar"
+            >
+              <HiOutlineRefresh />
+            </button>
           </div>
 
           <div className="admin-chat__conv-messages">
@@ -433,9 +449,11 @@ const AdminChatManager = ({
                 </div>
                 <h4>Inicia la conversación</h4>
                 <p>
-                  Este cliente necesita ser contactado para coordinar su pedido.
+                  Este es el primer mensaje. Escribe para contactar al cliente.
                 </p>
-                <small>Escribe un mensaje para comenzar...</small>
+                <small>
+                  El cliente recibirá tu mensaje en su chat de soporte.
+                </small>
               </div>
             ) : (
               messages.map((msg) => (
@@ -445,21 +463,16 @@ const AdminChatManager = ({
                     msg.sender === "admin"
                       ? "admin-chat__message--admin"
                       : "admin-chat__message--customer"
-                  } ${msg.is_auto ? "admin-chat__message--auto" : ""}`}
+                  }`}
                 >
                   <div className="admin-chat__message-bubble">
                     <p className="admin-chat__message-text">{msg.message}</p>
-                    {msg.is_auto && (
-                      <span className="admin-chat__auto-badge">
-                        🤖 Automático
-                      </span>
-                    )}
                   </div>
                   <div className="admin-chat__message-meta">
                     <span className="admin-chat__message-time">
                       {formatTime(msg.created_at)}
                     </span>
-                    {msg.sender === "admin" && !msg.is_auto && (
+                    {msg.sender === "admin" && (
                       <span className="admin-chat__message-check">
                         <HiOutlineCheck />
                       </span>
@@ -473,22 +486,20 @@ const AdminChatManager = ({
 
           <form className="admin-chat__conv-input" onSubmit={handleSend}>
             <input
+              ref={inputRef}
               type="text"
               className="admin-chat__conv-input-field"
-              placeholder={
-                messages.length === 0
-                  ? "Escribe tu primer mensaje..."
-                  : "Escribe tu respuesta..."
-              }
+              placeholder={`Escribe tu respuesta para ${selectedChat.user?.full_name || "el cliente"}...`}
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
+              disabled={sending}
             />
             <button
               type="submit"
               className="admin-chat__conv-send"
-              disabled={!newMessage.trim()}
+              disabled={!newMessage.trim() || sending}
             >
-              <HiOutlinePaperAirplane />
+              {sending ? "..." : <HiOutlinePaperAirplane />}
             </button>
           </form>
         </div>

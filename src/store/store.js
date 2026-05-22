@@ -12,6 +12,7 @@ import { appConfigReducer } from "../reducers/appConfigReducer";
 import { cartReducer } from "../reducers/cartReducer";
 import { ordersReducer } from "../reducers/ordersReducer";
 import { storesReducer } from "../reducers/storesReducer";
+import { chatReducer } from "../reducers/chatReducer";
 
 const reducers = combineReducers({
   products: productsReducer,
@@ -22,6 +23,7 @@ const reducers = combineReducers({
   cart: cartReducer,
   orders: ordersReducer,
   stores: storesReducer,
+  chat: chatReducer,
 });
 
 // ✅ CONFIGURACIÓN DE PERSISTENCIA

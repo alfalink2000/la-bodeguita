@@ -236,19 +236,46 @@ const AppContent = () => {
   };
 
   // ✅ MANEJAR LOGIN EXITOSO DESDE AuthPage
+  // ✅ MANEJAR LOGIN EXITOSO DESDE AuthPage
   const handleLoginSuccess = (userData) => {
-    console.log("🔑 Login exitoso desde AuthPage:", userData);
+    console.log("🔑 Login exitoso desde AuthPage - Datos completos:", userData);
+    console.log("👤 Datos del usuario anidado:", userData.user);
+    console.log("👤 Role del usuario:", userData.user?.role);
+    console.log("👤 ID del usuario:", userData.user?.uid || userData.user?.id);
 
     roleSelectorShownRef.current = false;
 
+    // ✅ EXTRAER EL USUARIO CORRECTAMENTE
+    const user = userData.user || userData;
+    const token = userData.token;
+
+    // ✅ GUARDAR TOKEN SI VIENE EN userData
+    if (token) {
+      localStorage.setItem("token", token);
+    }
+
+    // ✅ DESPACHAR LOGIN CON TODOS LOS DATOS
     dispatch({
       type: types.authLogin,
       payload: {
-        uid: userData.id || userData.uid,
-        name: userData.full_name || userData.username,
-        role: userData.role || "client",
+        uid: user.uid || user.id,
+        name: user.name || user.username,
+        role: user.role || "customer",
+        full_name: user.full_name || "",
+        email: user.email || "",
+        address: user.address || "",
+        city: user.city || "",
+        lat: user.lat || null,
+        lng: user.lng || null,
+        phone: user.phone || "",
       },
     });
+
+    // ✅ FORZAR RECARGA DE ESTADO PARA QUE EL ROLE SELECTOR SE ACTIVE
+    // Pequeño delay para asegurar que Redux actualizó el estado
+    setTimeout(() => {
+      console.log("🔄 Verificando estado después de login...");
+    }, 100);
   };
 
   // ✅ MANEJAR SELECCIÓN DE VISTA CLIENTE DESDE ROLE SELECTOR

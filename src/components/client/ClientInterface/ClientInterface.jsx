@@ -1,4 +1,4 @@
-// ClientInterface.js - VERSIÓN CON SELECTOR DE TIENDAS
+// ClientInterface.js - VERSIÓN CON SELECTOR DE TIENDAS MEJORADO
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useProductsSync } from "../../../hooks/useProductsSync";
@@ -51,15 +51,13 @@ const API_URL =
   import.meta.env.VITE_API_URL ||
   "https://minimarket-backend-6z9m.onrender.com";
 
-// Constantes para evitar recreación
+// Constantes
 const SECTIONS = {
   TODOS: "todos",
   POPULARES: "populares",
   OFERTAS: "ofertas",
   CONTACTO: "contacto",
 };
-
-const PRODUCT_SECTIONS = [SECTIONS.TODOS, SECTIONS.POPULARES, SECTIONS.OFERTAS];
 
 const ClientInterface = ({
   currentView,
@@ -83,7 +81,7 @@ const ClientInterface = ({
   const [unreadOrders, setUnreadOrders] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
-  // ✅ NUEVOS ESTADOS PARA TIENDAS
+  // Estados para tiendas
   const [stores, setStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const [filteredCategories, setFilteredCategories] = useState([]);
@@ -95,15 +93,14 @@ const ClientInterface = ({
   const popularProducts = useSelector(selectPopularProducts);
   const offerProducts = useSelector(selectOfferProducts);
   const categoryOptions = useSelector(selectCategoryOptions);
-  const featuredProducts = useSelector(selectFeaturedProducts);
   const appConfig = useSelector((state) => state.appConfig.config);
 
-  // Función para marcar pedidos como leídos
+  // Marcar pedidos como leídos
   const markOrdersAsRead = () => {
     setUnreadOrders(0);
   };
 
-  // Función para cargar mensajes no leídos
+  // Cargar mensajes no leídos
   const loadUnreadMessages = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -114,12 +111,13 @@ const ClientInterface = ({
       });
       const data = await res.json();
       if (data.ok) {
-        setUnreadMessages(data.count || 0);
+        setUnreadMessages(data.unreadCount || 0);
       }
     } catch (err) {
       console.error("Error cargando mensajes no leídos:", err);
     }
   }, []);
+
   useEffect(() => {
     if (isLoggedIn) {
       loadUnreadMessages();
@@ -127,7 +125,8 @@ const ClientInterface = ({
       return () => clearInterval(interval);
     }
   }, [isLoggedIn, loadUnreadMessages]);
-  // ✅ CARGAR TIENDAS
+
+  // Cargar tiendas
   useEffect(() => {
     const loadStores = async () => {
       try {
@@ -146,8 +145,7 @@ const ClientInterface = ({
     loadStores();
   }, []);
 
-  // ✅ FILTRAR CATEGORÍAS POR TIENDA
-  // ✅ FILTRAR CATEGORÍAS POR TIENDA (excluir "Todos")
+  // Filtrar categorías por tienda
   useEffect(() => {
     if (!selectedStoreId) {
       setFilteredCategories(
@@ -168,7 +166,7 @@ const ClientInterface = ({
     setSelectedCategory("Todos");
   }, [selectedStoreId, categoryOptions]);
 
-  // ✅ FILTRAR PRODUCTOS POR TIENDA
+  // Filtrar productos por tienda
   const storeFilteredProducts = useMemo(() => {
     if (!selectedStoreId) return products;
     return products.filter(
@@ -198,17 +196,45 @@ const ClientInterface = ({
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
-  const handleSearchClick = useCallback(() => {
-    const searchInput = document.querySelector(
-      ".client-interface__search-section input",
-    );
-    searchInput?.focus();
-  }, []);
+  // Filtrar productos
+  const filteredProducts = useMemo(() => {
+    const productsToFilter =
+      activeSection === SECTIONS.TODOS
+        ? storeFilteredProducts
+        : activeSection === SECTIONS.POPULARES
+          ? popularProducts.filter((p) =>
+              storeFilteredProducts.some((sp) => sp.id === p.id),
+            )
+          : activeSection === SECTIONS.OFERTAS
+            ? offerProducts.filter((p) =>
+                storeFilteredProducts.some((sp) => sp.id === p.id),
+              )
+            : storeFilteredProducts;
 
-  const handleSectionChange = useCallback((sectionId) => {
-    setActiveSection(sectionId);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+    return productsToFilter.filter((product) => {
+      const matchesSearch =
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.description &&
+          product.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesCategory =
+        selectedCategory === "Todos" ||
+        product.category?.name === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [
+    storeFilteredProducts,
+    popularProducts,
+    offerProducts,
+    searchTerm,
+    selectedCategory,
+    activeSection,
+  ]);
+
+  const getProductsCount = useCallback(() => {
+    return `${filteredProducts.length} ${
+      filteredProducts.length === 1 ? "producto" : "productos"
+    }`;
+  }, [filteredProducts]);
 
   const handleProductClick = useCallback((product) => {
     setSelectedProduct(product);
@@ -222,7 +248,9 @@ const ClientInterface = ({
     (productName) => {
       const phoneNumber = appConfig?.whatsapp_number || "5491112345678";
       const message = `¡Hola! Estoy interesado en el producto: ${productName}`;
-      const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+      const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
+        message,
+      )}`;
       window.open(whatsappUrl, "_blank");
     },
     [appConfig?.whatsapp_number],
@@ -277,46 +305,6 @@ const ClientInterface = ({
     );
   }, [appConfig]);
 
-  // const DesktopNavigation = useCallback(
-  //   () => (
-  //     <div className="desktop-navigation">
-  //       <InfoButton />
-  //       <button
-  //         className="header-action header-action--icon"
-  //         title="Búsqueda avanzada"
-  //         onClick={() =>
-  //           document.querySelector(".desktop-search input")?.focus()
-  //         }
-  //       >
-  //         <HiOutlineSearch className="header-action__icon" />
-  //       </button>
-  //       <button
-  //         className="header-action header-action--icon"
-  //         title="Productos destacados"
-  //         onClick={() => setActiveSection(SECTIONS.POPULARES)}
-  //       >
-  //         <HiOutlineStar className="header-action__icon" />
-  //       </button>
-  //       <button
-  //         className="header-action header-action--icon"
-  //         title="Ofertas especiales"
-  //         onClick={() => setActiveSection(SECTIONS.OFERTAS)}
-  //       >
-  //         <HiOutlineTag className="header-action__icon" />
-  //       </button>
-  //       <div className="header-separator"></div>
-  //       <button
-  //         className="header-action header-action--icon"
-  //         title="Contacto rápido"
-  //         onClick={() => setActiveSection(SECTIONS.CONTACTO)}
-  //       >
-  //         <HiOutlinePhone className="header-action__icon" />
-  //       </button>
-  //     </div>
-  //   ),
-  //   [],
-  // );
-  // Dentro de ClientInterface.js - Actualizar DesktopNavigation
   const DesktopNavigation = useCallback(
     () => (
       <div className="desktop-navigation">
@@ -330,211 +318,13 @@ const ClientInterface = ({
         >
           <HiOutlineSearch className="header-action__icon" />
         </button>
-        {/* ✅ ELIMINADOS: Productos destacados y Ofertas especiales */}
-        {/* <button
-        className="header-action header-action--icon"
-        title="Productos destacados"
-        onClick={() => setActiveSection(SECTIONS.POPULARES)}
-      >
-        <HiOutlineStar className="header-action__icon" />
-      </button>
-      <button
-        className="header-action header-action--icon"
-        title="Ofertas especiales"
-        onClick={() => setActiveSection(SECTIONS.OFERTAS)}
-      >
-        <HiOutlineTag className="header-action__icon" />
-      </button> */}
         <div className="header-separator"></div>
-        {/* <button
-          className="header-action header-action--icon"
-          title="Contacto rápido"
-          onClick={() => setActiveSection(SECTIONS.CONTACTO)}
-        >
-          <HiOutlinePhone className="header-action__icon" />
-        </button> */}
       </div>
     ),
-    [InfoButton], // Eliminadas dependencias de setActiveSection para populares y ofertas
-  );
-  // ✅ FILTRADO DE PRODUCTOS
-  const filteredProducts = useMemo(() => {
-    const productsToFilter =
-      activeSection === SECTIONS.TODOS
-        ? storeFilteredProducts
-        : activeSection === SECTIONS.POPULARES
-          ? popularProducts.filter((p) =>
-              storeFilteredProducts.some((sp) => sp.id === p.id),
-            )
-          : activeSection === SECTIONS.OFERTAS
-            ? offerProducts.filter((p) =>
-                storeFilteredProducts.some((sp) => sp.id === p.id),
-              )
-            : storeFilteredProducts;
-
-    return productsToFilter.filter((product) => {
-      const matchesSearch =
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.description &&
-          product.description.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesCategory =
-        selectedCategory === "Todos" ||
-        product.category?.name === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [
-    storeFilteredProducts,
-    popularProducts,
-    offerProducts,
-    searchTerm,
-    selectedCategory,
-    activeSection,
-  ]);
-
-  const getProductsToShow = useCallback(
-    () => filteredProducts,
-    [filteredProducts],
+    [InfoButton],
   );
 
-  const getProductsCount = useCallback(() => {
-    const productsToShow = getProductsToShow();
-    return `${productsToShow.length} ${productsToShow.length === 1 ? "producto" : "productos"}`;
-  }, [getProductsToShow]);
-
-  // ✅ COMPONENTES DE SECCIÓN (se mantienen igual)
-  const renderPopularSection = useMemo(() => {
-    if (activeSection !== SECTIONS.POPULARES) return null;
-    return (
-      <div className="popular-section">
-        <div className="section-header">
-          <div className="section-title">
-            <div className="icon-wrapper trending-icon">
-              <HiOutlineFire className="section-icon" />
-              <div className="icon-sparkle"></div>
-            </div>
-            <div className="title-content">
-              <h2>Productos Más Vendidos</h2>
-              <div className="title-subtitle">
-                <span className="trending-badge">🔥 Tendencia</span>
-                <span className="products-count-badge">
-                  {popularProducts.length} productos
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="section-decoration">
-            <div className="decoration-line"></div>
-            <div className="decoration-pulse"></div>
-          </div>
-        </div>
-        <div className="section-content">
-          <p className="section-description">
-            Los productos favoritos de nuestros clientes
-          </p>
-          <div className="stats-container">
-            <div className="stat-item">
-              <span className="stat-number">⭐</span>
-              <span className="stat-label">Mejor Calificados</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">🚀</span>
-              <span className="stat-label">Más Vendidos</span>
-            </div>
-          </div>
-        </div>
-        {popularProducts.length === 0 && (
-          <div className="no-products-message">
-            <HiOutlineFire className="no-products-icon" />
-            <p>Próximamente tendremos productos destacados</p>
-          </div>
-        )}
-      </div>
-    );
-  }, [activeSection, popularProducts]);
-
-  const renderOffersSection = useMemo(() => {
-    if (activeSection !== SECTIONS.OFERTAS) return null;
-    return (
-      <div className="offers-section">
-        <div className="section-header">
-          <div className="section-title">
-            <div className="icon-wrapper offer-icon">
-              <HiOutlineTag className="section-icon" />
-              <div className="icon-sparkle"></div>
-            </div>
-            <div className="title-content">
-              <h2>Ofertas Especiales</h2>
-              <div className="title-subtitle">
-                <span className="discount-badge">🎯 Oportunidad Única</span>
-                <span className="products-count-badge">
-                  {offerProducts.length} ofertas
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="offer-badge">
-            <HiOutlineSparkles className="badge-icon" />
-            <span>LIMITED</span>
-          </div>
-        </div>
-        <div className="section-content">
-          <p className="section-description">
-            Aprovecha nuestras promociones exclusivas
-          </p>
-          <div className="offer-features">
-            <div className="feature-tag">⚡ Ofertas Flash</div>
-            <div className="feature-tag">💰 Precios Especiales</div>
-            <div className="feature-tag">🎁 Descuentos Exclusivos</div>
-          </div>
-        </div>
-        {offerProducts.length === 0 && (
-          <div className="no-products-message">
-            <HiOutlineTag className="no-products-icon" />
-            <p>Próximamente tendremos ofertas especiales</p>
-          </div>
-        )}
-      </div>
-    );
-  }, [activeSection, offerProducts]);
-
-  const renderContactSection = useMemo(() => {
-    if (activeSection !== SECTIONS.CONTACTO) return null;
-    return (
-      <div className="contact-section">
-        <div className="section-header">
-          <div className="section-title">
-            <HiOutlinePhone className="section-icon contact-icon" />
-            <h2>Contáctanos</h2>
-          </div>
-        </div>
-        <div className="contact-info">
-          <div className="contact-item">
-            <span className="contact-label">
-              <HiOutlinePhone className="contact-item-icon" />
-              WhatsApp:
-            </span>
-            <span className="contact-value">{appConfig?.whatsapp_number}</span>
-          </div>
-          <div className="contact-item">
-            <span className="contact-label">
-              <HiOutlineClock className="contact-item-icon" />
-              Horario:
-            </span>
-            <span className="contact-value">{appConfig?.business_hours}</span>
-          </div>
-          <div className="contact-item">
-            <span className="contact-label">
-              <HiOutlineLocationMarker className="contact-item-icon" />
-              Dirección:
-            </span>
-            <span className="contact-value">{appConfig?.business_address}</span>
-          </div>
-        </div>
-      </div>
-    );
-  }, [activeSection, appConfig]);
-
-  // ✅ RENDERIZADO MÓVIL
+  // Renderizado móvil
   const renderMobileLayout = useMemo(
     () => (
       <div className="client-interface__content mobile-layout">
@@ -548,13 +338,33 @@ const ClientInterface = ({
           />
         </div>
 
-        {/* ✅ SELECTOR DE TIENDAS (CHIPS) */}
+        {/* SELECTOR DE TIENDAS CON TÍTULO Y DECORACIÓN */}
         <div className="store-selector-client">
+          <div className="selector-header">
+            <div className="selector-header__title">
+              <HiOutlineCollection className="selector-header__icon" />
+              <div className="decorative-divider">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+              </div>
+              <h3>Tiendas</h3>
+            </div>
+            <div className="selector-header__count">
+              <span className="count-number">{stores.length}</span>
+              <span className="count-label">tiendas</span>
+            </div>
+          </div>
+
           <div className="store-selector-client__scroll">
             {stores.map((store) => (
               <button
                 key={store.id}
-                className={`store-chip ${selectedStoreId === store.id.toString() ? "store-chip--active" : ""}`}
+                className={`store-chip ${
+                  selectedStoreId === store.id.toString()
+                    ? "store-chip--active"
+                    : ""
+                }`}
                 onClick={() => {
                   setSelectedStoreId(store.id.toString());
                   setSelectedCategory("Todos");
@@ -564,14 +374,51 @@ const ClientInterface = ({
                 <span className="store-chip__text">{store.name}</span>
               </button>
             ))}
+
+            {/* Decoración cuando hay pocas tiendas */}
+            {stores.length <= 3 && (
+              <div className="chips-decoration">
+                <div className="decoration-dots">
+                  <span className="dot"></span>
+                  <span className="dot"></span>
+                  <span className="dot"></span>
+                </div>
+                <div className="decoration-sparkle">✨</div>
+                <div className="decoration-line"></div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* ✅ CATEGORÍAS EN CHIPS HORIZONTALES */}
+        {/* SELECTOR DE CATEGORÍAS CON TÍTULO Y DECORACIÓN */}
         <div className="categories-chips">
+          <div className="selector-header">
+            <div className="selector-header__title">
+              <HiOutlineTag className="selector-header__icon" />
+              <div className="decorative-divider">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+              </div>
+              <h3>Categorías</h3>
+            </div>
+            <div className="selector-header__count">
+              <span className="count-number">
+                {
+                  filteredCategories.filter(
+                    (cat) => (cat.name || cat) !== "Todos",
+                  ).length
+                }
+              </span>
+              <span className="count-label">categorías</span>
+            </div>
+          </div>
+
           <div className="categories-chips__scroll">
             <button
-              className={`category-chip ${selectedCategory === "Todos" ? "category-chip--active" : ""}`}
+              className={`category-chip ${
+                selectedCategory === "Todos" ? "category-chip--active" : ""
+              }`}
               onClick={() => setSelectedCategory("Todos")}
             >
               Todos
@@ -581,12 +428,30 @@ const ClientInterface = ({
               .map((cat) => (
                 <button
                   key={cat.id || cat}
-                  className={`category-chip ${selectedCategory === (cat.name || cat) ? "category-chip--active" : ""}`}
+                  className={`category-chip ${
+                    selectedCategory === (cat.name || cat)
+                      ? "category-chip--active"
+                      : ""
+                  }`}
                   onClick={() => setSelectedCategory(cat.name || cat)}
                 >
                   {cat.name || cat}
                 </button>
               ))}
+
+            {/* Decoración cuando hay pocas categorías */}
+            {filteredCategories.filter((c) => (c.name || c) !== "Todos")
+              .length <= 3 && (
+              <div className="chips-decoration">
+                <div className="decoration-dots">
+                  <span className="dot"></span>
+                  <span className="dot"></span>
+                  <span className="dot"></span>
+                </div>
+                <div className="decoration-sparkle">✨</div>
+                <div className="decoration-line"></div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -600,7 +465,7 @@ const ClientInterface = ({
         {/* Grid de productos */}
         <div className="client-interface__products-section">
           <ProductGrid
-            products={getProductsToShow()}
+            products={filteredProducts}
             onProductClick={handleProductClick}
             isOfferSection={false}
           />
@@ -614,13 +479,13 @@ const ClientInterface = ({
       selectedStoreId,
       filteredCategories,
       selectedCategory,
+      filteredProducts,
       getProductsCount,
-      getProductsToShow,
       handleProductClick,
     ],
   );
 
-  // ✅ RENDERIZADO DESKTOP
+  // Renderizado desktop
   const renderDesktopLayout = useMemo(
     () => (
       <div className="client-interface__content desktop-layout">
@@ -636,7 +501,7 @@ const ClientInterface = ({
 
         {/* Sidebar */}
         <div className="desktop-sidebar">
-          {/* ✅ SELECTOR DE TIENDAS */}
+          {/* Tiendas en sidebar */}
           <div className="desktop-stores-nav">
             <h3 className="desktop-stores-title">
               <HiOutlineCollection className="desktop-stores-icon" /> Tiendas
@@ -645,7 +510,11 @@ const ClientInterface = ({
               {stores.map((store) => (
                 <button
                   key={store.id}
-                  className={`desktop-section-button ${selectedStoreId === store.id.toString() ? "desktop-section-button--active" : ""}`}
+                  className={`desktop-section-button ${
+                    selectedStoreId === store.id.toString()
+                      ? "desktop-section-button--active"
+                      : ""
+                  }`}
                   onClick={() => {
                     setSelectedStoreId(store.id.toString());
                     setSelectedCategory("Todos");
@@ -665,12 +534,18 @@ const ClientInterface = ({
             </div>
           </div>
 
-          {/* ✅ CATEGORÍAS EN LISTA VERTICAL */}
+          {/* Categorías en sidebar */}
           <div className="desktop-categories-nav">
-            <h3 className="desktop-stores-title">📂 Categorías</h3>
+            <h3 className="desktop-stores-title">
+              <HiOutlineTag className="desktop-stores-icon" /> Categorías
+            </h3>
             <div className="desktop-stores-list">
               <button
-                className={`desktop-section-button ${selectedCategory === "Todos" ? "desktop-section-button--active" : ""}`}
+                className={`desktop-section-button ${
+                  selectedCategory === "Todos"
+                    ? "desktop-section-button--active"
+                    : ""
+                }`}
                 onClick={() => setSelectedCategory("Todos")}
               >
                 <span className="desktop-section-text">
@@ -683,7 +558,11 @@ const ClientInterface = ({
               {filteredCategories.map((cat) => (
                 <button
                   key={cat.id || cat}
-                  className={`desktop-section-button ${selectedCategory === (cat.name || cat) ? "desktop-section-button--active" : ""}`}
+                  className={`desktop-section-button ${
+                    selectedCategory === (cat.name || cat)
+                      ? "desktop-section-button--active"
+                      : ""
+                  }`}
                   onClick={() => setSelectedCategory(cat.name || cat)}
                 >
                   <span className="desktop-section-text">
@@ -713,7 +592,7 @@ const ClientInterface = ({
           </div>
           <div className="desktop-products-section">
             <ProductGrid
-              products={getProductsToShow()}
+              products={filteredProducts}
               onProductClick={handleProductClick}
               isOfferSection={false}
             />
@@ -730,8 +609,8 @@ const ClientInterface = ({
       filteredCategories,
       selectedCategory,
       products,
+      filteredProducts,
       getProductsCount,
-      getProductsToShow,
       handleProductClick,
     ],
   );
@@ -800,18 +679,32 @@ const ClientInterface = ({
           currentView={currentView}
           onViewChange={onViewChange}
           onAdminClick={onShowLoginForm}
-          categories={filteredCategories.map((c) => c.name)}
+          categories={filteredCategories.map((c) => c.name || c)}
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
-          onSearchClick={handleSearchClick}
+          onSearchClick={() => {
+            const searchInput = document.querySelector(
+              ".search-bar__input, .client-interface__search-section input",
+            );
+            searchInput?.focus();
+            searchInput?.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          }}
           activeSection={activeSection}
-          onSectionChange={handleSectionChange}
+          onSectionChange={setActiveSection}
           isLoggedIn={isLoggedIn}
           onLogout={onLogout}
           onShowLogin={onShowLoginForm}
           onProfileClick={() => setShowProfile(true)}
+          currentStoreName={
+            stores.find((s) => s.id.toString() === selectedStoreId)?.name ||
+            "Tiendas"
+          }
         />
       )}
+
       <button
         className="floating-chat-button"
         onClick={() => setIsChatOpen(true)}

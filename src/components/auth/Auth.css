@@ -1,360 +1,310 @@
-/* Auth.css - Estilos minimalistas y elegantes */
+/* Auth.css - Versión compacta con badge opcional */
 
+:root {
+  --primary-green: #059669;
+  --primary-green-light: #10b981;
+  --primary-green-dark: #047857;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --white: #ffffff;
+  --error: #ef4444;
+}
+
+/* ============================================
+   CONTAINER
+   ============================================ */
 .auth-container {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* padding: var(--space-lg); */
   position: relative;
-  overflow: hidden;
-  /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
-  background: linear-gradient(135deg, #46a529b7 100%, #1e7248dc 0%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  padding: 1rem;
 }
 
-/* Fondo con profundidad y degradado suave */
 .auth-container::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background:
-    radial-gradient(
-      circle at 20% 50%,
-      rgba(255, 255, 255, 0.1) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      circle at 80% 80%,
-      rgba(255, 255, 255, 0.08) 0%,
-      transparent 50%
-    );
-  pointer-events: none;
-}
-
-.auth-container::after {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.03) 0%,
-    transparent 70%
+  inset: 0;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px
   );
-  animation: rotate 20s linear infinite;
+  background-size: 30px 30px;
   pointer-events: none;
 }
 
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
+/* Partículas */
+.auth-bg-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  background: rgba(5, 150, 105, 0.08);
+  border-radius: 50%;
+  animation: float 20s infinite;
+}
+
+.particle-1 {
+  width: 200px;
+  height: 200px;
+  top: -100px;
+  right: -100px;
+}
+.particle-2 {
+  width: 150px;
+  height: 150px;
+  bottom: -80px;
+  left: -80px;
+  animation-delay: 2s;
+}
+.particle-3 {
+  width: 100px;
+  height: 100px;
+  top: 20%;
+  left: 5%;
+  animation-delay: 5s;
+}
+.particle-4 {
+  width: 80px;
+  height: 80px;
+  bottom: 15%;
+  right: 10%;
+  animation-delay: 1s;
+}
+.particle-5 {
+  width: 120px;
+  height: 120px;
+  top: 50%;
+  right: 20%;
+  animation-delay: 3s;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
   }
-  to {
-    transform: rotate(360deg);
+  25% {
+    transform: translate(15px, -20px) rotate(90deg);
+  }
+  50% {
+    transform: translate(-10px, 15px) rotate(180deg);
+  }
+  75% {
+    transform: translate(8px, 10px) rotate(270deg);
   }
 }
 
-/* Tarjeta principal - Diseño rectangular compacto para desktop */
+/* ============================================
+   TARJETA - COMPACTA
+   ============================================ */
 .auth-card {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(10px);
   border-radius: 24px;
-  box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.25);
   width: 100%;
-  max-width: 420px;
-  padding: 2rem;
+  max-width: 380px;
+  padding: 1.5rem;
   position: relative;
-  z-index: 1;
-  transition: all 0.3s ease;
-  animation: fadeInScale 0.4s ease-out;
+  z-index: 10;
+  animation: slideUp 0.4s ease-out;
 }
 
-@keyframes fadeInScale {
+@keyframes slideUp {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
 }
 
-/* Ajustes para desktop - Recuadro más compacto */
-@media (min-width: 1024px) {
-  .auth-card {
-    max-width: 400px;
-    padding: 1.75rem;
-    border-radius: 28px;
-  }
-}
-
-/* Logo y encabezado minimalista */
+/* ============================================
+   LOGO - COMPACTO
+   ============================================ */
 .auth-logo {
   text-align: center;
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.25rem;
 }
 
 .auth-logo-icon {
-  width: 56px;
-  height: 56px;
-  background: linear-gradient(
-    135deg,
-    var(--primary-blue) 0%,
-    var(--primary-green) 100%
-  );
-  border-radius: 18px;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 0.875rem;
-  font-size: 2rem;
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
-  transition: transform 0.2s ease;
-}
-
-.auth-logo-icon:hover {
-  transform: scale(1.05);
+  margin: 0 auto 0.75rem;
+  color: white;
+  box-shadow: 0 8px 16px -4px rgba(5, 150, 105, 0.3);
 }
 
 .auth-logo h1 {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  color: var(--gray-800);
-  margin-bottom: 0.25rem;
-  letter-spacing: -0.3px;
+  color: #1f2937;
+  margin-bottom: 0.15rem;
 }
 
 .auth-logo p {
-  color: var(--gray-500);
-  font-size: 0.8rem;
-  font-weight: 400;
+  color: #6b7280;
+  font-size: 0.7rem;
 }
 
-/* Tabs minimalistas */
+/* ============================================
+   TABS - COMPACTOS
+   ============================================ */
 .auth-tabs {
   display: flex;
-  gap: 0.5rem;
-  background: var(--gray-100);
-  padding: 0.25rem;
-  border-radius: 14px;
-  margin-bottom: 1.75rem;
+  gap: 0.4rem;
+  background: #f3f4f6;
+  padding: 0.2rem;
+  border-radius: 40px;
+  margin-bottom: 1.25rem;
 }
 
 .auth-tab {
   flex: 1;
-  padding: 0.5rem 0.75rem;
+  padding: 0.4rem 0.5rem;
   border: none;
   background: transparent;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--gray-600);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border-radius: 12px;
-  font-family: inherit;
+  border-radius: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  transition: all 0.2s;
 }
 
 .auth-tab.active {
   background: white;
-  color: var(--primary-blue);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  color: #059669;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
-.auth-tab:hover:not(.active) {
-  color: var(--gray-800);
-  background: rgba(255, 255, 255, 0.5);
-}
-
-/* Formulario compacto */
+/* ============================================
+   FORMULARIO - COMPACTO
+   ============================================ */
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0.875rem;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  gap: 0.25rem;
+  position: relative;
 }
 
 .form-label {
-  font-size: 0.813rem;
-  font-weight: 500;
-  color: var(--gray-700);
-  letter-spacing: -0.2px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.optional-badge {
+  font-size: 0.55rem;
+  background: #e5e7eb;
+  color: #6b7280;
+  padding: 0.1rem 0.35rem;
+  border-radius: 20px;
+  margin-left: 0.25rem;
+  font-weight: normal;
+  text-transform: none;
 }
 
 .form-input {
-  padding: 0.625rem 0.875rem;
-  border: 1.5px solid var(--gray-200);
-  border-radius: 12px;
-  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.8rem;
   font-family: inherit;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
   background: white;
+  width: 100%;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: var(--primary-blue);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: #059669;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.1);
 }
 
-.form-input:hover:not(:focus) {
-  border-color: var(--gray-300);
-}
-
-/* Sugerencias de dirección */
-.address-search-group {
-  position: relative;
-}
-
-.address-suggestions {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid var(--gray-200);
-  border-radius: 12px;
-  margin-top: 0.375rem;
-  max-height: 180px;
-  overflow-y: auto;
-  z-index: 10;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-.address-suggestion-item {
-  padding: 0.5rem 0.875rem;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  font-size: 0.813rem;
-  color: var(--gray-700);
-}
-
-.address-suggestion-item:hover {
-  background: var(--gray-50);
-}
-
-/* Botón GPS minimalista */
-.gps-button {
+/* ============================================
+   DIRECCIÓN
+   ============================================ */
+.address-input-wrapper {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.875rem;
-  background: var(--gray-50);
-  border: 1.5px solid var(--gray-200);
-  border-radius: 12px;
-  font-size: 0.813rem;
-  font-weight: 500;
-  color: var(--gray-700);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
+  gap: 0.4rem;
   width: 100%;
 }
 
-.gps-button:hover:not(:disabled) {
-  background: var(--gray-100);
-  border-color: var(--gray-300);
-  transform: translateY(-1px);
+.address-input-wrapper .form-input {
+  flex: 1;
 }
 
-.gps-button:disabled {
+.gps-mini-btn {
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid #e5e7eb;
+  background: white;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.gps-mini-btn:hover:not(:disabled) {
+  border-color: #059669;
+  color: #059669;
+  transform: scale(1.02);
+}
+
+.gps-mini-btn.loading {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Divider minimalista */
-.auth-divider {
-  text-align: center;
-  margin: 0.25rem 0;
-  position: relative;
-}
-
-.auth-divider span {
-  font-size: 0.688rem;
-  color: var(--gray-400);
-}
-
-/* Botón de submit elegante */
-.auth-submit {
-  padding: 0.75rem;
-  background: linear-gradient(
-    135deg,
-    var(--primary-blue) 0%,
-    var(--primary-blue-dark) 100%
-  );
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  position: relative;
-  overflow: hidden;
-}
-
-.auth-submit::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
+.mini-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #059669;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  transform: translate(-50%, -50%);
-  transition:
-    width 0.6s,
-    height 0.6s;
-}
-
-.auth-submit:active::before {
-  width: 300px;
-  height: 300px;
-}
-
-.auth-submit:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
-}
-
-.auth-submit:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.auth-submit:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-/* Loading spinner */
-.auth-loading {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.auth-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.6s linear infinite;
 }
 
 @keyframes spin {
@@ -363,143 +313,467 @@
   }
 }
 
-/* Error message elegante */
-.form-error {
-  background: rgba(239, 68, 68, 0.08);
-  color: var(--error);
-  padding: 0.75rem;
-  border-radius: 12px;
-  font-size: 0.813rem;
+.address-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  margin-top: 0.25rem;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.address-suggestion-item {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.7rem;
+  color: #4b5563;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.address-suggestion-item:hover {
+  background: #f9fafb;
+  color: #059669;
+}
+
+.location-confirmed {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  border-left: 3px solid var(--error);
+  gap: 0.3rem;
+  font-size: 0.65rem;
+  color: #059669;
+  background: rgba(5, 150, 105, 0.08);
+  padding: 0.3rem 0.5rem;
+  border-radius: 8px;
+  margin-top: 0.25rem;
+}
+
+.location-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.6rem;
+  color: #9ca3af;
+  margin-top: 0.25rem;
+  background: #f9fafb;
+  padding: 0.3rem 0.5rem;
+  border-radius: 8px;
+}
+
+.location-hint span:first-child {
+  font-size: 0.7rem;
+}
+
+/* ============================================
+   TÉRMINOS Y BOTONES
+   ============================================ */
+.auth-terms {
+  text-align: center;
+  font-size: 0.6rem;
+  color: #9ca3af;
+  margin: 0.25rem 0;
+}
+
+.auth-submit {
+  padding: 0.6rem;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.auth-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.auth-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.auth-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  display: inline-block;
+}
+
+/* ============================================
+   ERROR Y FOOTER
+   ============================================ */
+.form-error {
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   margin-bottom: 1rem;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .auth-container {
-    align-items: center;
-    padding: 1rem;
-    min-height: 100vh;
-  }
-
-  .auth-card {
-    margin: auto;
-  }
-
-  .auth-logo-icon {
-    width: 48px;
-    height: 48px;
-    font-size: 1.75rem;
-  }
-
-  .auth-logo h1 {
-    font-size: 1.35rem;
-  }
-
-  .auth-tab {
-    font-size: 0.813rem;
-    padding: 0.375rem 0.625rem;
-  }
-
-  .form-input {
-    padding: 0.5625rem 0.8125rem;
-    font-size: 0.875rem;
-  }
-
-  /* Evitar zoom en iOS */
-  @media (max-width: 480px) {
-    .form-input,
-    .auth-submit,
-    .gps-button {
-      font-size: 16px;
-    }
-
-    .auth-card {
-      padding: 1.25rem;
-    }
-  }
+.auth-footer {
+  text-align: center;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
 }
 
-/* Ajustes para pantallas muy pequeñas */
+.auth-footer p {
+  font-size: 0.65rem;
+  color: #6b7280;
+}
+
+.auth-switch-btn {
+  background: none;
+  border: none;
+  color: #059669;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.65rem;
+}
+
+.auth-switch-btn:hover {
+  text-decoration: underline;
+}
+
+/* ============================================
+   RESPONSIVE MÓVIL
+   ============================================ */
 @media (max-width: 480px) {
+  .auth-container {
+    padding: 0.75rem;
+  }
+
   .auth-card {
+    max-width: 100%;
     padding: 1.25rem;
   }
 
   .auth-logo-icon {
     width: 44px;
     height: 44px;
-    font-size: 1.5rem;
   }
 
   .auth-logo h1 {
     font-size: 1.25rem;
   }
-}
 
-/* Animaciones suaves para elementos del formulario */
-.form-group {
-  animation: fadeInUp 0.3s ease-out backwards;
-  animation-delay: calc(var(--index, 0) * 0.05s);
-}
-
-.form-group:nth-child(1) {
-  --index: 1;
-}
-.form-group:nth-child(2) {
-  --index: 2;
-}
-.form-group:nth-child(3) {
-  --index: 3;
-}
-.form-group:nth-child(4) {
-  --index: 4;
-}
-.form-group:nth-child(5) {
-  --index: 5;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+  .form-input {
+    padding: 0.45rem 0.65rem;
+    font-size: 14px;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .gps-mini-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .auth-tab {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.4rem;
+  }
+
+  .auth-submit {
+    padding: 0.55rem;
+  }
+
+  .location-hint {
+    font-size: 0.55rem;
   }
 }
 
-/* Mejoras para el autocompletado */
-.form-input:-webkit-autofill,
-.form-input:-webkit-autofill:hover,
-.form-input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0px 1000px white inset;
-  transition: background-color 5000s ease-in-out 0s;
+@media (max-width: 360px) {
+  .auth-card {
+    padding: 1rem;
+  }
+
+  .auth-logo-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .auth-logo h1 {
+    font-size: 1.1rem;
+  }
+
+  .form-group {
+    gap: 0.2rem;
+  }
+
+  .form-input {
+    padding: 0.4rem 0.6rem;
+  }
 }
 
-/* Scrollbar personalizado */
+/* Scrollbar */
 .address-suggestions::-webkit-scrollbar {
   width: 4px;
 }
 
 .address-suggestions::-webkit-scrollbar-track {
-  background: var(--gray-100);
+  background: #f3f4f6;
   border-radius: 10px;
 }
 
 .address-suggestions::-webkit-scrollbar-thumb {
-  background: var(--gray-400);
+  background: #d1d5db;
   border-radius: 10px;
 }
+/* Agregar estos estilos a tu Auth.css */
 
-/* Efecto de vidrio en la tarjeta para desktop */
-@media (min-width: 1024px) {
-  .auth-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
+/* ============================================
+   SECCIÓN DE UBICACIÓN MEJORADA
+   ============================================ */
+
+.location-section {
+  margin-top: 0.25rem;
+}
+
+/* Botón GPS principal - grande y llamativo */
+.gps-main-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  transition: all 0.2s ease;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.gps-main-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+.gps-main-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.gps-main-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.gps-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Tarjeta de información GPS */
+.gps-info-card {
+  display: flex;
+  gap: 0.75rem;
+  background: #eff6ff;
+  border-left: 3px solid #3b82f6;
+  border-radius: 10px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.gps-info-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.gps-info-text {
+  flex: 1;
+}
+
+.gps-info-text strong {
+  font-size: 0.75rem;
+  color: #1e40af;
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.gps-info-text p {
+  font-size: 0.7rem;
+  color: #3b82f6;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* Separador "o" */
+.location-divider {
+  text-align: center;
+  margin: 0.75rem 0;
+  position: relative;
+}
+
+.location-divider::before,
+.location-divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 50px);
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.location-divider::before {
+  left: 0;
+}
+
+.location-divider::after {
+  right: 0;
+}
+
+.location-divider span {
+  background: white;
+  padding: 0 0.75rem;
+  font-size: 0.65rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Campo de dirección manual */
+.address-input-wrapper {
+  width: 100%;
+  margin-bottom: 0.25rem;
+}
+
+.address-input-wrapper .form-input {
+  width: 100%;
+}
+
+/* Sugerencias */
+.address-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  margin-top: 0.25rem;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.address-suggestion-item {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.7rem;
+  color: #4b5563;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.address-suggestion-item:hover {
+  background: #f9fafb;
+  color: #059669;
+}
+
+/* Confirmación de ubicación */
+.location-confirmed {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  color: #059669;
+  background: rgba(5, 150, 105, 0.1);
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  margin-top: 0.5rem;
+}
+
+/* ============================================
+   RESPONSIVE - AJUSTES MÓVIL
+   ============================================ */
+
+@media (max-width: 480px) {
+  .gps-main-btn {
+    padding: 0.65rem 0.875rem;
+    font-size: 0.8rem;
+  }
+
+  .gps-main-btn svg {
+    font-size: 16px;
+  }
+
+  .gps-info-card {
+    padding: 0.6rem;
+    gap: 0.5rem;
+  }
+
+  .gps-info-icon {
+    font-size: 1.25rem;
+  }
+
+  .gps-info-text strong {
+    font-size: 0.7rem;
+  }
+
+  .gps-info-text p {
+    font-size: 0.65rem;
+  }
+
+  .location-divider {
+    margin: 0.6rem 0;
+  }
+
+  .location-divider span {
+    font-size: 0.6rem;
+    padding: 0 0.5rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .gps-main-btn {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .gps-info-text strong {
+    font-size: 0.65rem;
+  }
+
+  .gps-info-text p {
+    font-size: 0.6rem;
   }
 }

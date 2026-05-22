@@ -1,119 +1,77 @@
 // components/client/ChatModal/ChatModal.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   HiOutlineX,
   HiOutlinePaperAirplane,
   HiOutlineChat,
   HiOutlineUserCircle,
 } from "react-icons/hi";
+import {
+  startLoadClientMessages,
+  startSendClientMessage,
+} from "../../../actions/chatActions";
 import "./ChatModal.css";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
-const ChatModal = ({ isOpen, onClose, token, userData }) => {
-  const [messages, setMessages] = useState([]);
+const ChatModal = ({ isOpen, onClose }) => {
+  const dispatch = useDispatch();
   const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [sending, setSending] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Cargar mensajes
-  const loadMessages = useCallback(async () => {
-    if (!token) return;
+  const { messages = [], loading = false } =
+    useSelector((state) => state.chat) || {};
 
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_URL}/api/chat/messages`, {
-        headers: { "x-token": token },
-      });
-      const data = await res.json();
-
-      if (data.ok) {
-        setMessages(data.mensajes || []);
-      }
-    } catch (err) {
-      console.error("Error cargando mensajes:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
-
-  // Cargar al abrir
+  // Cargar mensajes al abrir
   useEffect(() => {
     if (isOpen) {
-      loadMessages();
-      // Enfocar input
-      setTimeout(() => inputRef.current?.focus(), 300);
+      dispatch(startLoadClientMessages());
     }
-  }, [isOpen, loadMessages]);
+  }, [isOpen, dispatch]);
 
-  // Auto-scroll al final
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Polling cada 5 segundos
+  // Polling solo cuando el modal está abierto
   useEffect(() => {
     if (!isOpen) return;
 
     const interval = setInterval(() => {
-      loadMessages();
+      dispatch(startLoadClientMessages());
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [isOpen, loadMessages]);
+  }, [isOpen, dispatch]);
 
-  // Enviar mensaje
+  // Auto-scroll
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Enfocar input al abrir
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => inputRef.current?.focus(), 300);
+    }
+  }, [isOpen]);
+
   const handleSend = async (e) => {
     e.preventDefault();
+    if (!newMessage.trim() || sending) return;
 
-    if (!newMessage.trim() || !token) return;
+    setSending(true);
+    const messageToSend = newMessage.trim();
+    setNewMessage("");
 
-    try {
-      const res = await fetch(`${API_URL}/api/chat/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-token": token,
-        },
-        body: JSON.stringify({ message: newMessage.trim() }),
-      });
-      const data = await res.json();
-
-      if (data.ok) {
-        setNewMessage("");
-        // Recargar mensajes
-        await loadMessages();
-      }
-    } catch (err) {
-      console.error("Error enviando mensaje:", err);
-      setError("Error al enviar mensaje");
+    const success = await dispatch(startSendClientMessage(messageToSend));
+    if (!success) {
+      setNewMessage(messageToSend);
     }
+    setSending(false);
   };
 
-  // Formatear hora
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
-
-  // Cerrar con Escape
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-
-    if (isOpen) {
-      document.addEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "hidden";
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
-    };
-  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -186,14 +144,6 @@ const ChatModal = ({ isOpen, onClose, token, userData }) => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Error */}
-        {error && (
-          <div className="chat-modal__error">
-            {error}
-            <button onClick={() => setError(null)}>✕</button>
-          </div>
-        )}
-
         {/* Input */}
         <form className="chat-modal__input" onSubmit={handleSend}>
           <input
@@ -203,14 +153,14 @@ const ChatModal = ({ isOpen, onClose, token, userData }) => {
             placeholder="Escribe tu mensaje..."
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            disabled={!token}
+            disabled={sending}
           />
           <button
             type="submit"
             className="chat-modal__send-button"
-            disabled={!newMessage.trim() || !token}
+            disabled={!newMessage.trim() || sending}
           >
-            <HiOutlinePaperAirplane />
+            {sending ? "..." : <HiOutlinePaperAirplane />}
           </button>
         </form>
       </div>
