@@ -1,5 +1,5 @@
 // components/admin/AppConfigManager/AppConfigManager.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   HiOutlineCog,
@@ -56,6 +56,82 @@ const AppConfigManager = () => {
   const [previewingTheme, setPreviewingTheme] = useState(null);
   const [saving, setSaving] = useState(false);
   const [gpsLoadingDelivery, setGpsLoadingDelivery] = useState(false);
+
+  // ✅ CORREGIDO: Cargar configuración de delivery (useCallback para evitar recreaciones)
+  const loadDeliveryConfig = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.warn("⚠️ No hay token para cargar delivery config");
+        return;
+      }
+
+      console.log("🔄 Cargando configuración de delivery...");
+      const res = await fetch(`${API_URL}/api/delivery/config`, {
+        headers: { "x-token": token },
+      });
+      const data = await res.json();
+
+      console.log("📥 Respuesta delivery config:", data);
+
+      if (data.ok && data.config) {
+        console.log("✅ Delivery config cargada correctamente");
+        setFormData((prev) => ({
+          ...prev,
+          delivery_origin_name: data.config.origin_name || "",
+          delivery_origin_address: data.config.origin_address || "",
+          delivery_origin_lat: data.config.origin_lat
+            ? data.config.origin_lat.toString()
+            : "",
+          delivery_origin_lng: data.config.origin_lng
+            ? data.config.origin_lng.toString()
+            : "",
+          delivery_price_per_km: data.config.price_per_km
+            ? data.config.price_per_km.toString()
+            : "",
+          delivery_minimum_price: data.config.minimum_price
+            ? data.config.minimum_price.toString()
+            : "",
+          delivery_free_from: data.config.free_delivery_from
+            ? data.config.free_delivery_from.toString()
+            : "",
+          delivery_max_distance: data.config.max_distance_km
+            ? data.config.max_distance_km.toString()
+            : "",
+        }));
+      } else {
+        console.warn("⚠️ No se pudo cargar delivery config:", data.msg);
+      }
+    } catch (err) {
+      console.error("❌ Error cargando delivery config:", err);
+    }
+  }, []);
+
+  // ✅ CORREGIDO: useEffect que carga ambas configuraciones al montar
+  useEffect(() => {
+    console.log("🔄 AppConfigManager montado - cargando configuraciones");
+    dispatch(loadAppConfig());
+    loadDeliveryConfig();
+  }, [dispatch, loadDeliveryConfig]);
+
+  // ✅ CORREGIDO: Actualizar solo campos de AppConfig, preservando delivery
+  useEffect(() => {
+    if (config) {
+      setFormData((prev) => ({
+        ...prev, // ✅ Mantener todos los campos existentes (incluyendo delivery)
+        app_name: config.app_name || "",
+        app_description: config.app_description || "",
+        theme: config.theme || "blue",
+        whatsapp_number: config.whatsapp_number || "",
+        business_hours: config.business_hours || "",
+        business_address: config.business_address || "",
+        logo_url: config.logo_url || "",
+        initialinfo: config.initialinfo || "",
+        show_initialinfo: config.show_initialinfo !== false,
+        currency: config.currency || "CUP",
+      }));
+    }
+  }, [config]);
 
   const getGPSLocationForDelivery = () => {
     setGpsLoadingDelivery(true);
@@ -119,125 +195,12 @@ const AppConfigManager = () => {
     );
   };
 
-  // ✅ CORREGIDO: Cargar configuración de delivery
-  const loadDeliveryConfig = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.warn("⚠️ No hay token para cargar delivery config");
-        return;
-      }
-
-      console.log("🔄 Cargando configuración de delivery...");
-      const res = await fetch(`${API_URL}/api/delivery/config`, {
-        headers: { "x-token": token },
-      });
-      const data = await res.json();
-
-      console.log("📥 Respuesta delivery config:", data);
-
-      if (data.ok && data.config) {
-        console.log("✅ Delivery config cargada correctamente");
-        setFormData((prev) => ({
-          ...prev,
-          delivery_origin_name: data.config.origin_name || "",
-          delivery_origin_address: data.config.origin_address || "",
-          delivery_origin_lat: data.config.origin_lat
-            ? data.config.origin_lat.toString()
-            : "",
-          delivery_origin_lng: data.config.origin_lng
-            ? data.config.origin_lng.toString()
-            : "",
-          delivery_price_per_km: data.config.price_per_km
-            ? data.config.price_per_km.toString()
-            : "",
-          delivery_minimum_price: data.config.minimum_price
-            ? data.config.minimum_price.toString()
-            : "",
-          delivery_free_from: data.config.free_delivery_from
-            ? data.config.free_delivery_from.toString()
-            : "",
-          delivery_max_distance: data.config.max_distance_km
-            ? data.config.max_distance_km.toString()
-            : "",
-        }));
-      } else {
-        console.warn("⚠️ No se pudo cargar delivery config:", data.msg);
-      }
-    } catch (err) {
-      console.error("❌ Error cargando delivery config:", err);
-    }
-  };
-
-  // ✅ CORREGIDO: Guardar configuración de delivery
-  const handleSaveDelivery = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      setSaving(true);
-
-      const payload = {
-        origin_name: formData.delivery_origin_name || "Punto de partida",
-        origin_address: formData.delivery_origin_address || "",
-        origin_lat: parseFloat(formData.delivery_origin_lat) || 23.113592,
-        origin_lng: parseFloat(formData.delivery_origin_lng) || -82.366592,
-        price_per_km: parseFloat(formData.delivery_price_per_km) || 50,
-        minimum_price: parseFloat(formData.delivery_minimum_price) || 100,
-        free_delivery_from: parseFloat(formData.delivery_free_from) || 500,
-        max_distance_km: parseFloat(formData.delivery_max_distance) || 15,
-      };
-
-      console.log("📤 Guardando delivery config:", payload);
-
-      const res = await fetch(`${API_URL}/api/delivery/config`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-token": token,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      console.log("📥 Respuesta guardar delivery:", data);
-
-      if (data.ok) {
-        // ✅ Recargar para obtener los datos actualizados del servidor
-        await loadDeliveryConfig();
-
-        Swal.fire({
-          icon: "success",
-          title: "¡Configuración guardada!",
-          text: "La configuración de delivery se ha guardado correctamente",
-          showConfirmButton: false,
-          timer: 2000,
-        });
-      } else {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: data.msg || "No se pudo guardar la configuración",
-        });
-      }
-    } catch (err) {
-      console.error("❌ Error guardando delivery:", err);
-      Swal.fire({
-        icon: "error",
-        title: "Error de conexión",
-        text: "No se pudo conectar con el servidor",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
   // ✅ Guardar ubicación escrita manualmente
   const handleSaveManualLocation = async () => {
     const lat = parseFloat(formData.delivery_origin_lat);
     const lng = parseFloat(formData.delivery_origin_lng);
 
-    if (!lat || !lng) {
+    if (isNaN(lat) || isNaN(lng)) {
       Swal.fire({
         icon: "warning",
         title: "Coordenadas incompletas",
@@ -255,11 +218,10 @@ const AppConfigManager = () => {
       });
       const data = await res.json();
 
-      if (data.ok) {
+      if (data.ok && data.display_name) {
         setFormData((prev) => ({
           ...prev,
-          delivery_origin_address:
-            data.display_name || prev.delivery_origin_address,
+          delivery_origin_address: data.display_name,
         }));
       }
     } catch (err) {
@@ -307,13 +269,13 @@ const AppConfigManager = () => {
     });
   };
 
-  // ✅ CORREGIDO: handleSaveDelivery con recarga
+  // ✅ ÚNICA función handleSaveDelivery (sin duplicar)
   const handleSaveDelivery = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      setSaving(true); // Usar el estado saving existente
+      setSaving(true);
 
       const payload = {
         origin_name: formData.delivery_origin_name || "Punto de partida",
@@ -341,9 +303,6 @@ const AppConfigManager = () => {
       console.log("📥 Respuesta guardar delivery:", data);
 
       if (data.ok) {
-        // ✅ Recargar la configuración después de guardar
-        await loadDeliveryConfig();
-
         Swal.fire({
           icon: "success",
           title: "¡Configuración de delivery guardada!",
@@ -359,40 +318,16 @@ const AppConfigManager = () => {
         });
       }
     } catch (err) {
-      console.error("Error guardando delivery:", err);
+      console.error("❌ Error guardando delivery:", err);
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: "Error de conexión al guardar",
+        title: "Error de conexión",
+        text: "No se pudo conectar con el servidor",
       });
     } finally {
       setSaving(false);
     }
   };
-
-  // ✅ CORREGIDO: useEffect con dependencias correctas
-  useEffect(() => {
-    console.log("🔄 AppConfigManager montado - cargando configuraciones");
-    dispatch(loadAppConfig());
-    loadDeliveryConfig();
-  }, [dispatch]); // Solo se ejecuta al montar
-
-  useEffect(() => {
-    if (config) {
-      setFormData({
-        app_name: config.app_name || "",
-        app_description: config.app_description || "",
-        theme: config.theme || "blue",
-        whatsapp_number: config.whatsapp_number || "",
-        business_hours: config.business_hours || "",
-        business_address: config.business_address || "",
-        logo_url: config.logo_url || "",
-        initialinfo: config.initialinfo || "",
-        show_initialinfo: config.show_initialinfo !== false,
-        currency: config.currency || "CUP", // ✅ NUEVO CAMPO
-      });
-    }
-  }, [config]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -458,7 +393,6 @@ const AppConfigManager = () => {
     dispatch(resetTheme());
   };
 
-  // En tu componente AppConfigManager.jsx, reemplaza el array themeOptions con:
   const themeOptions = [
     {
       id: "blue",
@@ -542,14 +476,13 @@ const AppConfigManager = () => {
     },
   ];
 
-  // ✅ NUEVO: Opciones de moneda (con iconos corregidos)
   const currencyOptions = [
     {
       code: "CUP",
       name: "Moneda Nacional",
       symbol: "$",
       description: "Peso local (CUP)",
-      icon: HiOutlineCash, // Usando HiOutlineCash para moneda nacional
+      icon: HiOutlineCash,
     },
     {
       code: "USD",
@@ -747,6 +680,75 @@ const AppConfigManager = () => {
             </div>
           </div>
         )}
+
+        {activeTab === "currency" && (
+          <div className="tab-content">
+            <div className="currency-selection">
+              <h3 className="currency-title">Selecciona la Moneda</h3>
+              <p className="currency-subtitle">
+                Esta moneda se mostrará en todos los precios de la aplicación
+              </p>
+
+              <div className="currency-grid">
+                {currencyOptions.map((currency) => {
+                  const IconComponent = currency.icon;
+                  return (
+                    <div
+                      key={currency.code}
+                      className={`currency-card ${
+                        formData.currency === currency.code ? "selected" : ""
+                      }`}
+                      onClick={() => handleCurrencySelect(currency.code)}
+                    >
+                      <div className="currency-icon">
+                        <IconComponent className="currency-symbol" />
+                      </div>
+
+                      <div className="currency-info">
+                        <h4 className="currency-name">{currency.name}</h4>
+                        <p className="currency-description">
+                          {currency.description}
+                        </p>
+                        <div className="currency-preview">
+                          <span className="currency-example">
+                            {currency.symbol} 99.99
+                          </span>
+                        </div>
+                      </div>
+
+                      {formData.currency === currency.code && (
+                        <div className="currency-selected-indicator">
+                          <HiCheck className="check-icon" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="currency-preview-section">
+                <h4 className="preview-title">Vista Previa</h4>
+                <div className="preview-content">
+                  <div className="price-preview">
+                    <p>
+                      <strong>Producto de ejemplo:</strong> Camiseta Básica
+                    </p>
+                    <p className="preview-price">
+                      Precio:{" "}
+                      {currencyOptions.find((c) => c.code === formData.currency)
+                        ?.symbol || "$"}{" "}
+                      29.99
+                    </p>
+                    <small className="help-text">
+                      Los precios se mostrarán con este formato en toda la app
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === "delivery" && (
           <div className="tab-content">
             <div className="delivery-config">
@@ -869,24 +871,6 @@ const AppConfigManager = () => {
                     Quitar ubicación
                   </button>
                 </div>
-                {/* ✅ BOTÓN GPS
-                <button
-                  type="button"
-                  className="gps-button-delivery"
-                  onClick={getGPSLocationForDelivery}
-                  disabled={gpsLoadingDelivery}
-                >
-                  {gpsLoadingDelivery ? (
-                    <>⏳ Obteniendo ubicación...</>
-                  ) : (
-                    <>📍 Usar mi ubicación actual como punto de partida</>
-                  )}
-                </button>
-                <small className="help-text" style={{ marginTop: "0.5rem" }}>
-                  Escribe las coordenadas manualmente y presiona "Guardar
-                  ubicación manual", o usa el botón GPS para obtenerlas
-                  automáticamente
-                </small> */}
                 {/* ✅ BOTÓN GPS PARA OBTENER UBICACIÓN ACTUAL */}
                 <button
                   type="button"
@@ -1037,74 +1021,6 @@ const AppConfigManager = () => {
                   <HiOutlineTruck style={{ marginRight: "0.5rem" }} />
                   Guardar Configuración de Delivery
                 </button>
-              </div>
-            </div>
-          </div>
-        )}
-        {/* ✅ NUEVA PESTAÑA: Configuración de Moneda */}
-        {activeTab === "currency" && (
-          <div className="tab-content">
-            <div className="currency-selection">
-              <h3 className="currency-title">Selecciona la Moneda</h3>
-              <p className="currency-subtitle">
-                Esta moneda se mostrará en todos los precios de la aplicación
-              </p>
-
-              <div className="currency-grid">
-                {currencyOptions.map((currency) => {
-                  const IconComponent = currency.icon;
-                  return (
-                    <div
-                      key={currency.code}
-                      className={`currency-card ${
-                        formData.currency === currency.code ? "selected" : ""
-                      }`}
-                      onClick={() => handleCurrencySelect(currency.code)}
-                    >
-                      <div className="currency-icon">
-                        <IconComponent className="currency-symbol" />
-                      </div>
-
-                      <div className="currency-info">
-                        <h4 className="currency-name">{currency.name}</h4>
-                        <p className="currency-description">
-                          {currency.description}
-                        </p>
-                        <div className="currency-preview">
-                          <span className="currency-example">
-                            {currency.symbol} 99.99
-                          </span>
-                        </div>
-                      </div>
-
-                      {formData.currency === currency.code && (
-                        <div className="currency-selected-indicator">
-                          <HiCheck className="check-icon" />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="currency-preview-section">
-                <h4 className="preview-title">Vista Previa</h4>
-                <div className="preview-content">
-                  <div className="price-preview">
-                    <p>
-                      <strong>Producto de ejemplo:</strong> Camiseta Básica
-                    </p>
-                    <p className="preview-price">
-                      Precio:{" "}
-                      {currencyOptions.find((c) => c.code === formData.currency)
-                        ?.symbol || "$"}{" "}
-                      29.99
-                    </p>
-                    <small className="help-text">
-                      Los precios se mostrarán con este formato en toda la app
-                    </small>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
