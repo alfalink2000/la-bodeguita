@@ -1,0 +1,231 @@
+/* AddressSelector.css o agregar a CartModal.css */
+
+.address-selector {
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    margin-top: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .address-selector-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+    color: #1f2937;
+  }
+  
+  .address-list {
+    max-height: 250px;
+    overflow-y: auto;
+  }
+  
+  .address-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: 1px solid transparent;
+  }
+  
+  .address-item:hover {
+    background: #f9fafb;
+    border-color: #e5e7eb;
+  }
+  
+  .address-item.selected {
+    background: #f0fdf4;
+    border-color: #059669;
+  }
+  
+  .address-radio {
+    flex-shrink: 0;
+  }
+  
+  .radio-checked {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #059669;
+    border: 2px solid #059669;
+    position: relative;
+  }
+  
+  .radio-checked::after {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+  }
+  
+  .radio-unchecked {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #d1d5db;
+    background: white;
+  }
+  
+  .address-details {
+    flex: 1;
+  }
+  
+  .address-text {
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.4;
+  }
+  
+  .default-badge {
+    font-size: 10px;
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+  }
+  
+  .address-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  
+  .address-item:hover .address-actions {
+    opacity: 1;
+  }
+  
+  .address-action-btn {
+    background: none;
+    border: none;
+    padding: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.2s;
+  }
+  
+  .address-action-btn:hover {
+    background: #e5e7eb;
+    color: #059669;
+  }
+  
+  .address-action-btn.delete:hover {
+    background: #fee2e2;
+    color: #ef4444;
+  }
+  
+  .add-address-btn {
+    width: 100%;
+    padding: 10px;
+    background: #f3f4f6;
+    border: 1px dashed #d1d5db;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #6b7280;
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: all 0.2s;
+  }
+  
+  .add-address-btn:hover {
+    background: #e5e7eb;
+    border-color: #059669;
+    color: #059669;
+  }
+  
+  .select-address-btn {
+    width: 100%;
+    padding: 12px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #374151;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .select-address-btn:hover {
+    border-color: #059669;
+    background: #f0fdf4;
+  }
+  
+  .delivery-warning {
+    text-align: center;
+    padding: 12px;
+  }
+  
+  .delivery-warning span {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #f59e0b;
+  }
+  
+  .delivery-warning p {
+    font-size: 11px;
+    color: #9ca3af;
+    margin: 0;
+  }
+  
+  .delivery-error-hint {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 4px;
+  }
+  
+  .spinner-small {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #e5e7eb;
+    border-top-color: #059669;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  
+  .address-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    color: #6b7280;
+    font-size: 13px;
+  }
+  
+  .no-addresses {
+    text-align: center;
+    padding: 20px;
+    color: #9ca3af;
+  }
+  
+  .no-addresses p {
+    margin: 0;
+    font-size: 13px;
+  }
+  
+  .no-addresses-hint {
+    font-size: 11px;
+    margin-top: 4px;
+  }

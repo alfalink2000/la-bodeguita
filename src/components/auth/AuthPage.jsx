@@ -20,6 +20,7 @@ const AuthPage = ({ onLoginSuccess }) => {
   const [activeTab, setActiveTab] = useState("login");
   const [loading, setLoading] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsActive, setGpsActive] = useState(false);
   const [error, setError] = useState(null);
   const [addressSuggestions, setAddressSuggestions] = useState([]);
 
@@ -154,6 +155,8 @@ const AuthPage = ({ onLoginSuccess }) => {
   };
 
   const handleAddressSearch = async (address) => {
+    if (gpsActive) return;
+    
     setRegisterForm({ ...registerForm, address });
 
     if (address.length < 5) {
@@ -180,6 +183,8 @@ const AuthPage = ({ onLoginSuccess }) => {
   };
 
   const selectAddress = (suggestion) => {
+    if (gpsActive) return;
+    
     setRegisterForm({
       ...registerForm,
       address: suggestion.display_name,
@@ -190,10 +195,10 @@ const AuthPage = ({ onLoginSuccess }) => {
     setError(null);
   };
 
-  // ✅ FUNCIÓN GPS CORREGIDA - Usa reverse geocoding
   const getGPSLocation = () => {
     setGpsLoading(true);
     setError(null);
+    setGpsActive(true);
 
     if (!navigator.geolocation) {
       const errorMsg =
@@ -201,6 +206,7 @@ const AuthPage = ({ onLoginSuccess }) => {
       setError(errorMsg);
       showErrorAlert(errorMsg);
       setGpsLoading(false);
+      setGpsActive(false);
       return;
     }
 
@@ -219,7 +225,6 @@ const AuthPage = ({ onLoginSuccess }) => {
         console.log("📍 GPS: Coordenadas obtenidas:", latitude, longitude);
 
         try {
-          // ✅ Llamar al endpoint de geocodificación inversa
           const res = await fetch(`${API_URL}/api/geocoding/reverse`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -231,16 +236,13 @@ const AuthPage = ({ onLoginSuccess }) => {
           let addressText;
 
           if (data.ok && data.display_name) {
-            // ✅ Usar la dirección legible obtenida
             addressText = data.display_name;
             console.log("✅ Dirección obtenida:", addressText);
           } else {
-            // Fallback: usar coordenadas como texto
             addressText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
             console.log("⚠️ Usando coordenadas como texto:", addressText);
           }
 
-          // ✅ Guardar dirección legible + coordenadas
           setRegisterForm({
             ...registerForm,
             lat: latitude,
@@ -262,7 +264,6 @@ const AuthPage = ({ onLoginSuccess }) => {
         } catch (err) {
           console.error("❌ Error en reverse geocoding:", err);
 
-          // Fallback: guardar coordenadas como texto
           const coordText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
           setRegisterForm({
             ...registerForm,
@@ -307,6 +308,7 @@ const AuthPage = ({ onLoginSuccess }) => {
         setError(errorMsg);
         showErrorAlert(errorMsg);
         setGpsLoading(false);
+        setGpsActive(false);
         Swal.close();
       },
       {
@@ -478,6 +480,11 @@ const AuthPage = ({ onLoginSuccess }) => {
                     <div className="gps-spinner"></div>
                     <span>Obteniendo ubicación...</span>
                   </>
+                ) : gpsActive ? (
+                  <>
+                    <FaLocationArrow size={18} />
+                    <span>✓ Ubicación GPS activa</span>
+                  </>
                 ) : (
                   <>
                     <FaLocationArrow size={18} />
@@ -486,37 +493,78 @@ const AuthPage = ({ onLoginSuccess }) => {
                 )}
               </button>
 
-              {/* Info de beneficios */}
-              <div className="gps-info-card">
-                <div className="gps-info-icon">📍</div>
-                <div className="gps-info-text">
-                  <strong>¡Mejor experiencia con GPS!</strong>
-                  <p>
-                    Usar tu ubicación actual permite entregas más rápidas y
-                    precisas. Las direcciones manuales pueden generar demoras y
-                    necesitan verificación por soporte.
-                  </p>
+              {/* Info de beneficios - solo mostrar si NO hay GPS activo */}
+              {!gpsActive && (
+                <div className="gps-info-card">
+                  <div className="gps-info-icon">📍</div>
+                  <div className="gps-info-text">
+                    <strong>¡Mejor experiencia con GPS!</strong>
+                    <p>
+                      Usar tu ubicación actual permite entregas más rápidas y
+                      precisas. Las direcciones manuales pueden generar demoras y
+                      necesitan verificación por soporte.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Separador o */}
-              <div className="location-divider">
-                <span>o escribe tu dirección manualmente</span>
-              </div>
+              {/* Indicador de GPS activo */}
+              {gpsActive && (
+                <div className="gps-active-indicator">
+                  <span>📍</span>
+                  <strong>Usando ubicación GPS como dirección habitual</strong>
+                  <p>El campo de dirección está bloqueado porque has usado la ubicación GPS como tu dirección habitual.</p>
+                </div>
+              )}
 
-              {/* Campo de dirección manual */}
+              {/* Separador o - solo si NO hay GPS activo */}
+              {!gpsActive && (
+                <div className="location-divider">
+                  <span>o escribe tu dirección manualmente</span>
+                </div>
+              )}
+
+              {/* Campo de dirección manual - DESHABILITADO si GPS activo */}
               <div className="address-input-wrapper">
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="Ej: Calle 23 #456, Vedado, La Habana"
+                  placeholder={gpsActive ? "Ubicación bloqueada (usando GPS)" : "Ej: Calle 23 #456, Vedado, La Habana"}
                   value={registerForm.address}
                   onChange={(e) => handleAddressSearch(e.target.value)}
+                  disabled={gpsActive}
+                  style={gpsActive ? { backgroundColor: '#f3f4f6', cursor: 'not-allowed', color: '#6b7280' } : {}}
                 />
               </div>
 
-              {/* Sugerencias */}
-              {addressSuggestions.length > 0 && (
+              {/* Botón para desbloquear y usar dirección manual */}
+              {gpsActive && (
+                <button
+                  type="button"
+                  className="unlock-manual-btn"
+                  onClick={() => {
+                    Swal.fire({
+                      title: "¿Usar dirección manual?",
+                      text: "La ubicación GPS será ignorada. ¿Deseas continuar?",
+                      icon: "question",
+                      showCancelButton: true,
+                      confirmButtonColor: "#059669",
+                      cancelButtonColor: "#ef4444",
+                      confirmButtonText: "Sí, usar manual",
+                      cancelButtonText: "Cancelar"
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        setGpsActive(false);
+                      }
+                    });
+                  }}
+                >
+                  ✏️ Usar dirección manual en su lugar
+                </button>
+              )}
+
+              {/* Sugerencias - solo si hay y NO hay GPS activo */}
+              {!gpsActive && addressSuggestions.length > 0 && (
                 <div className="address-suggestions">
                   {addressSuggestions.map((suggestion, i) => (
                     <div
@@ -533,7 +581,11 @@ const AuthPage = ({ onLoginSuccess }) => {
               {/* Indicador de ubicación registrada */}
               {registerForm.lat && registerForm.lng && (
                 <div className="location-confirmed">
-                  <span>✅</span> Ubicación registrada correctamente
+                  <span>✅</span> 
+                  {gpsActive 
+                    ? "Ubicación GPS registrada como dirección habitual"
+                    : "Dirección registrada correctamente"
+                  }
                 </div>
               )}
             </div>

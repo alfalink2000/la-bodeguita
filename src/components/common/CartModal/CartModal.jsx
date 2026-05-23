@@ -20,6 +20,7 @@ import {
   clearCart,
 } from "../../../actions/cartActions";
 import Swal from "sweetalert2";
+import AddressSelector from "./AddressSelector";
 import "./CartModal.css";
 
 const API_URL =
@@ -36,11 +37,15 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
   const [creatingOrder, setCreatingOrder] = useState(false);
 
   // Estados para delivery
-  const [wantsDelivery, setWantsDelivery] = useState(false);
   const [deliveryInfo, setDeliveryInfo] = useState(null);
   const [calculatingDelivery, setCalculatingDelivery] = useState(false);
   const [deliveryConfig, setDeliveryConfig] = useState(null);
   const [needsManualContact, setNeedsManualContact] = useState(false);
+  
+  // Estados para selector de direcciones
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [showAddressSelector, setShowAddressSelector] = useState(false);
+  const [userAddresses, setUserAddresses] = useState([]);
 
   const getCurrencySymbol = () => {
     switch (currency) {
@@ -53,45 +58,143 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
     }
   };
 
-  // Cargar configuración de delivery al abrir el carrito
+  // Función para calcular delivery con dirección específica
+  const calculateDeliveryWithAddress = async (address) => {
+    if (!address || !address.lat || !address.lng) {
+      setNeedsManualContact(true);
+      setDeliveryInfo(null);
+      return;
+    }
+    
+    setCalculatingDelivery(true);
+    setDeliveryInfo(null);
+    setNeedsManualContact(false);
+    
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/api/orders/calculate-delivery`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-token": token,
+        },
+        body: JSON.stringify({ 
+          subtotal: total,
+          lat: address.lat,
+          lng: address.lng
+        }),
+      });
+      
+      const data = await res.json();
+      console.log("📦 Respuesta cálculo con dirección:", data);
+      
+      if (data.ok) {
+        setDeliveryInfo({
+          price: data.price,
+          distance: data.distance,
+          isAvailable: data.isAvailable,
+          config: data.config,
+        });
+      } else if (data.needsManualContact) {
+        setNeedsManualContact(true);
+        setDeliveryInfo(null);
+      } else {
+        setDeliveryInfo({
+          error: data.msg || "No es posible realizar el envío",
+          isAvailable: false,
+        });
+      }
+    } catch (err) {
+      console.error("Error calculando delivery:", err);
+      setDeliveryInfo({
+        error: "Error al calcular el envío",
+        isAvailable: false,
+      });
+    } finally {
+      setCalculatingDelivery(false);
+    }
+  };
+
+  // Seleccionar dirección
+  const handleAddressSelect = (address) => {
+    setSelectedAddress(address);
+    setShowAddressSelector(false);
+    calculateDeliveryWithAddress(address);
+  };
+
+  // Cargar configuración de delivery y dirección predeterminada al abrir el carrito
   useEffect(() => {
-    const loadDeliveryConfig = async () => {
+    const loadDeliveryConfigAndAddresses = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${API_URL}/api/delivery/config`, {
+        
+        // Cargar configuración de delivery
+        const configRes = await fetch(`${API_URL}/api/delivery/config`, {
           headers: token ? { "x-token": token } : {},
         });
-        const data = await res.json();
+        const configData = await configRes.json();
 
-        if (data.ok && data.config) {
+        if (configData.ok && configData.config) {
           setDeliveryConfig({
             isConfigured: !!(
-              data.config.origin_lat &&
-              data.config.origin_lng &&
-              data.config.price_per_km
+              configData.config.origin_lat &&
+              configData.config.origin_lng &&
+              configData.config.price_per_km
             ),
-            pricePerKm: parseFloat(data.config.price_per_km),
-            minimumPrice: parseFloat(data.config.minimum_price),
-            freeFrom: parseFloat(data.config.free_delivery_from),
-            maxDistance: parseFloat(data.config.max_distance_km),
-            originAddress: data.config.origin_address,
+            pricePerKm: parseFloat(configData.config.price_per_km),
+            minimumPrice: parseFloat(configData.config.minimum_price),
+            maxDistance: parseFloat(configData.config.max_distance_km),
+            originAddress: configData.config.origin_address,
           });
         } else {
           setDeliveryConfig({ isConfigured: false });
         }
+
+        // Cargar direcciones del usuario si está logueado
+        if (token && cartItems.length > 0) {
+          const addressesRes = await fetch(`${API_URL}/api/users/addresses`, {
+            headers: { "x-token": token }
+          });
+          const addressesData = await addressesRes.json();
+          
+          if (addressesData.ok && addressesData.addresses) {
+            setUserAddresses(addressesData.addresses);
+            const defaultAddress = addressesData.addresses.find(addr => addr.is_default);
+            if (defaultAddress) {
+              setSelectedAddress(defaultAddress);
+              // Calcular delivery con la dirección predeterminada
+              await calculateDeliveryWithAddress(defaultAddress);
+            } else if (addressesData.addresses.length > 0) {
+              // Si no hay predeterminada, usar la primera
+              setSelectedAddress(addressesData.addresses[0]);
+              await calculateDeliveryWithAddress(addressesData.addresses[0]);
+            }
+          }
+        }
+        
       } catch (err) {
-        console.error("Error cargando configuración de delivery:", err);
+        console.error("Error cargando configuración:", err);
         setDeliveryConfig({ isConfigured: false });
       }
     };
 
-    if (isOpen) {
-      loadDeliveryConfig();
-      setWantsDelivery(false);
+    if (isOpen && cartItems.length > 0) {
+      console.log("🔄 Carrito abierto, cargando configuración y direcciones...");
+      loadDeliveryConfigAndAddresses();
+    } else if (isOpen && cartItems.length === 0) {
       setDeliveryInfo(null);
       setNeedsManualContact(false);
+      setSelectedAddress(null);
     }
-  }, [isOpen]);
+  }, [isOpen, cartItems.length]);
+
+  // Si el total cambia mientras el carrito está abierto, recalcular delivery
+  useEffect(() => {
+    if (isOpen && cartItems.length > 0 && selectedAddress && deliveryConfig?.isConfigured && !calculatingDelivery) {
+      console.log("🔄 Total cambiado, recalculando delivery...");
+      calculateDeliveryWithAddress(selectedAddress);
+    }
+  }, [total]);
 
   const handleClose = () => {
     dispatch(toggleCartModal());
@@ -128,78 +231,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
     });
   };
 
-  // ✅ CORREGIDO: handleDeliveryToggle SIN Swal de "Abrir chat"
-  const handleDeliveryToggle = async (checked) => {
-    setWantsDelivery(checked);
-
-    if (!checked) {
-      setDeliveryInfo(null);
-      setNeedsManualContact(false);
-      return;
-    }
-
-    setCalculatingDelivery(true);
-    setDeliveryInfo(null);
-    setNeedsManualContact(false);
-
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        Swal.fire({
-          icon: "warning",
-          title: "Inicia sesión",
-          text: "Debes iniciar sesión para calcular el delivery",
-          confirmButtonColor: "#059669",
-        }).then(() => {
-          onShowLogin?.();
-        });
-        setWantsDelivery(false);
-        setCalculatingDelivery(false);
-        return;
-      }
-
-      const res = await fetch(`${API_URL}/api/orders/calculate-delivery`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-token": token,
-        },
-        body: JSON.stringify({ subtotal: total }),
-      });
-
-      const data = await res.json();
-
-      if (data.ok) {
-        setDeliveryInfo({
-          price: data.price,
-          distance: data.distance,
-          isFree: data.isFree,
-          isAvailable: data.isAvailable,
-          config: data.config,
-        });
-      } else if (data.needsManualContact) {
-        // ✅ SOLO marcar que necesita contacto, SIN mostrar Swal
-        setNeedsManualContact(true);
-        setDeliveryInfo(null);
-        // ❌ ELIMINADO: Swal.fire de "Abrir chat"
-      } else {
-        setDeliveryInfo({
-          error: data.msg || "No es posible realizar el envío",
-          isAvailable: false,
-        });
-      }
-    } catch (err) {
-      console.error("Error calculando delivery:", err);
-      setDeliveryInfo({
-        error: "Error al calcular el envío",
-        isAvailable: false,
-      });
-    } finally {
-      setCalculatingDelivery(false);
-    }
-  };
-
-  // ✅ CORREGIDO: SweetAlerts compactos - sin datos personales
   const handleCreateOrder = async () => {
     if (!isLoggedIn) {
       dispatch(toggleCartModal());
@@ -221,9 +252,9 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
     const currencySymbol = getCurrencySymbol();
 
     // ============================================
-    // CASO 1: NO QUIERE DELIVERY (RETIRO EN TIENDA)
+    // CASO 1: Sin configuración de delivery
     // ============================================
-    if (!wantsDelivery) {
+    if (!deliveryConfig?.isConfigured) {
       const result = await Swal.fire({
         title: "📦 Retiro en tienda",
         html: `
@@ -250,106 +281,80 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
     }
 
     // ============================================
-    // SI QUIERE DELIVERY: CALCULAR AHORA
+    // CASO 2: Sin dirección seleccionada
     // ============================================
-    Swal.fire({
-      title: "Calculando delivery...",
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
-    });
+    if (!selectedAddress) {
+      Swal.fire({
+        icon: "warning",
+        title: "Dirección requerida",
+        text: "Por favor selecciona una dirección de entrega",
+        confirmButtonColor: "#059669",
+      });
+      return;
+    }
 
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/api/orders/calculate-delivery`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-token": token },
-        body: JSON.stringify({ subtotal }),
+    // ============================================
+    // CASO 3: Necesita contacto manual (sin GPS en la dirección)
+    // ============================================
+    if (needsManualContact) {
+      const result = await Swal.fire({
+        title: "📍 Entrega a domicilio",
+        html: `
+        <div style="text-align: center; font-size: 0.95rem;">
+          <p style="margin-bottom: 0.5rem;">Solicitaste <strong>envío a domicilio</strong>.</p>
+          <div style="background: #fef3c7; padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0;">
+            <p style="margin: 0; font-size: 0.85rem;">⚠️ No tenemos coordenadas GPS para tu dirección: <strong>${selectedAddress.address.substring(0, 50)}</strong></p>
+            <p style="margin: 0.5rem 0 0; font-size: 0.85rem;">Soporte te contactará para calcular el costo de envío.</p>
+          </div>
+          <p style="font-weight: 700; font-size: 1.1rem; margin-top: 0.5rem; color: #f59e0b;">
+            Total (sin envío): ${currencySymbol} ${subtotal.toFixed(2)}
+          </p>
+          <p style="font-size: 0.75rem; color: #6b7280;">El costo del delivery será informado por soporte.</p>
+        </div>
+      `,
+        icon: "warning",
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonColor: "#f59e0b",
+        cancelButtonColor: "#6b7280",
+        denyButtonColor: "#059669",
+        confirmButtonText: "📞 Continuar (soporte me contacta)",
+        denyButtonText: "📍 Cambiar dirección",
+        cancelButtonText: "Cancelar",
       });
 
-      const data = await res.json();
-      Swal.close();
-
-      // ============================================
-      // CASO 2: DELIVERY PERO SIN UBICACIÓN GPS
-      // ============================================
-      if (data.needsManualContact || !data.ok) {
-        const result = await Swal.fire({
-          title: "📍 Entrega a domicilio",
-          html: `
-          <div style="text-align: center; font-size: 0.95rem;">
-            <p style="margin-bottom: 0.5rem;">Solicitaste <strong>envío a domicilio</strong>.</p>
-            <div style="background: #fef3c7; padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0;">
-              <p style="margin: 0; font-size: 0.85rem;">⚠️ No tienes ubicación GPS. Soporte te contactará para calcular el costo.</p>
-            </div>
-            <p style="font-weight: 700; font-size: 1.1rem; margin-top: 0.5rem; color: #f59e0b;">
-              Total (sin envío): ${currencySymbol} ${subtotal.toFixed(2)}
-            </p>
-            <p style="font-size: 0.75rem; color: #6b7280;">El costo del delivery será informado por soporte.</p>
-          </div>
-        `,
-          icon: "warning",
-          showCancelButton: true,
-          showDenyButton: true,
-          confirmButtonColor: "#f59e0b",
-          cancelButtonColor: "#6b7280",
-          denyButtonColor: "#059669",
-          confirmButtonText: "📞 Continuar (soporte me contacta)",
-          denyButtonText: "📍 Configurar GPS",
-          cancelButtonText: "Cancelar",
-        });
-
-        if (result.isDenied) {
-          dispatch(toggleCartModal());
-          window.dispatchEvent(new CustomEvent("open-profile"));
-          return;
-        }
-
-        if (result.isConfirmed) {
-          await submitOrder(true, true, null, null);
-        }
+      if (result.isDenied) {
+        setShowAddressSelector(true);
         return;
       }
 
-      // ============================================
-      // CASO 3: DELIVERY CON GPS - TODO CALCULADO
-      // ============================================
-      const { distance, price, isFree, isAvailable } = data;
-
-      if (!isAvailable) {
-        Swal.fire({
-          icon: "error",
-          title: "Delivery no disponible",
-          text: data.msg || "No se puede realizar el envío a tu ubicación",
-          confirmButtonColor: "#059669",
-        });
-        return;
+      if (result.isConfirmed) {
+        await submitOrder(true, true, null, null);
       }
+      return;
+    }
 
-      const finalTotal = isFree ? subtotal : subtotal + price;
-      const deliveryText = isFree
-        ? "🚚 ¡Delivery GRATIS!"
-        : `🚚 Delivery: ${currencySymbol} ${price?.toFixed(2)} (${distance?.toFixed(1)} km)`;
+    // ============================================
+    // CASO 4: Delivery con GPS - cálculo exitoso
+    // ============================================
+    if (deliveryInfo && deliveryInfo.isAvailable) {
+      const deliveryPrice = deliveryInfo.price || 0;
+      const finalTotal = subtotal + deliveryPrice;
 
       const result = await Swal.fire({
         title: "🚚 Confirmar pedido",
         html: `
         <div style="text-align: center; font-size: 0.95rem;">
-          <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">
-            ${
-              isFree
-                ? '<span style="color: #059669; font-weight: 600;">🎉 ¡Delivery GRATIS!</span>'
-                : `<span style="color: #2563eb;">📏 ${distance?.toFixed(1)} km · ${currencySymbol} ${price?.toFixed(2)}</span>`
-            }
-          </p>
           <div style="background: #f0fdf4; padding: 0.6rem; border-radius: 8px; margin: 0.5rem 0;">
             <p style="margin: 0; font-size: 0.85rem;">Subtotal: ${currencySymbol} ${subtotal.toFixed(2)}</p>
-            <p style="margin: 0.25rem 0 0; font-size: 0.85rem;">${deliveryText}</p>
+            <p style="margin: 0.25rem 0 0; font-size: 0.85rem; color: #2563eb;">
+              🚚 Delivery: ${currencySymbol} ${deliveryPrice.toFixed(2)}
+            </p>
             <p style="margin: 0.5rem 0 0; font-weight: 700; font-size: 1.15rem; color: #059669;">
               TOTAL: ${currencySymbol} ${finalTotal.toFixed(2)}
             </p>
           </div>
+          <p style="font-size: 0.7rem; color: #6b7280;">📍 Enviando a: ${selectedAddress.address.substring(0, 60)}${selectedAddress.address.length > 60 ? "..." : ""}</p>
         </div>
       `,
         icon: "question",
@@ -361,21 +366,35 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
       });
 
       if (result.isConfirmed) {
-        await submitOrder(true, false, distance, price);
+        await submitOrder(true, false, deliveryInfo.distance, deliveryPrice);
       }
-    } catch (err) {
-      Swal.close();
+      return;
+    }
+
+    // ============================================
+    // CASO 5: Delivery no disponible o aún calculando
+    // ============================================
+    if (calculatingDelivery) {
       Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "No se pudo calcular el envío. Intenta de nuevo.",
+        icon: "info",
+        title: "Calculando envío",
+        text: "Espera un momento mientras calculamos el costo de envío",
         confirmButtonColor: "#059669",
       });
+      return;
+    }
+
+    if (deliveryInfo && !deliveryInfo.isAvailable) {
+      Swal.fire({
+        icon: "error",
+        title: "Delivery no disponible",
+        text: deliveryInfo.error || "No se puede realizar el envío a esta dirección",
+        confirmButtonColor: "#059669",
+      });
+      return;
     }
   };
 
-  // ✅ Función submitOrder - SweetAlert de éxito COMPACTO
-  // ✅ Función submitOrder - SIN mensaje previo, solo mensaje DESPUÉS del pedido
   const submitOrder = async (
     wantsDeliveryFlag,
     needsManualContact,
@@ -396,6 +415,9 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
         return;
       }
 
+      // Usar la dirección seleccionada para el pedido
+      const addressToUse = selectedAddress || { address: "", lat: null, lng: null };
+
       const orderData = {
         items: cartItems.map((item) => ({
           id: item.id,
@@ -409,9 +431,13 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
         delivery_price: deliveryPrice || 0,
         delivery_distance: distance || null,
         delivery_needs_manual_contact: needsManualContact || false,
+        // Enviar la dirección seleccionada
+        customer_address: addressToUse.address,
+        customer_lat: addressToUse.lat,
+        customer_lng: addressToUse.lng,
         notes: needsManualContact
           ? "Requiere contacto manual para dirección"
-          : "",
+          : `Dirección seleccionada: ${addressToUse.address}`,
       };
 
       const res = await fetch(`${API_URL}/api/orders`, {
@@ -423,22 +449,15 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
       const data = await res.json();
 
       if (data.ok) {
-        // window.dispatchEvent(
-        //   new CustomEvent("order-created", {
-        //     detail: { orderId: data.pedido.id },
-        //   }),
-        // );
         if (onOrderCreated) onOrderCreated();
 
         dispatch(clearCart());
         dispatch(toggleCartModal());
         setCreatingOrder(false);
 
-        const finalTotal =
-          wantsDeliveryFlag && deliveryPrice ? total + deliveryPrice : total;
+        const finalTotal = wantsDeliveryFlag && deliveryPrice ? total + deliveryPrice : total;
         const currencySymbol = getCurrencySymbol();
 
-        // ✅ ENVIAR MENSAJE AL CHAT SOLO SI NECESITA CONTACTO MANUAL
         if (needsManualContact) {
           try {
             await fetch(`${API_URL}/api/chat/send`, {
@@ -448,7 +467,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
                 "x-token": token,
               },
               body: JSON.stringify({
-                message: `🛒 He realizado el pedido #${data.pedido.id} con envío a domicilio.\n\n📋 Necesito que un asesor me contacte para coordinar la dirección de entrega y el costo del envío.\n\n💰 Total del pedido (sin envío): ${currencySymbol} ${total.toFixed(2)}\n\n⏳ Quedo a la espera de su mensaje. Gracias.`,
+                message: `🛒 He realizado el pedido #${data.pedido.id} con envío a domicilio.\n\n📍 Dirección: ${addressToUse.address}\n\n📋 Necesito que un asesor me contacte para coordinar el costo del envío.\n\n💰 Total del pedido (sin envío): ${currencySymbol} ${total.toFixed(2)}\n\n⏳ Quedo a la espera de su mensaje. Gracias.`,
               }),
             });
             console.log("✅ Mensaje automático enviado al chat");
@@ -457,7 +476,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
           }
         }
 
-        // ✅ SweetAlert de éxito COMPACTO
         let message = "";
         if (needsManualContact) {
           message = "📞 Un asesor te contactará para coordinar el envío.";
@@ -482,9 +500,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
           confirmButtonColor: "#059669",
           confirmButtonText: "Entendido",
         });
-
-        // ✅ NO abrir chat automáticamente, solo si el usuario quiere
-        // (eliminado: if (needsManualContact && onOpenChat) onOpenChat();)
       } else {
         setCreatingOrder(false);
         Swal.fire({
@@ -596,143 +611,111 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
                   </span>
                 </div>
 
-                {wantsDelivery &&
-                  deliveryInfo &&
-                  deliveryInfo.isAvailable &&
-                  !needsManualContact && (
-                    <div className="cart-total-delivery">
-                      <span>Delivery:</span>
-                      <span className="delivery-amount">
-                        {deliveryInfo.isFree
-                          ? "GRATIS"
-                          : `${getCurrencySymbol()}${deliveryInfo.price.toFixed(2)}`}
-                      </span>
-                    </div>
-                  )}
-
-                {wantsDelivery &&
-                  deliveryInfo &&
-                  deliveryInfo.isAvailable &&
-                  !needsManualContact && (
-                    <div className="cart-total cart-total-final">
-                      <span>Total a pagar:</span>
-                      <span className="total-amount">
-                        {getCurrencySymbol()}
-                        {(total + deliveryInfo.price).toFixed(2)}
-                      </span>
-                    </div>
-                  )}
-
+                {/* ============================================ */}
+                {/* SECCIÓN DE DELIVERY CON SELECTOR DE DIRECCIONES */}
+                {/* ============================================ */}
                 {deliveryConfig && deliveryConfig.isConfigured && (
                   <div className="cart-delivery-section">
-                    <label className="cart-delivery-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={wantsDelivery}
-                        onChange={(e) => handleDeliveryToggle(e.target.checked)}
-                        disabled={calculatingDelivery}
-                      />
-                      <span className="checkbox-icon">
-                        <HiOutlineTruck />
-                      </span>
-                      <span className="checkbox-text">
-                        Quiero delivery a domicilio
-                      </span>
-                    </label>
+                    <div className="delivery-header">
+                      <HiOutlineTruck className="delivery-header-icon" />
+                      <span className="delivery-header-title">Envío a domicilio</span>
+                    </div>
 
-                    {calculatingDelivery && (
-                      <div className="cart-delivery-loading">
-                        <HiOutlineRefresh className="spinning" />
-                        <span>Calculando distancia y costo de envío...</span>
-                      </div>
-                    )}
-
-                    {wantsDelivery && !calculatingDelivery && deliveryInfo && (
-                      <div
-                        className={`cart-delivery-info ${deliveryInfo.isFree ? "cart-delivery-info--free" : ""} ${!deliveryInfo.isAvailable ? "cart-delivery-info--error" : ""}`}
+                    {/* Selector de dirección */}
+                    <div className="delivery-address-selector">
+                      <button 
+                        className="select-address-btn"
+                        onClick={() => setShowAddressSelector(!showAddressSelector)}
                       >
-                        {deliveryInfo.isAvailable ? (
-                          <>
-                            <div className="delivery-distance">
-                              <HiOutlineLocationMarker />
-                              <span>
-                                Distancia: {deliveryInfo.distance.toFixed(1)} km
-                              </span>
-                            </div>
-                            <div className="delivery-price">
-                              {deliveryInfo.isFree ? (
-                                <span className="free-delivery-badge">
-                                  🚚 ¡ENVÍO GRATIS!
-                                </span>
-                              ) : (
-                                <span>
-                                  Costo de envío:{" "}
-                                  <strong>
-                                    {getCurrencySymbol()}
-                                    {deliveryInfo.price.toFixed(2)}
-                                  </strong>
-                                </span>
-                              )}
-                            </div>
-                            {deliveryInfo.distance > 0 &&
-                              deliveryConfig.pricePerKm > 0 &&
-                              !deliveryInfo.isFree && (
-                                <div className="delivery-calculation">
-                                  <small>
-                                    {deliveryInfo.distance.toFixed(1)} km × $
-                                    {deliveryConfig.pricePerKm}/km = $
-                                    {(
-                                      deliveryInfo.distance *
-                                      deliveryConfig.pricePerKm
-                                    ).toFixed(2)}
-                                  </small>
-                                  {deliveryConfig.minimumPrice > 0 &&
-                                    deliveryInfo.price ===
-                                      deliveryConfig.minimumPrice &&
-                                    deliveryInfo.distance *
-                                      deliveryConfig.pricePerKm <
-                                      deliveryConfig.minimumPrice && (
-                                      <small className="minimum-note">
-                                        {" "}
-                                        (Aplicado precio mínimo de $
-                                        {deliveryConfig.minimumPrice})
-                                      </small>
-                                    )}
-                                </div>
-                              )}
-                          </>
-                        ) : (
-                          <div className="delivery-error">
-                            <span>
-                              ⚠️{" "}
-                              {deliveryInfo.error ||
-                                "No es posible realizar el envío a esta ubicación"}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {wantsDelivery &&
-                      !calculatingDelivery &&
-                      needsManualContact && (
-                        <div className="cart-delivery-info cart-delivery-info--manual">
-                          <div className="delivery-manual-message">
-                            <span>
-                              📞 <strong>Necesitamos contactarte</strong>
-                            </span>
-                            <p>
-                              No tenemos tu ubicación exacta registrada. Un
-                              asesor se pondrá en contacto contigo para
-                              coordinar el envío.
-                            </p>
-                            <small>
-                              Tu pedido será registrado y te contactaremos al
-                              número registrado.
-                            </small>
-                          </div>
+                        <HiOutlineLocationMarker />
+                        <span>
+                          {selectedAddress 
+                            ? (selectedAddress.nickname 
+                                ? `📍 ${selectedAddress.nickname} - ${selectedAddress.address.substring(0, 40)}...`
+                                : selectedAddress.address.substring(0, 50) + (selectedAddress.address.length > 50 ? "..." : ""))
+                            : "Seleccionar dirección de entrega"}
+                        </span>
+                      </button>
+                      
+                      {showAddressSelector && (
+                        <div className="address-selector-container">
+                          <AddressSelector
+                            selectedAddress={selectedAddress}
+                            onAddressSelect={handleAddressSelect}
+                            onAddressesLoaded={setUserAddresses}
+                            token={localStorage.getItem("token")}
+                          />
                         </div>
                       )}
+                    </div>
+
+                    {/* Estados de cálculo */}
+                    {!selectedAddress ? (
+                      <div className="cart-delivery-info cart-delivery-info--warning">
+                        <div className="delivery-warning">
+                          <span>📍 Selecciona una dirección de entrega</span>
+                          <p>Debes seleccionar o agregar una dirección para calcular el costo de envío</p>
+                        </div>
+                      </div>
+                    ) : calculatingDelivery ? (
+                      <div className="cart-delivery-loading">
+                        <HiOutlineRefresh className="spinning" />
+                        <span>Calculando costo de envío...</span>
+                      </div>
+                    ) : deliveryInfo && deliveryInfo.isAvailable ? (
+                      <div className="cart-delivery-info">
+                        <div className="delivery-price-info">
+                          <span className="delivery-price-label">Costo de envío:</span>
+                          <span className="delivery-price-value">
+                            {getCurrencySymbol()}{deliveryInfo.price.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="delivery-note">
+                          <small>🚚 Basado en tu dirección: {selectedAddress.nickname || "seleccionada"}</small>
+                        </div>
+                      </div>
+                    ) : needsManualContact ? (
+                      <div className="cart-delivery-info cart-delivery-info--manual">
+                        <div className="delivery-manual-message">
+                          <span>📞 <strong>Necesitamos contactarte</strong></span>
+                          <p>
+                            No es posible calcular automáticamente el costo de envío a esta dirección.
+                            Un asesor se pondrá en contacto contigo para informarte el costo del delivery.
+                          </p>
+                          <small>⏳ Una vez confirmes el pedido, soporte te contactará para coordinar el envío</small>
+                        </div>
+                      </div>
+                    ) : deliveryInfo && !deliveryInfo.isAvailable ? (
+                      <div className="cart-delivery-info cart-delivery-info--error">
+                        <div className="delivery-error">
+                          <span>⚠️ {deliveryInfo.error || "No es posible realizar el envío a esta dirección"}</span>
+                          <p className="delivery-error-hint">
+                            Por favor selecciona otra dirección o contacta a soporte
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+
+                {/* Mostrar total con delivery si está disponible */}
+                {deliveryInfo && deliveryInfo.isAvailable && !calculatingDelivery && selectedAddress && (
+                  <div className="cart-total cart-total-final">
+                    <span>Total a pagar:</span>
+                    <span className="total-amount">
+                      {getCurrencySymbol()}
+                      {(total + deliveryInfo.price).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+
+                {(!deliveryInfo?.isAvailable || needsManualContact) && !calculatingDelivery && deliveryConfig?.isConfigured && (
+                  <div className="cart-total cart-total-final">
+                    <span>Total:</span>
+                    <span className="total-amount">
+                      {getCurrencySymbol()}
+                      {total.toFixed(2)}
+                    </span>
                   </div>
                 )}
 
@@ -745,7 +728,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
                   <button
                     className="order-btn"
                     onClick={handleCreateOrder}
-                    disabled={creatingOrder}
+                    disabled={creatingOrder || calculatingDelivery}
                   >
                     {creatingOrder ? (
                       <>
