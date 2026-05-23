@@ -8,7 +8,7 @@ import {
   HiOutlineX 
 } from "react-icons/hi";
 import Swal from "sweetalert2";
-import "./AdressSelector.css";
+import "./AddressSelector.css";
 const API_URL = import.meta.env.VITE_API_URL || "https://minimarket-backend-6z9m.onrender.com";
 
 const AddressSelector = ({ 
