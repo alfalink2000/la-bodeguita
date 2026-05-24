@@ -37,6 +37,7 @@ const AdminChatManager = ({
   const [isInitialized, setIsInitialized] = useState(false);
   const [sending, setSending] = useState(false);
   const [showAllUsers, setShowAllUsers] = useState(false);
+  const [forceRefreshKey, setForceRefreshKey] = useState(0);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const prevSelectedUserIdRef = useRef(null);
@@ -60,9 +61,97 @@ const AdminChatManager = ({
     }
   }, [dispatch]);
 
+  // ✅ Función para forzar recarga completa de chats
+  const forceReloadChats = useCallback(async () => {
+    console.log("🔄 [AdminChatManager] Forzando recarga completa de chats...");
+    try {
+      await dispatch(startLoadChats());
+      setForceRefreshKey(prev => prev + 1);
+      console.log("✅ [AdminChatManager] Chats recargados correctamente");
+    } catch (error) {
+      console.error("Error recargando chats:", error);
+    }
+  }, [dispatch]);
+
+  // ✅ Función para actualizar el estado de atención basado en pedidos actuales
+  const refreshAttentionStatus = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      console.log("🔄 [AdminChatManager] Verificando estado de atención...");
+
+      // Obtener pedidos actualizados
+      const res = await fetch(`${API_URL}/api/orders/admin/all`, {
+        headers: { "x-token": token },
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        const pedidos = data.pedidos || [];
+        
+        // Crear un mapa de usuarios que necesitan atención (pedidos activos NO completados)
+        const usersNeedingAttention = new Set();
+        pedidos.forEach(pedido => {
+          // Solo contar pedidos NO cancelados y NO completados que requieren atención
+          if (pedido.delivery_needs_manual_contact === true && 
+              pedido.status !== "cancelled" && 
+              pedido.status !== "completed") {
+            if (pedido.user_id) {
+              usersNeedingAttention.add(pedido.user_id);
+            }
+          }
+        });
+        
+        console.log("📊 [AdminChatManager] Usuarios que necesitan atención:", Array.from(usersNeedingAttention));
+        
+        // ✅ Si el chat seleccionado ya no necesita atención, actualizar inmediatamente
+        if (selectedChat?.user?.id && !usersNeedingAttention.has(selectedChat.user.id)) {
+          console.log("✅ [AdminChatManager] El chat seleccionado ya no necesita atención, actualizando UI...");
+          // Forzar recarga de chats para actualizar el estado
+          await forceReloadChats();
+        } else {
+          // Solo recargar en segundo plano
+          await dispatch(startLoadChats());
+        }
+      }
+    } catch (err) {
+      console.error("Error actualizando estado de atención:", err);
+    }
+  }, [dispatch, selectedChat, forceReloadChats]);
+
+  // ✅ Escuchar evento de refresco de chats desde AdminInterface y AdminOrdersManager
+  useEffect(() => {
+    const handleRefreshChats = async () => {
+      console.log("📢 [AdminChatManager] Evento de refresco de chats recibido");
+      await forceReloadChats();
+      await refreshAttentionStatus();
+    };
+    
+    window.addEventListener("admin:refresh-chats", handleRefreshChats);
+    
+    return () => {
+      window.removeEventListener("admin:refresh-chats", handleRefreshChats);
+    };
+  }, [forceReloadChats, refreshAttentionStatus]);
+
+  // ✅ También refrescar periódicamente cada 30 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!selectedChat) {
+        refreshAttentionStatus();
+      } else {
+        // Si hay un chat seleccionado, verificar si sigue necesitando atención
+        refreshAttentionStatus();
+      }
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [selectedChat, refreshAttentionStatus]);
+
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, [loadData, forceRefreshKey]);
 
   // ✅ Seleccionar usuario por ID (desde orders)
   useEffect(() => {
@@ -201,51 +290,56 @@ const AdminChatManager = ({
     }
   }, [dispatch, onSelectUser]);
 
- const handleSend = useCallback(
-  async (e) => {
-    e.preventDefault();
+  const handleSend = useCallback(
+    async (e) => {
+      e.preventDefault();
 
-    if (!newMessage.trim() || !selectedChat?.user?.id || sending) return;
+      if (!newMessage.trim() || !selectedChat?.user?.id || sending) return;
 
-    setSending(true);
-    const messageToSend = newMessage.trim();
-    setNewMessage("");
+      setSending(true);
+      const messageToSend = newMessage.trim();
+      setNewMessage("");
 
-    try {
-      const success = await dispatch(
-        startSendAdminMessage(selectedChat.user.id, messageToSend),
-      );
+      try {
+        const success = await dispatch(
+          startSendAdminMessage(selectedChat.user.id, messageToSend),
+        );
 
-      if (success) {
-        await dispatch(startLoadMessages(selectedChat.user.id));
-        await dispatch(startLoadChats()); // ✅ Esto actualiza los contadores
-        
-        // ✅ FORZAR ACTUALIZACIÓN DEL CONTADOR GLOBAL
-        const token = localStorage.getItem("token");
-        if (token && onUnreadCountChange) {
-          const res = await fetch(`${API_URL}/api/chat/unread-count`, {
-            headers: { "x-token": token },
-          });
-          const data = await res.json();
-          if (data.ok) {
-            console.log("📊 [AdminChatManager] Actualizando contador a:", data.unreadCount);
-            onUnreadCountChange(data.unreadCount);
+        if (success) {
+          await dispatch(startLoadMessages(selectedChat.user.id));
+          await dispatch(startLoadChats());
+          
+          // ✅ FORZAR ACTUALIZACIÓN DEL CONTADOR GLOBAL
+          const token = localStorage.getItem("token");
+          if (token && onUnreadCountChange) {
+            const res = await fetch(`${API_URL}/api/chat/unread-count`, {
+              headers: { "x-token": token },
+            });
+            const data = await res.json();
+            if (data.ok) {
+              console.log("📊 [AdminChatManager] Actualizando contador a:", data.unreadCount);
+              onUnreadCountChange(data.unreadCount);
+            }
           }
+          
+          // ✅ Actualizar estado de atención después de enviar
+          await refreshAttentionStatus();
+        } else {
+          setNewMessage(messageToSend);
         }
-      } else {
+      } catch (error) {
+        console.error("Error enviando mensaje:", error);
         setNewMessage(messageToSend);
+      } finally {
+        setSending(false);
       }
-    } catch (error) {
-      console.error("Error enviando mensaje:", error);
-      setNewMessage(messageToSend);
-    } finally {
-      setSending(false);
-    }
-  },
-  [newMessage, selectedChat, sending, dispatch, onUnreadCountChange],
-);
+    },
+    [newMessage, selectedChat, sending, dispatch, onUnreadCountChange, refreshAttentionStatus],
+  );
 
   const handleRefresh = useCallback(async () => {
+    console.log("🔄 [AdminChatManager] Refrescando manualmente...");
+    
     if (showAllUsers) {
       await dispatch(startLoadAllUsers());
     } else {
@@ -254,7 +348,13 @@ const AdminChatManager = ({
     if (selectedChat?.user?.id) {
       await dispatch(startLoadMessages(selectedChat.user.id));
     }
-  }, [dispatch, selectedChat, showAllUsers]);
+    
+    // ✅ Actualizar estado de atención al refrescar
+    await refreshAttentionStatus();
+    
+    // ✅ Disparar evento para que otros componentes se actualicen
+    window.dispatchEvent(new CustomEvent("admin:refresh-complete"));
+  }, [dispatch, selectedChat, showAllUsers, refreshAttentionStatus]);
 
   const toggleUserView = useCallback(() => {
     const newShowAllUsers = !showAllUsers;

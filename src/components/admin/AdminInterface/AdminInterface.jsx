@@ -145,7 +145,7 @@ const AdminInterface = ({ onLogout }) => {
         const usersWithNeedingContact = new Set();
         
         pedidos.forEach((pedido) => {
-          if (pedido.delivery_needs_manual_contact === true && pedido.status !== "cancelled") {
+          if (pedido.delivery_needs_manual_contact === true && pedido.status !== "cancelled" && pedido.status !== "completed") {
             if (pedido.user_id) {
               usersWithNeedingContact.add(pedido.user_id);
             }
@@ -560,7 +560,23 @@ const AdminInterface = ({ onLogout }) => {
               token={localStorage.getItem("token")}
               onOpenChatWithUser={handleOpenChatFromOrders}
               onSelectOrder={handleSelectOrder}
-              onOrderStatusChange={loadUsersNeedingAttention}
+              onOrderStatusChange={async () => {
+                console.log("📊 [AdminInterface] Notificado cambio de estado de pedido");
+                
+                // ✅ Actualizar badge de usuarios que necesitan atención
+                await loadUsersNeedingAttention();
+                
+                // ✅ Forzar actualización del contador de chats no leídos
+                await refreshUnreadCount();
+                
+                // ✅ FORZAR RECARGA DE CHATS - Enviar evento para que AdminChatManager recargue
+                window.dispatchEvent(new CustomEvent("admin:refresh-chats"));
+                
+                // ✅ También forzar recarga después de 1 segundo (por si acaso)
+                setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent("admin:refresh-chats"));
+                }, 1000);
+              }}
             />
           </div>
         );

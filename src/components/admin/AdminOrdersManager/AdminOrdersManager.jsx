@@ -66,11 +66,11 @@ const AdminOrdersManager = ({
     }
   }, [token, filterDate, searchTerm]);
 
-  // ✅ Función para actualizar el estado después de un cambio (después de loadAllOrders)
+  // ✅ Función para actualizar el estado después de un cambio
   const refreshOrdersAndNotify = useCallback(async () => {
     await loadAllOrders();
     if (onOrderStatusChange) {
-      onOrderStatusChange();
+      await onOrderStatusChange();
     }
   }, [loadAllOrders, onOrderStatusChange]);
 
@@ -99,7 +99,7 @@ const AdminOrdersManager = ({
       cancelled: allOrders.filter((o) => o.status === "cancelled").length,
       needsContact: allOrders.filter(
         (o) =>
-          o.delivery_needs_manual_contact === true && o.status !== "cancelled",
+          o.delivery_needs_manual_contact === true && o.status !== "cancelled" && o.status !== "completed",
       ).length,
     }),
     [allOrders],
@@ -163,8 +163,12 @@ const AdminOrdersManager = ({
         // ✅ Recargar pedidos y notificar al padre
         await refreshOrdersAndNotify();
         
+        // ✅ FORZAR RECARGA DE CHATS - Enviar evento
+        window.dispatchEvent(new CustomEvent("admin:refresh-chats"));
+        
         // ✅ Si el pedido que estamos viendo en detalle es el que cambió, actualizarlo
         if (selectedOrder?.id === orderId) {
+          // Buscar el pedido actualizado en la lista
           const updatedOrder = allOrders.find(o => o.id === orderId);
           if (updatedOrder) {
             setSelectedOrder(updatedOrder);
