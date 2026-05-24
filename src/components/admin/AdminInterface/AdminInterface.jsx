@@ -19,6 +19,8 @@ import {
 } from "react-icons/hi";
 import Swal from "sweetalert2";
 
+// import AdminDiagnostic from "../AdminDiagnostic/AdminDiagnostic";
+
 // Components
 import AdminHeader from "../AdminHeader/AdminHeader";
 import DashboardStats from "../DashboardStats/DashboardStats";
@@ -582,6 +584,9 @@ const AdminInterface = ({ onLogout }) => {
             </div>
           </div>
 
+          {/* <div className="admin-container">
+  <AdminDiagnostic /> 
+</div> */}
           <div className="admin-header__right">
             <div className="admin-header__user-info">
               <HiOutlineUserCircle className="admin-header__user-icon" />

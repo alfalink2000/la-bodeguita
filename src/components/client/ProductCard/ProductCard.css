@@ -1,4 +1,25 @@
 /* components/client/ProductCard/ProductCard.css */
+
+/* ===== VARIABLES GLOBALES (si no existen) ===== */
+:root {
+  --white: #ffffff;
+  --gray-200: #e5e7eb;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-800: #1f2937;
+  --primary-blue: #059669;
+  --primary-blue-light: rgba(5, 150, 105, 0.1);
+  --radius-lg: 12px;
+  --radius-md: 10px;
+  --radius-sm: 8px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* ===== CARD PRINCIPAL ===== */
 .product-card {
   background: var(--white);
   border-radius: var(--radius-lg);
@@ -19,7 +40,7 @@
   border-color: var(--primary-blue);
 }
 
-/* Contenedor de imagen */
+/* ===== CONTENEDOR DE IMAGEN ===== */
 .product-card__image-container {
   position: relative;
   width: 100%;
@@ -40,7 +61,7 @@
   transform: scale(1.08);
 }
 
-/* ===== BADGE DE DISPONIBILIDAD - VERSIÓN PEQUEÑA Y ELEGANTE ===== */
+/* ===== BADGES ===== */
 .product-card__status {
   position: absolute;
   top: 0.5rem;
@@ -59,29 +80,6 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Punto verde para disponible - SIN DUPLICAR */
-/* .product-card__status.available::before {
-  content: "●";
-  font-size: 0.55rem;
-  color: #22c55e;
-  margin-right: 0.2rem;
-  text-shadow: 0 0 2px rgba(34, 197, 94, 0.5);
-  animation: pulse-dot 1.5s ease-in-out infinite;
-} */
-
-@keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 0.6;
-    transform: scale(0.9);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-}
-
-/* Punto rojo para agotado */
 .product-card__status.out-of-stock::before {
   content: "●";
   font-size: 0.55rem;
@@ -89,7 +87,6 @@
   margin-right: 0.2rem;
 }
 
-/* Badge de moneda */
 .product-card__currency-badge {
   position: absolute;
   top: 0.5rem;
@@ -106,7 +103,6 @@
   backdrop-filter: blur(4px);
 }
 
-/* Badge del carrito */
 .product-card__cart-badge {
   position: absolute;
   top: 0.5rem;
@@ -137,7 +133,7 @@
   }
 }
 
-/* Contenido */
+/* ===== CONTENIDO - CORREGIDO ===== */
 .product-card__content {
   padding: 1rem;
   display: flex;
@@ -146,7 +142,7 @@
   gap: 0.5rem;
 }
 
-/* Nombre */
+/* Nombre - altura fija para consistencia */
 .product-card__name {
   font-size: 0.95rem;
   font-weight: 600;
@@ -189,23 +185,25 @@
   max-width: 100px;
 }
 
-/* Descripción */
+/* Descripción - altura fija */
 .product-card__description {
   color: var(--gray-500);
   font-size: 0.75rem;
   line-height: 1.4;
-  margin: 0;
+  margin: 0 0 0.25rem 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  min-height: 2.1em;
 }
 
-/* Botón Agregar al Carrito */
+/* ===== CONTENEDOR DE BOTONES - SIEMPRE AL FINAL ===== */
 .product-card__action-buttons {
   display: flex;
   gap: 0.5rem;
-  margin-top: 0.5rem;
+  margin-top: auto; /* ✅ Esto empuja el botón hacia abajo */
+  padding-top: 0.5rem;
 }
 
 .product-card__cart-btn {
@@ -272,7 +270,7 @@
   box-shadow: none;
 }
 
-/* Controles de cantidad */
+/* ===== CONTROLES DE CANTIDAD - TAMBIÉN AL FINAL ===== */
 .product-card__quantity-controls {
   display: flex;
   align-items: center;
@@ -282,7 +280,7 @@
   border-radius: 40px;
   padding: 0.25rem;
   border: 1px solid #e5e7eb;
-  margin-top: 0.5rem;
+  margin-top: auto; /* ✅ Esto empuja los controles hacia abajo */
 }
 
 .quantity-btn {
@@ -337,6 +335,7 @@
 
   .product-card__name {
     font-size: 0.85rem;
+    min-height: 2.2em;
   }
 
   .product-card__price {
@@ -350,6 +349,7 @@
 
   .product-card__description {
     font-size: 0.7rem;
+    min-height: 1.9em;
   }
 
   .product-card__cart-btn {
@@ -374,7 +374,6 @@
     font-size: 0.55rem;
   }
 
-  .product-card__status.available::before,
   .product-card__status.out-of-stock::before {
     font-size: 0.5rem;
   }
@@ -407,7 +406,7 @@
 
   .product-card__name {
     font-size: 0.8rem;
-    min-height: 2.2em;
+    min-height: 2em;
   }
 
   .product-card__info-row {
@@ -420,6 +419,7 @@
 
   .product-card__description {
     font-size: 0.65rem;
+    min-height: 1.7em;
   }
 
   .product-card__cart-btn {
@@ -448,7 +448,6 @@
     font-size: 0.5rem;
   }
 
-  .product-card__status.available::before,
   .product-card__status.out-of-stock::before {
     font-size: 0.45rem;
   }

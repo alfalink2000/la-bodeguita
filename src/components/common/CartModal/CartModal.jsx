@@ -46,6 +46,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [showAddressSelector, setShowAddressSelector] = useState(false);
   const [userAddresses, setUserAddresses] = useState([]);
+  const [addressSelectedByUser, setAddressSelectedByUser] = useState(false);
 
   const getCurrencySymbol = () => {
     switch (currency) {
@@ -117,12 +118,45 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
 
   // Seleccionar dirección
   const handleAddressSelect = (address) => {
+    console.log("📍 Usuario seleccionó dirección:", address);
     setSelectedAddress(address);
+    setAddressSelectedByUser(true);
     setShowAddressSelector(false);
-    calculateDeliveryWithAddress(address);
+    
+    // Verificar si la dirección tiene GPS
+    if (address && address.lat && address.lng) {
+      calculateDeliveryWithAddress(address);
+    } else {
+      setNeedsManualContact(true);
+      setDeliveryInfo(null);
+    }
   };
 
-  // Cargar configuración de delivery y dirección predeterminada al abrir el carrito
+  // Manejar dirección agregada desde AddressSelector
+  const handleAddressAdded = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const addressesRes = await fetch(`${API_URL}/api/users/addresses`, {
+        headers: { "x-token": token }
+      });
+      const addressesData = await addressesRes.json();
+      
+      if (addressesData.ok && addressesData.addresses) {
+        setUserAddresses(addressesData.addresses);
+        if (onAddressesLoaded) onAddressesLoaded(addressesData.addresses);
+        
+        // Seleccionar la nueva dirección (la última agregada)
+        const newAddress = addressesData.addresses[addressesData.addresses.length - 1];
+        if (newAddress) {
+          handleAddressSelect(newAddress);
+        }
+      }
+    } catch (err) {
+      console.error("Error recargando direcciones:", err);
+    }
+  };
+
+  // Cargar configuración de delivery y direcciones
   useEffect(() => {
     const loadDeliveryConfigAndAddresses = async () => {
       try {
@@ -159,16 +193,11 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
           
           if (addressesData.ok && addressesData.addresses) {
             setUserAddresses(addressesData.addresses);
-            const defaultAddress = addressesData.addresses.find(addr => addr.is_default);
-            if (defaultAddress) {
-              setSelectedAddress(defaultAddress);
-              // Calcular delivery con la dirección predeterminada
-              await calculateDeliveryWithAddress(defaultAddress);
-            } else if (addressesData.addresses.length > 0) {
-              // Si no hay predeterminada, usar la primera
-              setSelectedAddress(addressesData.addresses[0]);
-              await calculateDeliveryWithAddress(addressesData.addresses[0]);
-            }
+            // NO seleccionar ninguna dirección por defecto
+            setSelectedAddress(null);
+            setAddressSelectedByUser(false);
+            setDeliveryInfo(null);
+            setNeedsManualContact(false);
           }
         }
         
@@ -179,18 +208,19 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
     };
 
     if (isOpen && cartItems.length > 0) {
-      console.log("🔄 Carrito abierto, cargando configuración y direcciones...");
+      console.log("🔄 Carrito abierto, cargando direcciones...");
       loadDeliveryConfigAndAddresses();
     } else if (isOpen && cartItems.length === 0) {
       setDeliveryInfo(null);
       setNeedsManualContact(false);
       setSelectedAddress(null);
+      setAddressSelectedByUser(false);
     }
   }, [isOpen, cartItems.length]);
 
   // Si el total cambia mientras el carrito está abierto, recalcular delivery
   useEffect(() => {
-    if (isOpen && cartItems.length > 0 && selectedAddress && deliveryConfig?.isConfigured && !calculatingDelivery) {
+    if (isOpen && cartItems.length > 0 && selectedAddress && deliveryConfig?.isConfigured && !calculatingDelivery && !needsManualContact) {
       console.log("🔄 Total cambiado, recalculando delivery...");
       calculateDeliveryWithAddress(selectedAddress);
     }
@@ -248,12 +278,21 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
       return;
     }
 
+    // Verificar que haya seleccionado una dirección
+    if (!selectedAddress) {
+      Swal.fire({
+        icon: "warning",
+        title: "Dirección requerida",
+        text: "Por favor selecciona una dirección de entrega antes de continuar",
+        confirmButtonColor: "#059669",
+      });
+      return;
+    }
+
     const subtotal = total;
     const currencySymbol = getCurrencySymbol();
 
-    // ============================================
-    // CASO 1: Sin configuración de delivery
-    // ============================================
+    // Caso 1: Sin configuración de delivery
     if (!deliveryConfig?.isConfigured) {
       const result = await Swal.fire({
         title: "📦 Retiro en tienda",
@@ -280,22 +319,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
       return;
     }
 
-    // ============================================
-    // CASO 2: Sin dirección seleccionada
-    // ============================================
-    if (!selectedAddress) {
-      Swal.fire({
-        icon: "warning",
-        title: "Dirección requerida",
-        text: "Por favor selecciona una dirección de entrega",
-        confirmButtonColor: "#059669",
-      });
-      return;
-    }
-
-    // ============================================
-    // CASO 3: Necesita contacto manual (sin GPS en la dirección)
-    // ============================================
+    // Caso 2: Necesita contacto manual (sin GPS)
     if (needsManualContact) {
       const result = await Swal.fire({
         title: "📍 Entrega a domicilio",
@@ -334,9 +358,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
       return;
     }
 
-    // ============================================
-    // CASO 4: Delivery con GPS - cálculo exitoso
-    // ============================================
+    // Caso 3: Delivery con GPS - cálculo exitoso
     if (deliveryInfo && deliveryInfo.isAvailable) {
       const deliveryPrice = deliveryInfo.price || 0;
       const finalTotal = subtotal + deliveryPrice;
@@ -371,9 +393,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
       return;
     }
 
-    // ============================================
-    // CASO 5: Delivery no disponible o aún calculando
-    // ============================================
+    // Caso 4: Delivery no disponible o aún calculando
     if (calculatingDelivery) {
       Swal.fire({
         icon: "info",
@@ -397,7 +417,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
 
   const submitOrder = async (
     wantsDeliveryFlag,
-    needsManualContact,
+    needsManualContactFlag,
     distance,
     deliveryPrice,
   ) => {
@@ -415,7 +435,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
         return;
       }
 
-      // Usar la dirección seleccionada para el pedido
       const addressToUse = selectedAddress || { address: "", lat: null, lng: null };
 
       const orderData = {
@@ -430,12 +449,11 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
         wants_delivery: wantsDeliveryFlag,
         delivery_price: deliveryPrice || 0,
         delivery_distance: distance || null,
-        delivery_needs_manual_contact: needsManualContact || false,
-        // Enviar la dirección seleccionada
+        delivery_needs_manual_contact: needsManualContactFlag || false,
         customer_address: addressToUse.address,
         customer_lat: addressToUse.lat,
         customer_lng: addressToUse.lng,
-        notes: needsManualContact
+        notes: needsManualContactFlag
           ? "Requiere contacto manual para dirección"
           : `Dirección seleccionada: ${addressToUse.address}`,
       };
@@ -458,7 +476,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
         const finalTotal = wantsDeliveryFlag && deliveryPrice ? total + deliveryPrice : total;
         const currencySymbol = getCurrencySymbol();
 
-        if (needsManualContact) {
+        if (needsManualContactFlag) {
           try {
             await fetch(`${API_URL}/api/chat/send`, {
               method: "POST",
@@ -477,7 +495,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
         }
 
         let message = "";
-        if (needsManualContact) {
+        if (needsManualContactFlag) {
           message = "📞 Un asesor te contactará para coordinar el envío.";
         } else if (wantsDeliveryFlag) {
           message = "🚚 Recibirás tu pedido en tu domicilio.";
@@ -493,7 +511,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
             <p style="margin-bottom: 0.5rem;">${message}</p>
             <p style="font-weight: 700; color: #059669;">Total: ${currencySymbol} ${finalTotal.toFixed(2)}</p>
             <p style="font-size: 0.8rem; color: #6b7280; margin-top: 0.5rem;">📋 Ver estado en <strong>Perfil > Mis Pedidos</strong></p>
-            ${needsManualContact ? '<p style="font-size: 0.8rem; color: #f59e0b; margin-top: 0.25rem;">💬 También puedes usar el chat de soporte</p>' : ""}
+            ${needsManualContactFlag ? '<p style="font-size: 0.8rem; color: #f59e0b; margin-top: 0.25rem;">💬 También puedes usar el chat de soporte</p>' : ""}
           </div>
         `,
           icon: "success",
@@ -611,20 +629,18 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
                   </span>
                 </div>
 
-                {/* ============================================ */}
                 {/* SECCIÓN DE DELIVERY CON SELECTOR DE DIRECCIONES */}
-                {/* ============================================ */}
                 {deliveryConfig && deliveryConfig.isConfigured && (
                   <div className="cart-delivery-section">
                     <div className="delivery-header">
                       <HiOutlineTruck className="delivery-header-icon" />
-                      <span className="delivery-header-title">Envío a domicilio</span>
+                      <span className="delivery-header-title">🚚 Envío a domicilio</span>
                     </div>
 
-                    {/* Selector de dirección */}
+                    {/* Selector de dirección - OBLIGATORIO */}
                     <div className="delivery-address-selector">
                       <button 
-                        className="select-address-btn"
+                        className={`select-address-btn ${selectedAddress ? "has-address" : ""}`}
                         onClick={() => setShowAddressSelector(!showAddressSelector)}
                       >
                         <HiOutlineLocationMarker />
@@ -632,9 +648,12 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
                           {selectedAddress 
                             ? (selectedAddress.nickname 
                                 ? `📍 ${selectedAddress.nickname} - ${selectedAddress.address.substring(0, 40)}...`
-                                : selectedAddress.address.substring(0, 50) + (selectedAddress.address.length > 50 ? "..." : ""))
-                            : "Seleccionar dirección de entrega"}
+                                : `📍 ${selectedAddress.address.substring(0, 50)}${selectedAddress.address.length > 50 ? "..." : ""}`)
+                            : "📌 Selecciona una dirección de entrega"}
                         </span>
+                        <svg className={`arrow-icon ${showAddressSelector ? "rotate" : ""}`} viewBox="0 0 20 20" width="16" height="16">
+                          <path fill="currentColor" d="M5 8l5 5 5-5H5z"/>
+                        </svg>
                       </button>
                       
                       {showAddressSelector && (
@@ -643,18 +662,19 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
                             selectedAddress={selectedAddress}
                             onAddressSelect={handleAddressSelect}
                             onAddressesLoaded={setUserAddresses}
+                            onAddressAdded={handleAddressAdded}
                             token={localStorage.getItem("token")}
                           />
                         </div>
                       )}
                     </div>
 
-                    {/* Estados de cálculo */}
-                    {!selectedAddress ? (
+                    {/* Mostrar estado según la dirección seleccionada */}
+                    {!addressSelectedByUser ? (
                       <div className="cart-delivery-info cart-delivery-info--warning">
                         <div className="delivery-warning">
-                          <span>📍 Selecciona una dirección de entrega</span>
-                          <p>Debes seleccionar o agregar una dirección para calcular el costo de envío</p>
+                          <span>⚠️ Selecciona una dirección de entrega</span>
+                          <p>Elige una dirección de tu lista o agrega una nueva para continuar</p>
                         </div>
                       </div>
                     ) : calculatingDelivery ? (
@@ -662,27 +682,30 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
                         <HiOutlineRefresh className="spinning" />
                         <span>Calculando costo de envío...</span>
                       </div>
+                    ) : needsManualContact ? (
+                      <div className="cart-delivery-info cart-delivery-info--manual">
+                        <div className="delivery-manual-message">
+                          <span>📞 <strong>Esta dirección requiere verificación</strong></span>
+                          <p>
+                            No es posible calcular automáticamente el costo de envío para esta dirección porque no tiene coordenadas GPS.
+                          </p>
+                          <p className="delivery-manual-detail">
+                            💡 <strong>¿Qué significa esto?</strong><br/>
+                            Un asesor se pondrá en contacto contigo para confirmar la dirección y calcular el costo del delivery.
+                          </p>
+                          <small>⏳ Una vez confirmes el pedido, soporte te contactará para coordinar el envío</small>
+                        </div>
+                      </div>
                     ) : deliveryInfo && deliveryInfo.isAvailable ? (
-                      <div className="cart-delivery-info">
+                      <div className="cart-delivery-info cart-delivery-info--success">
                         <div className="delivery-price-info">
-                          <span className="delivery-price-label">Costo de envío:</span>
+                          <span className="delivery-price-label">🚚 Costo de envío calculado:</span>
                           <span className="delivery-price-value">
                             {getCurrencySymbol()}{deliveryInfo.price.toFixed(2)}
                           </span>
                         </div>
                         <div className="delivery-note">
-                          <small>🚚 Basado en tu dirección: {selectedAddress.nickname || "seleccionada"}</small>
-                        </div>
-                      </div>
-                    ) : needsManualContact ? (
-                      <div className="cart-delivery-info cart-delivery-info--manual">
-                        <div className="delivery-manual-message">
-                          <span>📞 <strong>Necesitamos contactarte</strong></span>
-                          <p>
-                            No es posible calcular automáticamente el costo de envío a esta dirección.
-                            Un asesor se pondrá en contacto contigo para informarte el costo del delivery.
-                          </p>
-                          <small>⏳ Una vez confirmes el pedido, soporte te contactará para coordinar el envío</small>
+                          <small>📍 Distancia: {(deliveryInfo.distance || 0).toFixed(1)} km</small>
                         </div>
                       </div>
                     ) : deliveryInfo && !deliveryInfo.isAvailable ? (
@@ -699,7 +722,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
                 )}
 
                 {/* Mostrar total con delivery si está disponible */}
-                {deliveryInfo && deliveryInfo.isAvailable && !calculatingDelivery && selectedAddress && (
+                {deliveryInfo && deliveryInfo.isAvailable && !calculatingDelivery && selectedAddress && addressSelectedByUser && (
                   <div className="cart-total cart-total-final">
                     <span>Total a pagar:</span>
                     <span className="total-amount">
@@ -709,7 +732,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
                   </div>
                 )}
 
-                {(!deliveryInfo?.isAvailable || needsManualContact) && !calculatingDelivery && deliveryConfig?.isConfigured && (
+                {(!deliveryInfo?.isAvailable || needsManualContact) && !calculatingDelivery && deliveryConfig?.isConfigured && addressSelectedByUser && (
                   <div className="cart-total cart-total-final">
                     <span>Total:</span>
                     <span className="total-amount">
@@ -728,7 +751,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
                   <button
                     className="order-btn"
                     onClick={handleCreateOrder}
-                    disabled={creatingOrder || calculatingDelivery}
+                    disabled={creatingOrder || calculatingDelivery || !addressSelectedByUser}
                   >
                     {creatingOrder ? (
                       <>

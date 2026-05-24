@@ -5,31 +5,75 @@ import {
   HiOutlinePlus, 
   HiOutlineTrash,
   HiOutlineCheck,
-  HiOutlineX 
+  HiOutlineX,
+  HiOutlineSearch
 } from "react-icons/hi";
+import { FaLocationArrow } from "react-icons/fa";
 import Swal from "sweetalert2";
 import "./AddressSelector.css";
+
 const API_URL = import.meta.env.VITE_API_URL || "https://minimarket-backend-6z9m.onrender.com";
 
 const AddressSelector = ({ 
   selectedAddress, 
   onAddressSelect, 
   onAddressesLoaded,
+  onAddressAdded,
   token 
 }) => {
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [searchingAddress, setSearchingAddress] = useState(false);
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [newAddress, setNewAddress] = useState({
     address: "",
     lat: null,
     lng: null,
+    nickname: "",
     is_default: false
   });
-  const [searchingAddress, setSearchingAddress] = useState(false);
-  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [addressError, setAddressError] = useState("");
 
-  // Cargar ubicaciones del usuario
+  // Validación de dirección
+  const validateAddress = (address, lat, lng) => {
+    if (!address || address.trim() === "") {
+      setAddressError("📝 Por favor ingresa una dirección válida");
+      return false;
+    }
+
+    const trimmedAddress = address.trim();
+
+    if (trimmedAddress.length < 10) {
+      setAddressError(`📍 "${trimmedAddress}" es muy corto. Una dirección debe tener al menos 10 caracteres.`);
+      return false;
+    }
+
+    const coordinatesPattern = /^-?\d+\.\d+,\s*-?\d+\.\d+$/;
+    if (coordinatesPattern.test(trimmedAddress)) {
+      setAddressError("🌍 Por favor escribe una dirección completa, no solo coordenadas");
+      return false;
+    }
+
+    const hasNumbers = /\d/.test(trimmedAddress);
+    const hasLetters = /[a-zA-Záéíóúñ]/i.test(trimmedAddress);
+    
+    if (!hasNumbers || !hasLetters) {
+      setAddressError("🏠 La dirección debe incluir el número de la casa y el nombre de la calle");
+      return false;
+    }
+
+    if (!lat || !lng) {
+      setAddressError("📍 Por favor selecciona una dirección de las sugerencias o usa GPS");
+      return false;
+    }
+
+    setAddressError("");
+    return true;
+  };
+
+  // Cargar direcciones del usuario
   const loadUserAddresses = async () => {
     if (!token) return;
     
@@ -43,15 +87,9 @@ const AddressSelector = ({
       if (data.ok && data.addresses) {
         setAddresses(data.addresses);
         if (onAddressesLoaded) onAddressesLoaded(data.addresses);
-        
-        // Seleccionar la dirección por defecto si existe
-        const defaultAddress = data.addresses.find(addr => addr.is_default);
-        if (defaultAddress && !selectedAddress) {
-          onAddressSelect(defaultAddress);
-        }
       }
     } catch (err) {
-      console.error("Error cargando ubicaciones:", err);
+      console.error("Error cargando direcciones:", err);
     } finally {
       setLoading(false);
     }
@@ -61,15 +99,17 @@ const AddressSelector = ({
     loadUserAddresses();
   }, [token]);
 
-  // Buscar dirección para nueva ubicación
-  const handleAddressSearch = async (address) => {
+  // Buscar dirección por texto
+  const searchAddress = async (address) => {
     setNewAddress({ ...newAddress, address });
+    setAddressError("");
     
     if (address.length < 5) {
       setAddressSuggestions([]);
       return;
     }
 
+    setSearchingAddress(true);
     try {
       const res = await fetch(`${API_URL}/api/geocoding/geocode`, {
         method: "POST",
@@ -85,9 +125,13 @@ const AddressSelector = ({
       }
     } catch (err) {
       console.error("Error buscando dirección:", err);
+      setAddressSuggestions([]);
+    } finally {
+      setSearchingAddress(false);
     }
   };
 
+  // Seleccionar sugerencia de dirección
   const selectAddressSuggestion = (suggestion) => {
     setNewAddress({
       ...newAddress,
@@ -96,25 +140,123 @@ const AddressSelector = ({
       lng: suggestion.lng
     });
     setAddressSuggestions([]);
+    validateAddress(suggestion.display_name, suggestion.lat, suggestion.lng);
   };
 
-  // Agregar nueva ubicación
-  const addNewAddress = async () => {
-    if (!newAddress.address.trim()) {
+  // Obtener ubicación por GPS
+  const getGPSLocation = () => {
+    setGpsLoading(true);
+    setAddressError("");
+
+    if (!navigator.geolocation) {
       Swal.fire({
         icon: "warning",
-        title: "Dirección requerida",
-        text: "Por favor ingresa una dirección válida",
+        title: "GPS no soportado",
+        text: "Tu navegador no soporta geolocalización. Por favor, escribe tu dirección manualmente.",
         confirmButtonColor: "#059669"
       });
+      setGpsLoading(false);
       return;
     }
 
-    if (!newAddress.lat || !newAddress.lng) {
+    Swal.fire({
+      title: "📍 Obteniendo tu ubicación",
+      text: "Por favor espera...",
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          const res = await fetch(`${API_URL}/api/geocoding/reverse`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lat: latitude, lng: longitude })
+          });
+          const data = await res.json();
+
+          let addressText = data.ok && data.display_name 
+            ? data.display_name 
+            : `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+
+          setNewAddress({
+            ...newAddress,
+            address: addressText,
+            lat: latitude,
+            lng: longitude
+          });
+          
+          validateAddress(addressText, latitude, longitude);
+
+          Swal.fire({
+            title: "📍 ¡Ubicación obtenida!",
+            text: addressText.length > 80 ? addressText.substring(0, 80) + "..." : addressText,
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false
+          });
+        } catch (err) {
+          console.error("Error en reverse geocoding:", err);
+          const coordText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+          setNewAddress({
+            ...newAddress,
+            address: coordText,
+            lat: latitude,
+            lng: longitude
+          });
+          setAddressError("⚠️ No pudimos obtener una dirección clara. Puedes editar el texto.");
+          
+          Swal.fire({
+            title: "📍 Ubicación obtenida",
+            text: "Coordenadas guardadas. Por favor, completa la dirección.",
+            icon: "info",
+            confirmButtonText: "Entendido"
+          });
+        }
+        setGpsLoading(false);
+        Swal.close();
+      },
+      (err) => {
+        let errorMsg = "";
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            errorMsg = "Permiso de ubicación denegado. Escribe tu dirección manualmente.";
+            break;
+          case err.POSITION_UNAVAILABLE:
+            errorMsg = "Ubicación no disponible. Escribe tu dirección manualmente.";
+            break;
+          case err.TIMEOUT:
+            errorMsg = "Tiempo de espera agotado. Escribe tu dirección manualmente.";
+            break;
+          default:
+            errorMsg = "Error obteniendo ubicación. Escribe tu dirección manualmente.";
+        }
+        
+        Swal.fire({
+          icon: "warning",
+          title: "Error de GPS",
+          text: errorMsg,
+          confirmButtonColor: "#059669"
+        });
+        setGpsLoading(false);
+        Swal.close();
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
+
+  // Agregar nueva dirección
+  const addNewAddress = async () => {
+    if (!validateAddress(newAddress.address, newAddress.lat, newAddress.lng)) {
       Swal.fire({
         icon: "warning",
-        title: "Ubicación no válida",
-        text: "Por favor selecciona una dirección de las sugerencias",
+        title: "Dirección inválida",
+        text: addressError,
         confirmButtonColor: "#059669"
       });
       return;
@@ -128,23 +270,33 @@ const AddressSelector = ({
           "Content-Type": "application/json",
           "x-token": token
         },
-        body: JSON.stringify(newAddress)
+        body: JSON.stringify({
+          address: newAddress.address.trim(),
+          lat: newAddress.lat,
+          lng: newAddress.lng,
+          nickname: newAddress.nickname || null,
+          is_default: newAddress.is_default
+        })
       });
       const data = await res.json();
       
       if (data.ok) {
         Swal.fire({
           icon: "success",
-          title: "¡Ubicación agregada!",
+          title: "¡Dirección agregada!",
           text: "Tu nueva dirección ha sido guardada",
           confirmButtonColor: "#059669",
           timer: 1500,
           showConfirmButton: false
         });
         
-        setNewAddress({ address: "", lat: null, lng: null, is_default: false });
+        setNewAddress({ address: "", lat: null, lng: null, nickname: "", is_default: false });
         setShowAddForm(false);
-        loadUserAddresses(); // Recargar lista
+        await loadUserAddresses();
+        
+        if (onAddressAdded) {
+          onAddressAdded();
+        }
       } else {
         throw new Error(data.msg || "Error al guardar");
       }
@@ -160,10 +312,10 @@ const AddressSelector = ({
     }
   };
 
-  // Eliminar ubicación
+  // Eliminar dirección
   const deleteAddress = async (addressId) => {
     const result = await Swal.fire({
-      title: "¿Eliminar ubicación?",
+      title: "¿Eliminar dirección?",
       text: "Esta acción no se puede deshacer",
       icon: "question",
       showCancelButton: true,
@@ -186,7 +338,7 @@ const AddressSelector = ({
         Swal.fire({
           icon: "success",
           title: "Eliminada",
-          text: "Ubicación eliminada correctamente",
+          text: "Dirección eliminada correctamente",
           confirmButtonColor: "#059669",
           timer: 1500,
           showConfirmButton: false
@@ -197,7 +349,7 @@ const AddressSelector = ({
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "No se pudo eliminar la ubicación",
+        text: "No se pudo eliminar la dirección",
         confirmButtonColor: "#059669"
       });
     }
@@ -224,7 +376,7 @@ const AddressSelector = ({
     <div className="address-selector">
       <div className="address-selector-header">
         <HiOutlineLocationMarker className="address-icon" />
-        <span>Dirección de entrega</span>
+        <span>Mis direcciones</span>
       </div>
 
       {loading && !addresses.length ? (
@@ -249,7 +401,8 @@ const AddressSelector = ({
               </div>
               <div className="address-details">
                 <div className="address-text">
-                  {addr.address}
+                  {addr.nickname && <span className="address-nickname">🏷️ {addr.nickname}</span>}
+                  <span className="address-full">{addr.address}</span>
                   {addr.is_default && <span className="default-badge">Predeterminada</span>}
                 </div>
               </div>
@@ -282,7 +435,7 @@ const AddressSelector = ({
         </div>
       ) : (
         <div className="no-addresses">
-          <p>No tienes direcciones guardadas</p>
+          <p>📭 No tienes direcciones guardadas</p>
           <p className="no-addresses-hint">Agrega tu primera dirección para recibir pedidos</p>
         </div>
       )}
@@ -290,34 +443,83 @@ const AddressSelector = ({
       {showAddForm ? (
         <div className="add-address-form">
           <div className="form-header">
-            <span>Nueva dirección</span>
+            <span>➕ Agregar nueva dirección</span>
             <button className="close-form" onClick={() => setShowAddForm(false)}>
               <HiOutlineX size={18} />
             </button>
           </div>
           
+          <button 
+            className="gps-address-btn"
+            onClick={getGPSLocation}
+            disabled={gpsLoading}
+          >
+            {gpsLoading ? (
+              <>
+                <div className="gps-spinner-small"></div>
+                <span>Obteniendo ubicación...</span>
+              </>
+            ) : (
+              <>
+                <FaLocationArrow size={16} />
+                <span>Usar mi ubicación actual</span>
+              </>
+            )}
+          </button>
+
+          <div className="location-divider-mini">
+            <span>o escribe tu dirección</span>
+          </div>
+          
           <div className="address-search-wrapper">
+            <HiOutlineSearch className="search-icon" />
             <input
               type="text"
               className="address-search-input"
-              placeholder="Buscar dirección..."
+              placeholder="Ej: Calle 23 #456 entre L y M, Vedado"
               value={newAddress.address}
-              onChange={(e) => handleAddressSearch(e.target.value)}
+              onChange={(e) => searchAddress(e.target.value)}
             />
-            {addressSuggestions.length > 0 && (
-              <div className="address-suggestions-list">
-                {addressSuggestions.map((suggestion, idx) => (
-                  <div 
-                    key={idx}
-                    className="address-suggestion"
-                    onClick={() => selectAddressSuggestion(suggestion)}
-                  >
-                    📍 {suggestion.display_name.substring(0, 60)}
-                  </div>
-                ))}
+            {searchingAddress && (
+              <div className="searching-indicator">
+                <div className="spinner-small"></div>
               </div>
             )}
           </div>
+
+          {addressSuggestions.length > 0 && (
+            <div className="address-suggestions-list">
+              {addressSuggestions.map((suggestion, idx) => (
+                <div 
+                  key={idx}
+                  className="address-suggestion"
+                  onClick={() => selectAddressSuggestion(suggestion)}
+                >
+                  📍 {suggestion.display_name.substring(0, 60)}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {addressError && (
+            <div className="address-error-mini">
+              <span>⚠️</span> {addressError}
+            </div>
+          )}
+
+          {newAddress.address && !addressError && newAddress.lat && newAddress.lng && (
+            <div className="address-valid-mini">
+              <span>✅</span> Dirección válida
+            </div>
+          )}
+
+          <input
+            type="text"
+            className="address-nickname-input"
+            placeholder="Nombre de la dirección (opcional: Casa, Trabajo, etc.)"
+            value={newAddress.nickname}
+            onChange={(e) => setNewAddress({ ...newAddress, nickname: e.target.value })}
+          />
           
           <label className="checkbox-label">
             <input
@@ -331,7 +533,7 @@ const AddressSelector = ({
           <button 
             className="save-address-btn"
             onClick={addNewAddress}
-            disabled={loading}
+            disabled={loading || !newAddress.lat || !newAddress.lng}
           >
             {loading ? "Guardando..." : "Guardar dirección"}
           </button>
