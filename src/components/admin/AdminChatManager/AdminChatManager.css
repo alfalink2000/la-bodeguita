@@ -860,3 +860,96 @@
   margin-top: 0.15rem;
   display: block;
 }
+/* AdminChatManager.css - Agregar */
+.admin-chat__search {
+  position: relative;
+}
+
+.admin-chat__search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.admin-chat__search-clear:hover {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+/* AdminOrdersManager.css - Agregar */
+.ao-search {
+  position: relative;
+}
+
+.ao-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+}
+
+.ao-search-input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.ao-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ao-search-clear:hover {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+.ao-search-results {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  margin: 12px 0;
+  font-size: 13px;
+}
+
+.ao-search-results-text {
+  color: #065f46;
+}
+
+.ao-search-results-count {
+  background: #d1fae5;
+  padding: 2px 8px;
+  border-radius: 20px;
+  color: #047857;
+  font-weight: 500;
+}

@@ -108,10 +108,8 @@ const AdminChatManager = ({
         // ✅ Si el chat seleccionado ya no necesita atención, actualizar inmediatamente
         if (selectedChat?.user?.id && !usersNeedingAttention.has(selectedChat.user.id)) {
           console.log("✅ [AdminChatManager] El chat seleccionado ya no necesita atención, actualizando UI...");
-          // Forzar recarga de chats para actualizar el estado
           await forceReloadChats();
         } else {
-          // Solo recargar en segundo plano
           await dispatch(startLoadChats());
         }
       }
@@ -120,7 +118,7 @@ const AdminChatManager = ({
     }
   }, [dispatch, selectedChat, forceReloadChats]);
 
-  // ✅ Escuchar evento de refresco de chats desde AdminInterface y AdminOrdersManager
+  // ✅ Escuchar evento de refresco de chats
   useEffect(() => {
     const handleRefreshChats = async () => {
       console.log("📢 [AdminChatManager] Evento de refresco de chats recibido");
@@ -141,7 +139,6 @@ const AdminChatManager = ({
       if (!selectedChat) {
         refreshAttentionStatus();
       } else {
-        // Si hay un chat seleccionado, verificar si sigue necesitando atención
         refreshAttentionStatus();
       }
     }, 30000);
@@ -153,7 +150,7 @@ const AdminChatManager = ({
     loadData();
   }, [loadData, forceRefreshKey]);
 
-  // ✅ Seleccionar usuario por ID (desde orders)
+  // ✅ Seleccionar usuario por ID
   useEffect(() => {
     if (!selectedUserId || !isInitialized) return;
 
@@ -309,7 +306,6 @@ const AdminChatManager = ({
           await dispatch(startLoadMessages(selectedChat.user.id));
           await dispatch(startLoadChats());
           
-          // ✅ FORZAR ACTUALIZACIÓN DEL CONTADOR GLOBAL
           const token = localStorage.getItem("token");
           if (token && onUnreadCountChange) {
             const res = await fetch(`${API_URL}/api/chat/unread-count`, {
@@ -322,7 +318,6 @@ const AdminChatManager = ({
             }
           }
           
-          // ✅ Actualizar estado de atención después de enviar
           await refreshAttentionStatus();
         } else {
           setNewMessage(messageToSend);
@@ -349,10 +344,7 @@ const AdminChatManager = ({
       await dispatch(startLoadMessages(selectedChat.user.id));
     }
     
-    // ✅ Actualizar estado de atención al refrescar
     await refreshAttentionStatus();
-    
-    // ✅ Disparar evento para que otros componentes se actualicen
     window.dispatchEvent(new CustomEvent("admin:refresh-complete"));
   }, [dispatch, selectedChat, showAllUsers, refreshAttentionStatus]);
 
@@ -382,10 +374,16 @@ const AdminChatManager = ({
     return date.toLocaleDateString([], { day: "2-digit", month: "2-digit" });
   };
 
+  // ✅ FILTRO MEJORADO: Buscar por nombre, username o teléfono
   const filteredChats = chats.filter((chat) => {
     if (!searchTerm) return true;
-    const name = chat.user?.full_name || chat.user?.username || "";
-    return name.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase();
+    const fullName = (chat.user?.full_name || "").toLowerCase();
+    const username = (chat.user?.username || "").toLowerCase();
+    const phone = (chat.user?.phone || "").toLowerCase();
+    return fullName.includes(searchLower) || 
+           username.includes(searchLower) || 
+           phone.includes(searchLower);
   });
 
   const chatsWithMessages = filteredChats.filter(
@@ -448,10 +446,19 @@ const AdminChatManager = ({
             <input
               type="text"
               className="admin-chat__search-input"
-              placeholder="Buscar por nombre o teléfono..."
+              placeholder="🔍 Buscar por nombre, usuario o teléfono..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            {searchTerm && (
+              <button 
+                className="admin-chat__search-clear"
+                onClick={() => setSearchTerm("")}
+                title="Limpiar búsqueda"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
           <div className="admin-chat__list">
@@ -463,15 +470,15 @@ const AdminChatManager = ({
             ) : filteredChats.length === 0 ? (
               <div className="admin-chat__empty">
                 <HiOutlineChat className="admin-chat__empty-icon" />
-                <h3>No hay usuarios registrados</h3>
-                <p>Los clientes aparecerán aquí cuando se registren</p>
+                <h3>No se encontraron resultados</h3>
+                <p>{searchTerm ? `No hay usuarios que coincidan con "${searchTerm}"` : "Los clientes aparecerán aquí cuando se registren"}</p>
               </div>
             ) : (
               <>
                 {chatsWithMessages.length > 0 && !showAllUsers && (
                   <>
                     <div className="admin-chat__section-title">
-                      <span>Conversaciones activas</span>
+                      <span>Conversaciones activas {searchTerm && `(filtrado)`}</span>
                     </div>
                     {chatsWithMessages.map((chat) => (
                       <button
@@ -527,7 +534,7 @@ const AdminChatManager = ({
                   <>
                     {!showAllUsers && newUsers.length > 0 && (
                       <div className="admin-chat__section-title">
-                        <span>Usuarios sin conversación</span>
+                        <span>Usuarios sin conversación {searchTerm && `(filtrado)`}</span>
                       </div>
                     )}
                     {(showAllUsers ? filteredChats : newUsers).map((chat) => (

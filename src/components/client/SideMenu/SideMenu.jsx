@@ -280,7 +280,7 @@ const SideMenu = ({
 
         {/* Footer del menú */}
         <div className="sidemenu__footer">
-          <span className="sidemenu__version">v1.0.0</span>
+          <span className="sidemenu__version">v2.0.0</span>
           <span className="sidemenu__footer-text">
             💬 Soporte disponible por chat
           </span>

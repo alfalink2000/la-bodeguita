@@ -41,7 +41,7 @@ const AdminOrdersManager = ({
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [expandedCards, setExpandedCards] = useState({});
 
-  // ✅ Cargar TODOS los pedidos (declarada PRIMERO)
+  // ✅ Cargar TODOS los pedidos
   const loadAllOrders = useCallback(async () => {
     if (!token) return;
 
@@ -49,7 +49,6 @@ const AdminOrdersManager = ({
       setLoading(true);
       const params = new URLSearchParams();
       if (filterDate !== "all") params.append("fecha", filterDate);
-      if (searchTerm) params.append("search", searchTerm);
 
       const res = await fetch(`${API_URL}/api/orders/admin/all?${params}`, {
         headers: { "x-token": token },
@@ -64,7 +63,7 @@ const AdminOrdersManager = ({
     } finally {
       setLoading(false);
     }
-  }, [token, filterDate, searchTerm]);
+  }, [token, filterDate]);
 
   // ✅ Función para actualizar el estado después de un cambio
   const refreshOrdersAndNotify = useCallback(async () => {
@@ -80,14 +79,38 @@ const AdminOrdersManager = ({
     return () => clearInterval(interval);
   }, [loadAllOrders]);
 
-  // Pedidos filtrados
+  // ✅ FILTRADO LOCAL: ID exacto, nombre/telefono parcial
   const filteredOrders = useMemo(() => {
     let result = allOrders;
+    
+    // Filtrar por estado
     if (filterStatus !== "all") {
       result = result.filter((order) => order.status === filterStatus);
     }
+    
+    // ✅ Filtrar por búsqueda
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      const searchNumber = parseInt(searchTerm);
+      const isNumberSearch = !isNaN(searchNumber) && searchTerm.trim() !== "";
+      
+      result = result.filter((order) => {
+        // Búsqueda numérica: coincidencia EXACTA del ID
+        if (isNumberSearch) {
+          return order.id === searchNumber;
+        }
+        
+        // Búsqueda de texto: coincidencia parcial en nombre o teléfono
+        const customerName = (order.customer_name || "").toLowerCase();
+        const customerPhone = (order.customer_phone || "").toLowerCase();
+        
+        return customerName.includes(searchLower) || 
+               customerPhone.includes(searchLower);
+      });
+    }
+    
     return result;
-  }, [allOrders, filterStatus]);
+  }, [allOrders, filterStatus, searchTerm]);
 
   // Contar por estado
   const counts = useMemo(
@@ -109,7 +132,7 @@ const AdminOrdersManager = ({
     setExpandedCards((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
   };
 
-  // ✅ Función mejorada para cambiar estado con confirmación y notificación
+  // ✅ Función para cambiar estado
   const handleChangeStatus = async (orderId, newStatus, orderData = null) => {
     let confirmMessage = "";
     let confirmTitle = "";
@@ -160,15 +183,10 @@ const AdminOrdersManager = ({
       const data = await res.json();
 
       if (data.ok) {
-        // ✅ Recargar pedidos y notificar al padre
         await refreshOrdersAndNotify();
-        
-        // ✅ FORZAR RECARGA DE CHATS - Enviar evento
         window.dispatchEvent(new CustomEvent("admin:refresh-chats"));
         
-        // ✅ Si el pedido que estamos viendo en detalle es el que cambió, actualizarlo
         if (selectedOrder?.id === orderId) {
-          // Buscar el pedido actualizado en la lista
           const updatedOrder = allOrders.find(o => o.id === orderId);
           if (updatedOrder) {
             setSelectedOrder(updatedOrder);
@@ -294,14 +312,25 @@ const AdminOrdersManager = ({
           <div
             className={`ao-filters ${showMobileFilters ? "ao-filters--mobile-open" : ""}`}
           >
+            {/* Búsqueda */}
             <div className="ao-search">
-              <HiOutlineSearch />
+              <HiOutlineSearch className="ao-search-icon" />
               <input
                 type="text"
-                placeholder="Buscar por #ID, nombre o teléfono..."
+                className="ao-search-input"
+                placeholder="🔍 Buscar por #ID (ej: 1, 2, 3) o por nombre..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+              {searchTerm && (
+                <button 
+                  className="ao-search-clear"
+                  onClick={() => setSearchTerm("")}
+                  title="Limpiar búsqueda"
+                >
+                  ✕
+                </button>
+              )}
             </div>
 
             <div className="ao-status-filters">
@@ -351,6 +380,18 @@ const AdminOrdersManager = ({
             </div>
           </div>
 
+          {/* Resultados de búsqueda */}
+          {searchTerm && (
+            <div className="ao-search-results">
+              <span className="ao-search-results-text">
+                🔍 Resultados para: <strong>"{searchTerm}"</strong>
+              </span>
+              <span className="ao-search-results-count">
+                {filteredOrders.length} pedido{filteredOrders.length !== 1 ? "s" : ""} encontrado{filteredOrders.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
+
           {/* Lista de pedidos */}
           <div className="ao-list">
             {loading && allOrders.length === 0 ? (
@@ -362,7 +403,11 @@ const AdminOrdersManager = ({
               <div className="ao-empty">
                 <HiOutlineClipboardList className="ao-empty-icon" />
                 <h3>No hay pedidos</h3>
-                <p>Los pedidos de los clientes aparecerán aquí</p>
+                <p>
+                  {searchTerm 
+                    ? `No se encontraron pedidos que coincidan con "${searchTerm}"` 
+                    : "Los pedidos de los clientes aparecerán aquí"}
+                </p>
               </div>
             ) : (
               filteredOrders.map((order) => {
@@ -544,7 +589,7 @@ const AdminOrdersManager = ({
           </div>
         </>
       ) : (
-        /* Vista detalle de pedido */
+        // Vista detalle de pedido
         <div className="ao-detail">
           <div className="ao-detail-header">
             <button
