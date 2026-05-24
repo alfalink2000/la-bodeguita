@@ -15,7 +15,7 @@ const SearchBar = ({
   const wrapperRef = useRef(null);
 
   const marqueeText =
-    "🚚 Envíos a Domicilio — GRATIS por cantidad — ¡No dude en preguntar! 🚚";
+    "🚚 Envíos a domicilio — Calculamos el costo según tu ubicación — ¡Recibe tus productos sin salir de casa! 🚚";
 
   // ✅ Calcular velocidad basada en la longitud del texto y el contenedor
   useEffect(() => {

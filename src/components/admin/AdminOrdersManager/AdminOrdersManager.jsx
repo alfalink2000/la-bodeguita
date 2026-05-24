@@ -27,7 +27,11 @@ const API_URL =
   import.meta.env.VITE_API_URL ||
   "https://minimarket-backend-6z9m.onrender.com";
 
-const AdminOrdersManager = ({ token, onOpenChatWithUser }) => {
+const AdminOrdersManager = ({ 
+  token, 
+  onOpenChatWithUser,
+  onOrderStatusChange
+}) => {
   const [allOrders, setAllOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -37,7 +41,7 @@ const AdminOrdersManager = ({ token, onOpenChatWithUser }) => {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [expandedCards, setExpandedCards] = useState({});
 
-  // Cargar TODOS los pedidos
+  // ✅ Cargar TODOS los pedidos (declarada PRIMERO)
   const loadAllOrders = useCallback(async () => {
     if (!token) return;
 
@@ -62,6 +66,14 @@ const AdminOrdersManager = ({ token, onOpenChatWithUser }) => {
     }
   }, [token, filterDate, searchTerm]);
 
+  // ✅ Función para actualizar el estado después de un cambio (después de loadAllOrders)
+  const refreshOrdersAndNotify = useCallback(async () => {
+    await loadAllOrders();
+    if (onOrderStatusChange) {
+      onOrderStatusChange();
+    }
+  }, [loadAllOrders, onOrderStatusChange]);
+
   useEffect(() => {
     loadAllOrders();
     const interval = setInterval(loadAllOrders, 10000);
@@ -71,11 +83,9 @@ const AdminOrdersManager = ({ token, onOpenChatWithUser }) => {
   // Pedidos filtrados
   const filteredOrders = useMemo(() => {
     let result = allOrders;
-
     if (filterStatus !== "all") {
       result = result.filter((order) => order.status === filterStatus);
     }
-
     return result;
   }, [allOrders, filterStatus]);
 
@@ -99,7 +109,7 @@ const AdminOrdersManager = ({ token, onOpenChatWithUser }) => {
     setExpandedCards((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
   };
 
-  // Función mejorada para cambiar estado con confirmación
+  // ✅ Función mejorada para cambiar estado con confirmación y notificación
   const handleChangeStatus = async (orderId, newStatus, orderData = null) => {
     let confirmMessage = "";
     let confirmTitle = "";
@@ -150,9 +160,17 @@ const AdminOrdersManager = ({ token, onOpenChatWithUser }) => {
       const data = await res.json();
 
       if (data.ok) {
-        await loadAllOrders();
+        // ✅ Recargar pedidos y notificar al padre
+        await refreshOrdersAndNotify();
+        
+        // ✅ Si el pedido que estamos viendo en detalle es el que cambió, actualizarlo
         if (selectedOrder?.id === orderId) {
-          setSelectedOrder(data.pedido);
+          const updatedOrder = allOrders.find(o => o.id === orderId);
+          if (updatedOrder) {
+            setSelectedOrder(updatedOrder);
+          } else {
+            setSelectedOrder(null);
+          }
         }
 
         Swal.fire({
@@ -422,8 +440,7 @@ const AdminOrdersManager = ({ token, onOpenChatWithUser }) => {
                           <span className="delivery-info-tag">
                             <HiOutlineTruck /> Delivery: $
                             {order.delivery_price || 0}
-                            {/* ✅ CORREGIDO: usar distance_km */}(
-                            {order.distance_km != null
+                            ({order.distance_km != null
                               ? `${order.distance_km} km`
                               : "distancia no calculada"}
                             )
@@ -650,7 +667,6 @@ const AdminOrdersManager = ({ token, onOpenChatWithUser }) => {
                     <div className="ao-delivery-row">
                       <span>Distancia:</span>
                       <strong>
-                        {/* ✅ CORREGIDO: usar distance_km */}
                         {selectedOrder.distance_km != null
                           ? `${selectedOrder.distance_km} km`
                           : "No calculada"}

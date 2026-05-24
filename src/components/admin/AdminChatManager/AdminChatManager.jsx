@@ -201,36 +201,49 @@ const AdminChatManager = ({
     }
   }, [dispatch, onSelectUser]);
 
-  const handleSend = useCallback(
-    async (e) => {
-      e.preventDefault();
+ const handleSend = useCallback(
+  async (e) => {
+    e.preventDefault();
 
-      if (!newMessage.trim() || !selectedChat?.user?.id || sending) return;
+    if (!newMessage.trim() || !selectedChat?.user?.id || sending) return;
 
-      setSending(true);
-      const messageToSend = newMessage.trim();
-      setNewMessage("");
+    setSending(true);
+    const messageToSend = newMessage.trim();
+    setNewMessage("");
 
-      try {
-        const success = await dispatch(
-          startSendAdminMessage(selectedChat.user.id, messageToSend),
-        );
+    try {
+      const success = await dispatch(
+        startSendAdminMessage(selectedChat.user.id, messageToSend),
+      );
 
-        if (success) {
-          await dispatch(startLoadMessages(selectedChat.user.id));
-          await dispatch(startLoadChats());
-        } else {
-          setNewMessage(messageToSend);
+      if (success) {
+        await dispatch(startLoadMessages(selectedChat.user.id));
+        await dispatch(startLoadChats()); // ✅ Esto actualiza los contadores
+        
+        // ✅ FORZAR ACTUALIZACIÓN DEL CONTADOR GLOBAL
+        const token = localStorage.getItem("token");
+        if (token && onUnreadCountChange) {
+          const res = await fetch(`${API_URL}/api/chat/unread-count`, {
+            headers: { "x-token": token },
+          });
+          const data = await res.json();
+          if (data.ok) {
+            console.log("📊 [AdminChatManager] Actualizando contador a:", data.unreadCount);
+            onUnreadCountChange(data.unreadCount);
+          }
         }
-      } catch (error) {
-        console.error("Error enviando mensaje:", error);
+      } else {
         setNewMessage(messageToSend);
-      } finally {
-        setSending(false);
       }
-    },
-    [newMessage, selectedChat, sending, dispatch],
-  );
+    } catch (error) {
+      console.error("Error enviando mensaje:", error);
+      setNewMessage(messageToSend);
+    } finally {
+      setSending(false);
+    }
+  },
+  [newMessage, selectedChat, sending, dispatch, onUnreadCountChange],
+);
 
   const handleRefresh = useCallback(async () => {
     if (showAllUsers) {

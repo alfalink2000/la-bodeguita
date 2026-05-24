@@ -1,4 +1,4 @@
-// AdminInterface.jsx - VERSIÓN COMPLETA CON BADGE DE CHATS CORREGIDO
+// AdminInterface.jsx - VERSIÓN COMPLETA CORREGIDA
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useAppNavigation } from "../../../hooks/useNavigationHistory";
@@ -18,8 +18,6 @@ import {
   HiOutlineCollection,
 } from "react-icons/hi";
 import Swal from "sweetalert2";
-
-// import AdminDiagnostic from "../AdminDiagnostic/AdminDiagnostic";
 
 // Components
 import AdminHeader from "../AdminHeader/AdminHeader";
@@ -95,7 +93,7 @@ const AdminInterface = ({ onLogout }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [unreadChats, setUnreadChats] = useState(0);
   const [pendingOrders, setPendingOrders] = useState(0);
-  const [ordersNeedingContact, setOrdersNeedingContact] = useState(0);
+  const [usersNeedingAttention, setUsersNeedingAttention] = useState(0);
   const [selectedChatUserId, setSelectedChatUserId] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
@@ -104,6 +102,64 @@ const AdminInterface = ({ onLogout }) => {
   const products = useSelector((state) => state.products.products);
   const categories = useSelector((state) => state.categories.categories);
   const adminUsers = useSelector((state) => state.adminUsers.users);
+
+  // ✅ Función para forzar actualización del contador de chats
+  const refreshUnreadCount = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const res = await fetch(`${API_URL}/api/chat/unread-count`, {
+        headers: { "x-token": token },
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        const count = data.unreadCount || 0;
+        console.log("📊 [AdminInterface] Forzando actualización contador:", count);
+        setUnreadChats(count);
+      }
+    } catch (err) {
+      console.error("Error actualizando contador:", err);
+    }
+  }, []);
+
+  // ✅ Función para cargar usuarios que necesitan atención (ÚNICOS)
+  const loadUsersNeedingAttention = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const res = await fetch(`${API_URL}/api/orders/admin/all`, {
+        headers: { "x-token": token },
+      });
+      const data = await res.json();
+      
+      if (data.ok) {
+        const pedidos = data.pedidos || [];
+        
+        // Contar pedidos abiertos
+        setPendingOrders(pedidos.filter((o) => o.status === "open").length);
+        
+        // ✅ Obtener usuarios ÚNICOS que tienen pedidos que requieren contacto manual
+        const usersWithNeedingContact = new Set();
+        
+        pedidos.forEach((pedido) => {
+          if (pedido.delivery_needs_manual_contact === true && pedido.status !== "cancelled") {
+            if (pedido.user_id) {
+              usersWithNeedingContact.add(pedido.user_id);
+            }
+          }
+        });
+        
+        const uniqueUsersCount = usersWithNeedingContact.size;
+        console.log("📊 [AdminInterface] Usuarios únicos que necesitan atención:", uniqueUsersCount);
+        setUsersNeedingAttention(uniqueUsersCount);
+      }
+    } catch (err) {
+      console.error("Error cargando estadísticas:", err);
+    }
+  }, []);
 
   // ✅ Guardar cambios de sección
   const handleSectionChange = useCallback(
@@ -114,9 +170,15 @@ const AdminInterface = ({ onLogout }) => {
         setIsMobileMenuOpen(false);
         setSelectedChatUserId(null);
         setSelectedOrder(null);
+        
+        // ✅ Actualizar contador al salir de la sección de chats
+        if (activeSection === "chats" && sectionId !== "chats") {
+          refreshUnreadCount();
+          loadUsersNeedingAttention();
+        }
       }
     },
-    [activeSection, saveAction],
+    [activeSection, saveAction, refreshUnreadCount, loadUsersNeedingAttention],
   );
 
   // ✅ Guardar cuando se selecciona un pedido
@@ -135,6 +197,13 @@ const AdminInterface = ({ onLogout }) => {
       setSelectedChatUserId(userId);
       setActiveSection("chats");
       saveAction("detail", { type: "chat", userId });
+      
+      // ✅ Al abrir el chat, recargar usuarios que necesitan atención
+      setTimeout(() => {
+        loadUsersNeedingAttention();
+        refreshUnreadCount();
+      }, 500);
+      
       Swal.fire({
         icon: "info",
         title: "Chat abierto",
@@ -145,7 +214,7 @@ const AdminInterface = ({ onLogout }) => {
         position: "top-end",
       });
     },
-    [saveAction],
+    [saveAction, loadUsersNeedingAttention, refreshUnreadCount],
   );
 
   // ✅ Guardar cuando se abre el formulario de producto
@@ -166,6 +235,9 @@ const AdminInterface = ({ onLogout }) => {
         setSelectedOrder(null);
       } else if (detailType === "chat") {
         setSelectedChatUserId(null);
+        // ✅ Actualizar contador al cerrar chat
+        refreshUnreadCount();
+        loadUsersNeedingAttention();
       }
     };
 
@@ -191,7 +263,7 @@ const AdminInterface = ({ onLogout }) => {
       window.removeEventListener("admin:close-modal", handleCloseModal);
       window.removeEventListener("admin:section-back", handleSectionBack);
     };
-  }, []);
+  }, [refreshUnreadCount, loadUsersNeedingAttention]);
 
   // ✅ Resetear navegación al montar
   useEffect(() => {
@@ -216,41 +288,16 @@ const AdminInterface = ({ onLogout }) => {
   useEffect(() => {
     dispatch(getFeaturedProducts());
     dispatch(getAdminUsers());
-  }, [dispatch]);
+    loadUsersNeedingAttention();
+  }, [dispatch, loadUsersNeedingAttention]);
 
-  // Cargar pedidos pendientes
+  // Cargar pedidos pendientes periódicamente
   useEffect(() => {
-    const loadOrdersStats = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
-        const res = await fetch(`${API_URL}/api/orders/admin/all`, {
-          headers: { "x-token": token },
-        });
-        const data = await res.json();
-        if (data.ok) {
-          const pedidos = data.pedidos || [];
-          setPendingOrders(pedidos.filter((o) => o.status === "open").length);
-          setOrdersNeedingContact(
-            pedidos.filter(
-              (o) =>
-                o.delivery_needs_manual_contact === true &&
-                o.status !== "cancelled",
-            ).length,
-          );
-        }
-      } catch (err) {
-        console.error("Error cargando estadísticas:", err);
-      }
-    };
-
-    loadOrdersStats();
-    const interval = setInterval(loadOrdersStats, 15000);
+    const interval = setInterval(loadUsersNeedingAttention, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [loadUsersNeedingAttention]);
 
-  // ✅ Cargar contador de chats no leídos (CORREGIDO)
+  // ✅ Cargar contador de chats no leídos
   useEffect(() => {
     const loadUnread = async () => {
       try {
@@ -265,20 +312,10 @@ const AdminInterface = ({ onLogout }) => {
         if (data.ok) {
           const count = data.unreadCount || 0;
           console.log("📊 [AdminInterface] Chats no leídos desde API:", count);
-          console.log("📊 [AdminInterface] Sección activa:", activeSection);
 
           // ✅ Solo actualizar si NO estamos en la sección de chats
-          // (porque AdminChatManager maneja su propio contador)
           if (activeSection !== "chats") {
-            console.log(
-              "📊 [AdminInterface] Actualizando unreadChats a:",
-              count,
-            );
             setUnreadChats(count);
-          } else {
-            console.log(
-              "📊 [AdminInterface] En sección chats, no se actualiza unreadChats",
-            );
           }
         }
       } catch (err) {
@@ -289,7 +326,7 @@ const AdminInterface = ({ onLogout }) => {
     loadUnread();
     const interval = setInterval(loadUnread, 10000);
     return () => clearInterval(interval);
-  }, [activeSection]); // ✅ Dependencia de activeSection
+  }, [activeSection]);
 
   const categoryNames = useMemo(
     () =>
@@ -413,7 +450,7 @@ const AdminInterface = ({ onLogout }) => {
           <DashboardStats
             products={products}
             pendingOrders={pendingOrders}
-            ordersNeedingContact={ordersNeedingContact}
+            ordersNeedingContact={usersNeedingAttention}
             unreadChats={unreadChats}
           />
         );
@@ -483,11 +520,13 @@ const AdminInterface = ({ onLogout }) => {
               selectedUserId={selectedChatUserId}
               onSelectUser={setSelectedChatUserId}
               onUnreadCountChange={(count) => {
-                console.log(
-                  "📊 [AdminInterface] onUnreadCountChange recibido:",
-                  count,
-                );
+                console.log("📊 [AdminInterface] onUnreadCountChange recibido:", count);
                 setUnreadChats(count);
+              }}
+              onMessageSent={() => {
+                // ✅ Al enviar mensaje, actualizar contadores
+                refreshUnreadCount();
+                loadUsersNeedingAttention();
               }}
             />
           </div>
@@ -521,6 +560,7 @@ const AdminInterface = ({ onLogout }) => {
               token={localStorage.getItem("token")}
               onOpenChatWithUser={handleOpenChatFromOrders}
               onSelectOrder={handleSelectOrder}
+              onOrderStatusChange={loadUsersNeedingAttention}
             />
           </div>
         );
@@ -530,7 +570,7 @@ const AdminInterface = ({ onLogout }) => {
           <DashboardStats
             products={products}
             pendingOrders={pendingOrders}
-            ordersNeedingContact={ordersNeedingContact}
+            ordersNeedingContact={usersNeedingAttention}
             unreadChats={unreadChats}
           />
         );
@@ -541,7 +581,7 @@ const AdminInterface = ({ onLogout }) => {
     categories,
     adminUsers,
     pendingOrders,
-    ordersNeedingContact,
+    usersNeedingAttention,
     unreadChats,
     selectedChatUserId,
     handleEdit,
@@ -552,18 +592,20 @@ const AdminInterface = ({ onLogout }) => {
     handleOpenChatFromOrders,
     handleSelectOrder,
     handleOpenProductForm,
+    refreshUnreadCount,
+    loadUsersNeedingAttention,
   ]);
 
-  // ✅ Badge combinado para chats
-  const chatBadgeCount = unreadChats + ordersNeedingContact;
+  // ✅ Badge combinado para chats - Cuenta usuarios que necesitan atención + mensajes no leídos
+  const chatBadgeCount = unreadChats + usersNeedingAttention;
 
   console.log(
     "📊 [AdminInterface] Render - chatBadgeCount:",
     chatBadgeCount,
     "unreadChats:",
     unreadChats,
-    "ordersNeedingContact:",
-    ordersNeedingContact,
+    "usersNeedingAttention:",
+    usersNeedingAttention,
   );
 
   return (
@@ -584,9 +626,6 @@ const AdminInterface = ({ onLogout }) => {
             </div>
           </div>
 
-          {/* <div className="admin-container">
-  <AdminDiagnostic /> 
-</div> */}
           <div className="admin-header__right">
             <div className="admin-header__user-info">
               <HiOutlineUserCircle className="admin-header__user-icon" />
@@ -643,7 +682,7 @@ const AdminInterface = ({ onLogout }) => {
                   {badgeCount > 0 && (
                     <span
                       className={`admin-sidebar__badge ${
-                        item.id === "chats" && ordersNeedingContact > 0
+                        item.id === "chats" && usersNeedingAttention > 0
                           ? "admin-sidebar__badge--warning"
                           : ""
                       }`}
