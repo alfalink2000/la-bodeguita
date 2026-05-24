@@ -325,7 +325,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
         title: "📍 Entrega a domicilio",
         html: `
         <div style="text-align: center; font-size: 0.95rem;">
-          <p style="margin-bottom: 0.5rem;">Solicitaste <strong>envío a domicilio</strong>.</p>
+          <p style="margin-bottom: 0.5rem;">Solicitud de <strong>envío a domicilio</strong>.</p>
           <div style="background: #fef3c7; padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0;">
             <p style="margin: 0; font-size: 0.85rem;">⚠️ No tenemos coordenadas GPS para tu dirección: <strong>${selectedAddress.address.substring(0, 50)}</strong></p>
             <p style="margin: 0.5rem 0 0; font-size: 0.85rem;">Soporte te contactará para calcular el costo de envío.</p>

@@ -15,6 +15,8 @@ import {
   HiOutlineLogout,
   HiOutlineIdentification,
   HiOutlineAtSymbol,
+  HiOutlineChevronDown,
+  HiOutlineChevronUp,
 } from "react-icons/hi";
 import Swal from "sweetalert2";
 import { startLogout } from "../../../actions/authActions";
@@ -51,6 +53,7 @@ const UserProfile = ({
     useState(initialUnreadOrders);
   const [emailError, setEmailError] = useState("");
   const [usernameError, setUsernameError] = useState("");
+  const [expandedOrders, setExpandedOrders] = useState({});
   const appConfig = useSelector((state) => state.appConfig.config);
   const currency = appConfig?.currency || "CUP";
 
@@ -65,7 +68,13 @@ const UserProfile = ({
     }
   };
 
-  // Inicializar formulario de edición
+  const toggleExpandOrder = (orderId) => {
+    setExpandedOrders((prev) => ({
+      ...prev,
+      [orderId]: !prev[orderId],
+    }));
+  };
+
   useEffect(() => {
     if (userData) {
       setEditForm({
@@ -80,7 +89,6 @@ const UserProfile = ({
     }
   }, [userData]);
 
-  // ✅ Al abrir el perfil, marcar pedidos como vistos
   useEffect(() => {
     if (unreadOrdersCount > 0 && onOrdersViewed) {
       onOrdersViewed();
@@ -89,7 +97,6 @@ const UserProfile = ({
     }
   }, [unreadOrdersCount, onOrdersViewed]);
 
-  // Cargar pedidos del usuario
   const loadOrders = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -163,7 +170,6 @@ const UserProfile = ({
     }
   };
 
-  // ✅ Validar email en tiempo real
   const validateEmail = (email) => {
     if (!email || email.trim() === "") {
       setEmailError("");
@@ -178,7 +184,6 @@ const UserProfile = ({
     return true;
   };
 
-  // ✅ Validar username en tiempo real
   const validateUsername = (username) => {
     if (!username || username.trim() === "") {
       setUsernameError("El nombre de usuario es obligatorio");
@@ -203,7 +208,6 @@ const UserProfile = ({
 
   const handleEditToggle = () => {
     if (isEditing) {
-      // Cancelar edición - restaurar valores originales
       setEditForm({
         username: userData?.username || userData?.name || "",
         email: userData?.email || "",
@@ -219,7 +223,6 @@ const UserProfile = ({
     setIsEditing(!isEditing);
   };
 
-  // ✅ FUNCIÓN GPS CORREGIDA - Usa reverse geocoding
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
       Swal.fire({
@@ -245,31 +248,23 @@ const UserProfile = ({
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        console.log("📍 GPS: Coordenadas obtenidas:", latitude, longitude);
 
         try {
-          // ✅ Llamar al endpoint de geocodificación inversa
           const res = await fetch(`${API_URL}/api/geocoding/reverse`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ lat: latitude, lng: longitude }),
           });
           const data = await res.json();
-          console.log("📍 Respuesta reverse geocode:", data);
 
           let addressText;
 
           if (data.ok && data.display_name) {
-            // ✅ Usar la dirección legible obtenida
             addressText = data.display_name;
-            console.log("✅ Dirección obtenida:", addressText);
           } else {
-            // Fallback: usar coordenadas como texto
             addressText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-            console.log("⚠️ Usando coordenadas como texto:", addressText);
           }
 
-          // ✅ Guardar dirección legible + coordenadas
           setEditForm((prev) => ({
             ...prev,
             lat: latitude,
@@ -291,8 +286,6 @@ const UserProfile = ({
           });
         } catch (err) {
           console.error("❌ Error en reverse geocoding:", err);
-
-          // Fallback: guardar coordenadas como texto
           const coordText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
           setEditForm((prev) => ({
             ...prev,
@@ -346,9 +339,7 @@ const UserProfile = ({
     );
   };
 
-  // ✅ Función para guardar perfil
   const handleSaveProfile = async () => {
-    // Validar campos obligatorios
     if (!editForm.username || editForm.username.trim() === "") {
       Swal.fire({
         icon: "error",
@@ -384,7 +375,6 @@ const UserProfile = ({
     setSaving(true);
     const token = localStorage.getItem("token");
 
-    // Construir el body
     const bodyData = {
       username: editForm.username.trim(),
       full_name: editForm.full_name?.trim() || "",
@@ -392,12 +382,10 @@ const UserProfile = ({
       address: editForm.address?.trim() || "",
     };
 
-    // Incluir email solo si tiene valor
     if (editForm.email && editForm.email.trim() !== "") {
       bodyData.email = editForm.email.trim();
     }
 
-    // Solo incluir lat y lng si tienen un valor numérico válido
     if (
       editForm.lat !== null &&
       editForm.lat !== undefined &&
@@ -413,8 +401,6 @@ const UserProfile = ({
       bodyData.lng = parseFloat(editForm.lng);
     }
 
-    console.log("📤 Enviando datos al servidor:", bodyData);
-
     try {
       const res = await fetch(`${API_URL}/api/auth/profile`, {
         method: "PUT",
@@ -426,37 +412,19 @@ const UserProfile = ({
       });
 
       const data = await res.json();
-      console.log("📥 Respuesta del servidor:", data);
 
       if (data.ok) {
         Swal.fire({
           icon: "success",
           title: "Perfil actualizado",
-          text: "Tus datos han sido actualizados correctamente. Si cambiaste tu usuario, deberás iniciar sesión nuevamente.",
+          text: "Tus datos han sido actualizados correctamente.",
           confirmButtonColor: "#059669",
         });
 
         setIsEditing(false);
 
-        // Actualizar datos locales
         if (data.user) {
           Object.assign(userData, data.user);
-
-          // Si cambió el username, actualizar localStorage y recargar
-          if (data.user.username !== userData.username) {
-            setTimeout(() => {
-              Swal.fire({
-                title: "Usuario modificado",
-                text: "Has cambiado tu nombre de usuario. Por seguridad, deberás iniciar sesión nuevamente.",
-                icon: "info",
-                confirmButtonColor: "#059669",
-                confirmButtonText: "Iniciar sesión",
-              }).then(() => {
-                dispatch(startLogout());
-                onClose();
-              });
-            }, 1500);
-          }
         }
       } else {
         Swal.fire({
@@ -543,7 +511,7 @@ const UserProfile = ({
         <div className="up-content-wrapper">
           {activeTab === "profile" ? (
             <div className="up-profile-section">
-              {/* ✅ CAMPO: Nombre de usuario */}
+              {/* Campo: Nombre de usuario */}
               <div className="up-field">
                 <label>
                   <HiOutlineIdentification size={14} /> Usuario de acceso
@@ -575,7 +543,7 @@ const UserProfile = ({
                 )}
               </div>
 
-              {/* ✅ CAMPO: Email */}
+              {/* Campo: Email */}
               <div className="up-field">
                 <label>
                   <HiOutlineAtSymbol size={14} /> Correo electrónico
@@ -748,6 +716,9 @@ const UserProfile = ({
                 <div className="up-orders-list">
                   {orders.map((order) => {
                     const statusConfig = getStatusConfig(order.status);
+                    const items = order.items || [];
+                    const isExpanded = expandedOrders[order.id];
+
                     return (
                       <div key={order.id} className="up-order-card">
                         <div className="up-order-header">
@@ -791,16 +762,44 @@ const UserProfile = ({
                           </span>
                         </div>
 
-                        <div className="up-order-items">
-                          {order.items?.slice(0, 3).map((item, idx) => (
-                            <span key={idx} className="up-order-item">
-                              {item.name} x{item.quantity}
-                            </span>
-                          ))}
-                          {order.items?.length > 3 && (
-                            <span className="up-order-more">
-                              +{order.items.length - 3} más
-                            </span>
+                        {/* ===== PRODUCTOS - SOLO AL EXPANDIR ===== */}
+                        <div className="up-order-products">
+                          <button
+                            className="up-products-toggle-btn"
+                            onClick={() => toggleExpandOrder(order.id)}
+                          >
+                            {isExpanded ? (
+                              <>
+                                <HiOutlineChevronUp size={16} />
+                                <span>Ocultar productos ({items.length})</span>
+                              </>
+                            ) : (
+                              <>
+                                <HiOutlineChevronDown size={16} />
+                                <span>Ver productos ({items.length})</span>
+                              </>
+                            )}
+                          </button>
+
+                          {isExpanded && (
+                            <div className="up-products-list">
+                              {items.map((item, idx) => (
+                                <div key={idx} className="up-product-item">
+                                  <span className="up-product-name">
+                                    {item.name}
+                                  </span>
+                                  <div className="up-product-details">
+                                    <span className="up-product-quantity">
+                                      x{item.quantity}
+                                    </span>
+                                    <span className="up-product-price">
+                                      {getCurrencySymbol()}
+                                      {(parseFloat(item.price) * item.quantity).toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
 
@@ -825,14 +824,14 @@ const UserProfile = ({
                                     {
                                       method: "PUT",
                                       headers: { "x-token": token },
-                                    },
+                                    }
                                   );
                                   const data = await res.json();
                                   if (data.ok) {
                                     Swal.fire(
                                       "Pedido cancelado",
                                       "",
-                                      "success",
+                                      "success"
                                     );
                                     loadOrders();
                                   } else {

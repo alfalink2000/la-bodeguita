@@ -17,8 +17,6 @@ import {
 import {
   updateAppConfig,
   loadAppConfig,
-  previewTheme,
-  resetTheme,
 } from "../../../actions/appConfigActions";
 import Swal from "sweetalert2";
 import "./AppConfigManager.css";
@@ -46,12 +44,10 @@ const AppConfigManager = () => {
     delivery_origin_lng: "",
     delivery_price_per_km: "",
     delivery_minimum_price: "",
-    delivery_free_from: "",
-    delivery_max_distance: "",
+    // ✅ Eliminados: delivery_free_from y delivery_max_distance
   });
 
   const [activeTab, setActiveTab] = useState("general");
-  const [previewingTheme, setPreviewingTheme] = useState(null);
   const [saving, setSaving] = useState(false);
   const [gpsLoadingDelivery, setGpsLoadingDelivery] = useState(false);
 
@@ -83,12 +79,7 @@ const AppConfigManager = () => {
           delivery_minimum_price: data.config.minimum_price
             ? data.config.minimum_price.toString()
             : "",
-          delivery_free_from: data.config.free_delivery_from
-            ? data.config.free_delivery_from.toString()
-            : "",
-          delivery_max_distance: data.config.max_distance_km
-            ? data.config.max_distance_km.toString()
-            : "",
+          // ✅ Ya no cargamos delivery_free_from ni delivery_max_distance
         }));
       }
     } catch (err) {
@@ -240,11 +231,13 @@ const AppConfigManager = () => {
     });
   };
 
+  // ✅ FUNCIÓN GUARDAR DELIVERY MODIFICADA - Sin límite de distancia ni envío gratis
   const handleSaveDelivery = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
       setSaving(true);
+      
       const payload = {
         origin_name: formData.delivery_origin_name || "Punto de partida",
         origin_address: formData.delivery_origin_address || "",
@@ -252,9 +245,10 @@ const AppConfigManager = () => {
         origin_lng: parseFloat(formData.delivery_origin_lng) || -82.366592,
         price_per_km: parseFloat(formData.delivery_price_per_km) || 50,
         minimum_price: parseFloat(formData.delivery_minimum_price) || 100,
-        free_delivery_from: parseFloat(formData.delivery_free_from) || 500,
-        max_distance_km: parseFloat(formData.delivery_max_distance) || 15,
+        // ✅ ELIMINADO: free_delivery_from - Ya no existe envío gratis
+        // ✅ ELIMINADO: max_distance_km - Ya no hay límite de distancia
       };
+      
       const res = await fetch(`${API_URL}/api/delivery/config`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "x-token": token },
@@ -265,6 +259,7 @@ const AppConfigManager = () => {
         Swal.fire({
           icon: "success",
           title: "¡Configuración de delivery guardada!",
+          text: "El envío se calculará por distancia sin límite máximo",
           showConfirmButton: false,
           timer: 2000,
         });
@@ -360,26 +355,12 @@ const AppConfigManager = () => {
           <HiOutlineInformationCircle /> General
         </button>
 
-        {/* ============================================
-             PESTAÑA APARIENCIA - COMENTADA
-             ============================================ */}
-        {/* <button className={`tab ${activeTab === "appearance" ? "active" : ""}`} onClick={() => setActiveTab("appearance")}>
-          <HiOutlineColorSwatch /> Apariencia
-        </button> */}
-
         <button
           className={`tab ${activeTab === "currency" ? "active" : ""}`}
           onClick={() => setActiveTab("currency")}
         >
           <HiOutlineCurrencyDollar /> Moneda
         </button>
-
-        {/* ============================================
-             PESTAÑA CONTACTO - COMENTADA
-             ============================================ */}
-        {/* <button className={`tab ${activeTab === "contact" ? "active" : ""}`} onClick={() => setActiveTab("contact")}>
-          <HiOutlineCog /> Contacto
-        </button> */}
 
         <button
           className={`tab ${activeTab === "welcome" ? "active" : ""}`}
@@ -437,15 +418,6 @@ const AppConfigManager = () => {
             </div>
           </div>
         )}
-
-        {/* ============================================
-             APARIENCIA - COMENTADA
-             ============================================ */}
-        {/* {activeTab === "appearance" && (
-          <div className="tab-content">
-            <div className="theme-selection">...</div>
-          </div>
-        )} */}
 
         {/* ===== MONEDA ===== */}
         {activeTab === "currency" && (
@@ -510,16 +482,7 @@ const AppConfigManager = () => {
           </div>
         )}
 
-        {/* ============================================
-             CONTACTO - COMENTADA
-             ============================================ */}
-        {/* {activeTab === "contact" && (
-          <div className="tab-content">
-            <div className="form-group">...</div>
-          </div>
-        )} */}
-
-        {/* ===== DELIVERY ===== */}
+        {/* ===== DELIVERY - MODIFICADO ===== */}
         {activeTab === "delivery" && (
           <div className="tab-content">
             <div className="delivery-config">
@@ -693,41 +656,19 @@ const AppConfigManager = () => {
                     Cobro mínimo aunque la distancia sea corta
                   </small>
                 </div>
-                <div className="form-group">
-                  <label>Delivery gratis desde (CUP)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.delivery_free_from}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        delivery_free_from: e.target.value,
-                      }))
-                    }
-                    placeholder="500.00"
-                  />
-                  <small className="help-text">
-                    Si el pedido supera este monto, el delivery es gratis
-                  </small>
-                </div>
-                <div className="form-group">
-                  <label>Distancia máxima (km)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={formData.delivery_max_distance}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        delivery_max_distance: e.target.value,
-                      }))
-                    }
-                    placeholder="15.00"
-                  />
-                  <small className="help-text">
-                    No se harán envíos más allá de esta distancia
-                  </small>
+
+                {/* ✅ ELIMINADOS: delivery_free_from y delivery_max_distance */}
+
+                <div className="info-note">
+                  <HiOutlineInformationCircle />
+                  <span>
+                    ✅ El envío se calcula SOLO por distancia (precio/km)
+                    <br />
+                    ✅ No hay límite máximo de distancia - se calcula cualquier
+                    distancia
+                    <br />
+                    ✅ No existe envío gratis por monto de pedido
+                  </span>
                 </div>
               </div>
 
@@ -739,7 +680,11 @@ const AppConfigManager = () => {
                     <strong>
                       {formData.delivery_price_per_km &&
                       formData.delivery_minimum_price
-                        ? `${formData.delivery_origin_address ? formData.delivery_origin_address.split(",")[0] : "Origen"} → 2km = ${Math.max(parseFloat(formData.delivery_minimum_price) || 100, (parseFloat(formData.delivery_price_per_km) || 50) * 2).toFixed(2)} CUP`
+                        ? `${Math.max(
+                            parseFloat(formData.delivery_minimum_price) || 100,
+                            (parseFloat(formData.delivery_price_per_km) || 50) *
+                              2,
+                          ).toFixed(2)} CUP`
                         : "Configura las tarifas"}
                     </strong>
                   </div>
@@ -747,15 +692,33 @@ const AppConfigManager = () => {
                     <span>Cliente a 5 km:</span>
                     <strong>
                       {formData.delivery_price_per_km
-                        ? `${(parseFloat(formData.delivery_price_per_km) * 5).toFixed(2)} CUP`
+                        ? `${Math.max(
+                            parseFloat(formData.delivery_minimum_price) || 100,
+                            (parseFloat(formData.delivery_price_per_km) || 50) *
+                              5,
+                          ).toFixed(2)} CUP`
                         : "—"}
                     </strong>
                   </div>
                   <div className="example-item">
-                    <span>
-                      Pedido mayor a {formData.delivery_free_from || "—"} CUP:
-                    </span>
-                    <strong className="free-delivery">¡GRATIS!</strong>
+                    <span>Cliente a 10 km:</span>
+                    <strong>
+                      {formData.delivery_price_per_km
+                        ? `${Math.max(
+                            parseFloat(formData.delivery_minimum_price) || 100,
+                            (parseFloat(formData.delivery_price_per_km) || 50) *
+                              10,
+                          ).toFixed(2)} CUP`
+                        : "—"}
+                    </strong>
+                  </div>
+                  <div className="example-item example-item-info">
+                    <span>ℹ️ Nota:</span>
+                    <small>
+                      El envío se calcula como: MAX(precio mínimo, distancia ×
+                      precio/km)
+                      <br />✓ No hay límite de distancia
+                    </small>
                   </div>
                 </div>
               </div>
@@ -765,6 +728,7 @@ const AppConfigManager = () => {
                   type="button"
                   className="save-btn"
                   onClick={handleSaveDelivery}
+                  disabled={saving}
                 >
                   <HiOutlineTruck style={{ marginRight: "0.5rem" }} /> Guardar
                   Configuración de Delivery
