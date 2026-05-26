@@ -13,7 +13,6 @@ const initialState = {
 
 export const productsReducer = (state = initialState, action) => {
   switch (action.type) {
-    // ✅ Manejar acciones básicas de productos
     case types.productsLoad:
       return {
         ...state,
@@ -43,17 +42,19 @@ export const productsReducer = (state = initialState, action) => {
       return {
         ...state,
         products: state.products.map((product) =>
-          product.id === action.payload.id ? action.payload : product
+          product.id === action.payload.id ? action.payload : product,
         ),
       };
 
-    // case types.productDeleted:
-    //   return {
-    //     ...state,
-    //     products: state.products.filter(
-    //       (product) => product.id !== action.payload
-    //     ),
-    //   };
+    // ✅ DESCOMENTAR Y MEJORAR - ELIMINACIÓN INMEDIATA
+    case types.productDeleted:
+      console.log(`🗑️ Eliminando producto ${action.payload} del estado local`);
+      return {
+        ...state,
+        products: state.products.filter(
+          (product) => product.id !== action.payload,
+        ),
+      };
 
     case types.productSetActive:
       return {
@@ -61,7 +62,6 @@ export const productsReducer = (state = initialState, action) => {
         activeProduct: action.payload,
       };
 
-    // ✅ Manejar acciones de featured products (aunque no las uses)
     case types.productSetPopular:
       return {
         ...state,
@@ -88,7 +88,7 @@ export const productsReducer = (state = initialState, action) => {
           ...state.featuredProducts,
           popular: isPopular
             ? state.featuredProducts.popular.filter(
-                (id) => id !== action.payload
+                (id) => id !== action.payload,
               )
             : [...state.featuredProducts.popular, action.payload],
         },
@@ -102,7 +102,7 @@ export const productsReducer = (state = initialState, action) => {
           ...state.featuredProducts,
           onSale: isOnSale
             ? state.featuredProducts.onSale.filter(
-                (id) => id !== action.payload
+                (id) => id !== action.payload,
               )
             : [...state.featuredProducts.onSale, action.payload],
         },

@@ -24,14 +24,14 @@ export const getProducts = (forceRefresh = false) => {
 
       if (body.ok) {
         console.log(
-          `✅ ${body.products.length} productos cargados exitosamente`
+          `✅ ${body.products.length} productos cargados exitosamente`,
         );
         dispatch(loadProducts(body.products));
         return Promise.resolve();
       } else {
         console.error("❌ Error en respuesta de productos:", body.msg);
         return Promise.reject(
-          new Error(body.msg || "Error cargando productos")
+          new Error(body.msg || "Error cargando productos"),
         );
       }
     } catch (error) {
@@ -100,7 +100,7 @@ export const updateProduct = (formData) => {
         `products/update/${productId}`,
         formData,
         "PUT",
-        true
+        true,
       );
 
       console.log("📥 Respuesta del servidor:", body);
@@ -118,7 +118,7 @@ export const updateProduct = (formData) => {
         Swal.fire(
           "¡Actualización exitosa!",
           "Producto actualizado correctamente",
-          "success"
+          "success",
         );
       } else {
         Swal.fire("Error", body.msg, "error");
@@ -128,7 +128,7 @@ export const updateProduct = (formData) => {
       Swal.fire(
         "Error",
         "Error de conexión al actualizar el producto",
-        "error"
+        "error",
       );
     }
   };
@@ -172,48 +172,42 @@ export const deleteProduct = (id) => {
         },
       });
 
+      // ✅ PRIMERO: Eliminar del backend
       const body = await fetchAPIConfig(`products/delete/${id}`, {}, "DELETE");
 
-      Swal.close();
-
       if (body.ok) {
-        // ✅ NO ELIMINAR DEL ESTADO LOCAL - SOLO RECARGAR
-        console.log("🔄 Recargando productos desde el backend...");
-        await dispatch(getProducts(true)); // Esperar a que se recarguen
+        // ✅ SEGUNDO: Eliminar del estado local INMEDIATAMENTE
+        dispatch(deleteProductAction(id));
+
+        // ✅ TERCERO: Forzar recarga para asegurar sincronización
+        setTimeout(async () => {
+          console.log("🔄 Verificando sincronización con backend...");
+          await dispatch(getProducts(true));
+        }, 500);
 
         Swal.fire({
           icon: "success",
           title: "¡Eliminado!",
           text: "Producto eliminado correctamente",
-          timer: 2000,
+          timer: 1500,
           showConfirmButton: false,
         });
       } else {
-        // ✅ MANEJAR ERROR - EL PRODUCTO SIGUE EN EL ESTADO
-        if (body.msg && body.msg.includes("último producto")) {
-          Swal.fire({
-            icon: "error",
-            title: "No se puede eliminar",
-            text: body.msg,
-            confirmButtonText: "Entendido",
-          });
-        } else {
-          Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: body.msg || "Error al eliminar el producto",
-            confirmButtonText: "Entendido",
-          });
-        }
+        // Si hay error en el backend, mostrar mensaje
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: body.msg || "Error al eliminar el producto",
+        });
       }
     } catch (error) {
-      console.error("Error eliminando producto:", error);
+      console.error("❌ Error eliminando producto:", error);
       Swal.close();
 
       Swal.fire({
         icon: "error",
         title: "Error de conexión",
-        text: "No se pudo conectar con el servidor",
+        text: "No se pudo eliminar el producto. Intenta nuevamente.",
         confirmButtonText: "Entendido",
       });
     }
