@@ -16,6 +16,7 @@ import SpiralLoading from "./components/common/SpiralLoading/SpiralLoading";
 import MaintenanceMode from "./components/common/MaintenanceMode/MaintenanceMode";
 import { types } from "./types/types";
 import { applyTheme } from "./utils/themeManager";
+import InstallPrompt from "./components/InstallPrompt/InstallPrompt";
 
 const AppContent = () => {
   const [currentView, setCurrentView] = useState("client");
@@ -407,6 +408,7 @@ const App = () => {
       }
       persistor={persistor}
     >
+      <InstallPrompt />
       <AppContent />
     </PersistGate>
   );

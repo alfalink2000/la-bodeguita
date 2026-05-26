@@ -1,0 +1,158 @@
+/* components/InstallPrompt/InstallPrompt.css */
+.install-prompt {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  z-index: 9999;
+  animation: slideUp 0.3s ease-out;
+}
+
+.install-prompt.ios {
+  bottom: auto;
+  top: 20px;
+}
+
+.install-prompt__content {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  position: relative;
+  max-width: 400px;
+  margin: 0 auto;
+  border: 1px solid #e0e0e0;
+}
+
+.install-prompt__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.install-prompt__close:hover {
+  color: #333;
+}
+
+.install-prompt__icon {
+  font-size: 48px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.install-prompt__title {
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.install-prompt__text {
+  text-align: center;
+  color: #666;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.install-prompt__benefits {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+  font-size: 12px;
+  color: #666;
+  gap: 10px;
+}
+
+.install-prompt__benefits span {
+  flex: 1;
+  text-align: center;
+  padding: 8px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.install-prompt__steps {
+  text-align: left;
+  margin: 16px 0;
+  padding-left: 20px;
+}
+
+.install-prompt__steps li {
+  margin-bottom: 12px;
+  color: #555;
+  font-size: 14px;
+}
+
+.ios-icon {
+  display: inline-block;
+  font-size: 18px;
+  background: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 8px;
+  margin: 0 4px;
+}
+
+.install-prompt__buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.install-prompt__button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.install-prompt__button--primary {
+  background: #4caf50;
+  color: white;
+}
+
+.install-prompt__button--primary:hover {
+  background: #45a049;
+}
+
+.install-prompt__button--secondary {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.install-prompt__button--secondary:hover {
+  background: #e0e0e0;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (min-width: 768px) {
+  .install-prompt {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+  }
+}
