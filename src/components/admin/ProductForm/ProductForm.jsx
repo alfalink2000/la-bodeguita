@@ -9,6 +9,7 @@ const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
     description: "",
     price: "",
     category_id: "",
+    store_id: "",
     status: "available",
     stock_quantity: 1,
   });
@@ -18,7 +19,6 @@ const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState(null); // null, 'uploading', 'success', 'error'
 
   useEffect(() => {
     if (product) {
@@ -116,7 +116,6 @@ const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
       }
 
       if (file.size > 10 * 1024 * 1024) {
-        // Aumentado a 10MB para mejor calidad
         setErrors((prev) => ({
           ...prev,
           image: "La imagen debe ser menor a 10MB",
@@ -135,47 +134,7 @@ const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
     }
   };
 
-  // ✅ NUEVA FUNCIÓN: Subir imagen en segundo plano después de crear el producto
-  const uploadImageInBackground = async (
-    productId,
-    imageBuffer,
-    categoryName,
-  ) => {
-    try {
-      setUploadStatus("uploading");
-      console.log(
-        `🖼️ Subiendo imagen en segundo plano para producto ${productId}...`,
-      );
-
-      const formData = new FormData();
-      formData.append("image", imageBuffer);
-
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || "https://minimarket-backend-6z9m.onrender.com"}/api/products/update/${productId}`,
-        {
-          method: "PUT",
-          body: formData,
-        },
-      );
-
-      const result = await response.json();
-
-      if (result.ok) {
-        console.log("✅ Imagen subida exitosamente en segundo plano");
-        setUploadStatus("success");
-        // Opcional: Mostrar notificación de éxito
-        setTimeout(() => setUploadStatus(null), 3000);
-      } else {
-        throw new Error(result.msg || "Error al subir imagen");
-      }
-    } catch (error) {
-      console.error("❌ Error subiendo imagen en segundo plano:", error);
-      setUploadStatus("error");
-      // Opcional: Mostrar notificación de error
-      setTimeout(() => setUploadStatus(null), 5000);
-    }
-  };
-
+  // ✅ CORREGIDO: Enviar SOLO el producto creado/actualizado, NO FormData
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -191,63 +150,77 @@ const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
         import.meta.env.VITE_API_URL ||
         "https://minimarket-backend-6z9m.onrender.com";
 
-      // ✅ PASO 1: Crear producto SIN imagen primero (rápido)
-      const productData = new FormData();
+      // ✅ CREAR FormData para enviar al backend
+      const submitFormData = new FormData();
 
-      // Agregar todos los campos excepto la imagen
-      Object.keys(formData).forEach((key) => {
-        if (formData[key] !== undefined && formData[key] !== "") {
-          productData.append(key, formData[key]);
-        }
-      });
+      // Agregar todos los campos del formulario
+      submitFormData.append("name", formData.name.trim());
+      submitFormData.append("description", formData.description.trim());
+      submitFormData.append("price", formData.price);
+      submitFormData.append("category_id", formData.category_id);
+      submitFormData.append("status", formData.status);
+      submitFormData.append(
+        "stock_quantity",
+        formData.stock_quantity.toString(),
+      );
 
-      console.log("📤 PASO 1: Creando producto sin imagen...");
-      const createResponse = await fetch(`${API_URL}/api/products/new`, {
-        method: "POST",
-        body: productData,
-      });
-
-      const createResult = await createResponse.json();
-
-      if (!createResult.ok) {
-        throw new Error(createResult.msg || "Error al crear el producto");
+      // Agregar store_id si existe
+      if (formData.store_id) {
+        submitFormData.append("store_id", formData.store_id);
       }
 
-      const newProduct = createResult.product;
-      console.log("✅ Producto creado exitosamente:", newProduct);
-
-      // ✅ PASO 2: Si hay imagen, subirla en segundo plano (no bloqueante)
+      // Agregar imagen si existe
       if (imageFile) {
-        console.log(
-          "🖼️ PASO 2: Iniciando subida de imagen en segundo plano...",
-        );
+        submitFormData.append("image", imageFile);
+      }
 
-        // Subir imagen sin esperar a que termine
-        uploadImageInBackground(newProduct.id, imageFile, formData.category_id);
+      // ✅ DEBUG: Ver qué se está enviando
+      console.log("📤 Enviando FormData:");
+      for (let pair of submitFormData.entries()) {
+        console.log(pair[0] + ": " + pair[1]);
+      }
 
-        // Mostrar mensaje indicando que la imagen se está procesando
+      let url = `${API_URL}/api/products/new`;
+      let method = "POST";
+
+      // Si es edición, cambiar URL y método
+      if (product && product.id) {
+        url = `${API_URL}/api/products/update/${product.id}`;
+        method = "PUT";
+        console.log("✏️ Modo edición - ID:", product.id);
+      }
+
+      const response = await fetch(url, {
+        method: method,
+        body: submitFormData,
+        // No incluir Content-Type, fetch lo setea automáticamente con el boundary
+      });
+
+      const result = await response.json();
+
+      if (result.ok) {
         alert(
-          "✅ Producto creado exitosamente.\n\nLa imagen se está subiendo en segundo plano y aparecerá en unos momentos.",
+          product
+            ? "Producto actualizado exitosamente"
+            : "Producto creado exitosamente",
         );
+
+        // ✅ CORREGIDO: Llamar a onSubmit con el producto JSON, NO con FormData
+        if (onSubmit) {
+          // Pasamos el producto que viene en la respuesta
+          onSubmit(result.product);
+        }
+
+        // Cerrar el formulario
+        onCancel();
       } else {
-        alert("✅ Producto creado exitosamente.");
+        alert(result.msg || "Error al guardar el producto");
       }
-
-      // ✅ Recargar la lista de productos para mostrar el nuevo producto
-      if (onSubmit) {
-        onSubmit(); // Llamar al callback para recargar la lista
-      }
-
-      // Cerrar el formulario
-      onCancel();
-
-      // Opcional: Recargar la página para mostrar el producto actualizado
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
     } catch (error) {
       console.error("❌ Error detallado:", error);
-      alert(`Error al crear producto: ${error.message}`);
+      alert(
+        `Error al ${product ? "actualizar" : "crear"} producto: ${error.message}`,
+      );
     } finally {
       setIsLoading(false);
     }
@@ -275,26 +248,6 @@ const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
           </h2>
           <div className="product-form__required-note">* Campos requeridos</div>
         </div>
-
-        {/* ✅ NUEVO: Indicador de subida en segundo plano */}
-        {uploadStatus === "uploading" && (
-          <div className="product-form__notification product-form__notification--info">
-            <span className="spinner"></span>
-            Subiendo imagen en segundo plano...
-          </div>
-        )}
-
-        {uploadStatus === "success" && (
-          <div className="product-form__notification product-form__notification--success">
-            ✅ ¡Imagen subida exitosamente!
-          </div>
-        )}
-
-        {uploadStatus === "error" && (
-          <div className="product-form__notification product-form__notification--error">
-            ⚠️ Error al subir la imagen. El producto se creó sin imagen.
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="product-form__content">
           {/* Campo Nombre */}
@@ -426,8 +379,6 @@ const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
             />
             <small className="product-form__help">
               Formatos: JPG, PNG, GIF, WebP. Máximo 10MB.
-              {!product &&
-                " La imagen es requerida y se subirá en segundo plano."}
             </small>
 
             {errors.image && (
@@ -471,36 +422,6 @@ const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
             </small>
           </div>
 
-          {/* DEBUG: Mostrar estado actual */}
-          <div
-            className="product-form__debug"
-            style={{
-              padding: "10px",
-              background: "#f5f5f5",
-              borderRadius: "4px",
-              fontSize: "12px",
-              marginBottom: "15px",
-            }}
-          >
-            <strong>Estado actual:</strong>
-            <br />
-            Status:{" "}
-            <span
-              style={{
-                color: formData.status === "available" ? "green" : "red",
-              }}
-            >
-              {formData.status}
-            </span>
-            <br />
-            Stock:{" "}
-            <span
-              style={{ color: formData.stock_quantity > 0 ? "green" : "red" }}
-            >
-              {formData.stock_quantity}
-            </span>
-          </div>
-
           <div className="product-form__actions">
             <button
               type="submit"
@@ -508,7 +429,9 @@ const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
               disabled={isLoading}
             >
               {isLoading
-                ? "Creando producto..."
+                ? product
+                  ? "Actualizando..."
+                  : "Creando producto..."
                 : product
                   ? "Guardar Cambios"
                   : "Agregar Producto"}

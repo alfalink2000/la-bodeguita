@@ -42,18 +42,38 @@ export const productsReducer = (state = initialState, action) => {
       return {
         ...state,
         products: state.products.map((product) =>
-          product.id === action.payload.id ? action.payload : product,
+          parseInt(product.id) === parseInt(action.payload.id)
+            ? { ...product, ...action.payload }
+            : product,
         ),
       };
 
-    // ✅ DESCOMENTAR Y MEJORAR - ELIMINACIÓN INMEDIATA
+    // ✅ CORREGIDO: ELIMINACIÓN INMEDIATA CON COMPARACIÓN CORRECTA
     case types.productDeleted:
-      console.log(`🗑️ Eliminando producto ${action.payload} del estado local`);
+      const deletedId = parseInt(action.payload);
+      console.log("🗑️ [Reducer] Eliminando producto ID:", deletedId);
+      console.log("📊 [Reducer] Productos antes:", state.products.length);
+
+      const updatedProducts = state.products.filter(
+        (product) => parseInt(product.id) !== deletedId,
+      );
+
+      console.log("📊 [Reducer] Productos después:", updatedProducts.length);
+
+      if (updatedProducts.length === state.products.length) {
+        console.warn(
+          "⚠️ [Reducer] No se eliminó ningún producto - ID no encontrado:",
+          deletedId,
+        );
+        console.log(
+          "📋 [Reducer] IDs disponibles:",
+          state.products.map((p) => p.id),
+        );
+      }
+
       return {
         ...state,
-        products: state.products.filter(
-          (product) => product.id !== action.payload,
-        ),
+        products: updatedProducts,
       };
 
     case types.productSetActive:

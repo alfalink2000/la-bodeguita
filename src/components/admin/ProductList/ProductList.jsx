@@ -1,5 +1,7 @@
 // components/admin/ProductList/ProductList.jsx
 import { useState, useMemo, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { deleteProduct } from "../../../actions/productsActions"; // ✅ IMPORTAR
 import {
   Edit,
   Trash2,
@@ -21,6 +23,7 @@ const API_URL =
   "https://minimarket-backend-6z9m.onrender.com";
 
 const ProductList = ({ products, onEdit, onDelete }) => {
+  const dispatch = useDispatch(); // ✅ AGREGAR
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [selectedStoreId, setSelectedStoreId] = useState("all");
@@ -52,10 +55,9 @@ const ProductList = ({ products, onEdit, onDelete }) => {
   const categories = useMemo(() => {
     let filteredProducts = products;
 
-    // Filtrar por tienda primero para obtener las categorías relevantes
     if (selectedStoreId !== "all") {
       filteredProducts = products.filter(
-        (p) => p.store_id?.toString() === selectedStoreId,
+        (p) => p.store_id?.toString() === selectedStoreId.toString(),
       );
     }
 
@@ -69,22 +71,21 @@ const ProductList = ({ products, onEdit, onDelete }) => {
   const filteredProducts = useMemo(() => {
     let result = products;
 
-    // Filtrar por tienda
     if (selectedStoreId !== "all") {
-      result = result.filter((p) => p.store_id?.toString() === selectedStoreId);
+      result = result.filter(
+        (p) => p.store_id?.toString() === selectedStoreId.toString(),
+      );
     }
 
-    // Filtrar por categoría
     if (selectedCategory !== "Todos") {
       result = result.filter((p) => p.category?.name === selectedCategory);
     }
 
-    // Filtrar por búsqueda (nombre o descripción)
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       result = result.filter((product) => {
         if (searchType === "name") {
-          return product.name.toLowerCase().includes(searchLower);
+          return product.name?.toLowerCase().includes(searchLower);
         } else {
           return (product.description || "")
             .toLowerCase()
@@ -100,13 +101,18 @@ const ProductList = ({ products, onEdit, onDelete }) => {
   const storeCounts = useMemo(() => {
     const counts = { all: products.length };
     stores.forEach((store) => {
-      counts[store.id] = products.filter((p) => p.store_id === store.id).length;
+      counts[store.id] = products.filter(
+        (p) => parseInt(p.store_id) === parseInt(store.id),
+      ).length;
     });
     return counts;
   }, [products, stores]);
 
   const toggleExpand = (productId) => {
-    setExpandedProducts((prev) => ({ ...prev, [productId]: !prev[productId] }));
+    setExpandedProducts((prev) => ({
+      ...prev,
+      [productId]: !prev[productId],
+    }));
   };
 
   const clearFilters = () => {
@@ -117,8 +123,18 @@ const ProductList = ({ products, onEdit, onDelete }) => {
   };
 
   const getStoreName = (storeId) => {
-    const store = stores.find((s) => s.id === storeId);
+    if (!storeId) return "Sin tienda";
+    const store = stores.find((s) => parseInt(s.id) === parseInt(storeId));
     return store?.name || "Sin tienda";
+  };
+
+  // ✅ CORREGIDO: SOLO despachar Redux, NO usar onDelete callback
+  const handleDelete = (productId) => {
+    const id = parseInt(productId);
+    console.log("🗑️ ProductList: Eliminando producto ID:", id);
+
+    // ✅ Despachar Redux DIRECTAMENTE
+    dispatch(deleteProduct(id));
   };
 
   return (
@@ -141,7 +157,7 @@ const ProductList = ({ products, onEdit, onDelete }) => {
       <div
         className={`product-list__filters ${showMobileFilters ? "product-list__filters--open" : ""}`}
       >
-        {/* ✅ NUEVO: Selector de tienda */}
+        {/* Selector de tienda */}
         <div className="product-list__store-filter">
           <label className="product-list__filter-label">
             <Store size={16} /> Filtrar por tienda:
@@ -300,7 +316,6 @@ const ProductList = ({ products, onEdit, onDelete }) => {
                     </span>
                   </div>
 
-                  {/* ✅ Mostrar tienda del producto */}
                   {product.store_id && (
                     <p className="product-list__store">
                       <Store size={12} /> {getStoreName(product.store_id)}
@@ -322,7 +337,6 @@ const ProductList = ({ products, onEdit, onDelete }) => {
                     </p>
                   </div>
 
-                  {/* Descripción expandible en móvil */}
                   {product.description && (
                     <>
                       <button
@@ -359,7 +373,7 @@ const ProductList = ({ products, onEdit, onDelete }) => {
                     <Edit className="product-list__icon" />
                   </button>
                   <button
-                    onClick={() => onDelete(product.id)}
+                    onClick={() => handleDelete(product.id)}
                     className="product-list__button product-list__button--delete"
                     title="Eliminar producto"
                   >

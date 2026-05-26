@@ -110,10 +110,8 @@ export const updateProduct = (formData) => {
       if (body.ok) {
         dispatch(updateProductAction(body.product));
 
-        setTimeout(() => {
-          console.log("🔄 Forzando refresh de productos...");
-          dispatch(getProducts(true));
-        }, 1000);
+        // ✅ CORREGIDO: NO recargar productos después de actualizar
+        // El dispatch de updateProductAction ya actualiza el estado
 
         Swal.fire(
           "¡Actualización exitosa!",
@@ -145,9 +143,24 @@ export const refreshProductsIfNeeded = () => {
   };
 };
 
+// ✅ CORREGIDO: deleteProduct SIN recargar productos
+// ✅ CORREGIDO: deleteProduct CON LOGS DETALLADOS
 export const deleteProduct = (id) => {
   return async (dispatch, getState) => {
+    console.log("🚀 [deleteProduct] INICIANDO con ID:", id);
+
     try {
+      // ✅ Validar ID
+      if (!id) {
+        console.error("❌ [deleteProduct] ID inválido:", id);
+        Swal.fire("Error", "ID de producto inválido", "error");
+        return;
+      }
+
+      const productId = parseInt(id);
+      console.log("🔢 [deleteProduct] ID parseado:", productId);
+
+      // ✅ Mostrar confirmación
       const result = await Swal.fire({
         title: "¿Estás seguro?",
         text: "¡No podrás revertir esta acción!",
@@ -160,9 +173,13 @@ export const deleteProduct = (id) => {
       });
 
       if (!result.isConfirmed) {
+        console.log("❌ [deleteProduct] Usuario canceló");
         return;
       }
 
+      console.log("✅ [deleteProduct] Usuario confirmó");
+
+      // ✅ Mostrar loading
       Swal.fire({
         title: "Eliminando producto...",
         text: "Por favor espera",
@@ -172,19 +189,48 @@ export const deleteProduct = (id) => {
         },
       });
 
-      // ✅ PRIMERO: Eliminar del backend
-      const body = await fetchAPIConfig(`products/delete/${id}`, {}, "DELETE");
+      // ✅ PASO 1: Eliminar del backend
+      console.log(
+        "📡 [deleteProduct] Enviando DELETE a:",
+        `products/delete/${productId}`,
+      );
+
+      const body = await fetchAPIConfig(
+        `products/delete/${productId}`,
+        {},
+        "DELETE",
+      );
+
+      console.log("📥 [deleteProduct] Respuesta del backend:", body);
 
       if (body.ok) {
-        // ✅ SEGUNDO: Eliminar del estado local INMEDIATAMENTE
-        dispatch(deleteProductAction(id));
+        console.log("✅ [deleteProduct] Backend respondió OK");
 
-        // ✅ TERCERO: Forzar recarga para asegurar sincronización
-        setTimeout(async () => {
-          console.log("🔄 Verificando sincronización con backend...");
-          await dispatch(getProducts(true));
-        }, 500);
+        // ✅ PASO 2: Eliminar del estado local
+        console.log(
+          "🗑️ [deleteProduct] Despachando deleteProductAction con ID:",
+          productId,
+        );
+        dispatch(deleteProductAction(productId));
 
+        // ✅ PASO 3: Verificar que se eliminó
+        const currentState = getState();
+        const productStillExists = currentState.products.products.find(
+          (p) => parseInt(p.id) === productId,
+        );
+
+        if (productStillExists) {
+          console.warn(
+            "⚠️ [deleteProduct] Producto aún existe, reintentando...",
+          );
+          dispatch(deleteProductAction(productId));
+        } else {
+          console.log(
+            "✅ [deleteProduct] Producto eliminado del estado correctamente",
+          );
+        }
+
+        // ✅ Mostrar éxito
         Swal.fire({
           icon: "success",
           title: "¡Eliminado!",
@@ -193,7 +239,7 @@ export const deleteProduct = (id) => {
           showConfirmButton: false,
         });
       } else {
-        // Si hay error en el backend, mostrar mensaje
+        console.error("❌ [deleteProduct] Backend respondió error:", body.msg);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -201,7 +247,7 @@ export const deleteProduct = (id) => {
         });
       }
     } catch (error) {
-      console.error("❌ Error eliminando producto:", error);
+      console.error("❌ [deleteProduct] Error:", error);
       Swal.close();
 
       Swal.fire({
@@ -237,7 +283,11 @@ const updateProductAction = (product) => ({
   payload: product,
 });
 
-const deleteProductAction = (id) => ({
-  type: types.productDeleted,
-  payload: id,
-});
+const deleteProductAction = (id) => {
+  const numericId = parseInt(id);
+  console.log("🏭 [deleteProductAction] Creando acción con ID:", numericId);
+  return {
+    type: types.productDeleted,
+    payload: numericId,
+  };
+};
