@@ -1,4 +1,4 @@
-// components/InstallPrompt/InstallPrompt.jsx - VERSIÓN MEJORADA
+// components/InstallPrompt/InstallPrompt.jsx
 import { useState, useEffect } from "react";
 import "./InstallPrompt.css";
 
@@ -7,9 +7,9 @@ const InstallPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [installSupported, setInstallSupported] = useState(true);
 
   useEffect(() => {
-    // Detectar iOS
     const isIOSDevice =
       /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     setIsIOS(isIOSDevice);
@@ -18,73 +18,71 @@ const InstallPrompt = () => {
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       window.navigator.standalone === true;
-
     if (isStandalone) {
       setIsInstalled(true);
-      console.log("✅ App ya está instalada");
       return;
     }
 
     // Escuchar evento de instalación (Android/Chrome)
     const handleBeforeInstallPrompt = (e) => {
-      console.log("🎯 Evento beforeinstallprompt detectado");
+      console.log("✅ beforeinstallprompt capturado");
       e.preventDefault();
       setDeferredPrompt(e);
-
-      // Mostrar prompt después de 3 segundos
-      setTimeout(() => {
-        if (!isInstalled && !localStorage.getItem("installPromptClosed")) {
-          setShowPrompt(true);
-        }
-      }, 3000);
+      setInstallSupported(true);
+      // Mostrar el botón personalizado inmediatamente
+      setShowPrompt(true);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
+    // Si después de 5 segundos no se disparó el evento, asumimos que no es instalable
+    const timeout = setTimeout(() => {
+      if (!deferredPrompt && !isStandalone) {
+        console.warn(
+          "⚠️ beforeinstallprompt no se disparó. PWA no instalable automáticamente.",
+        );
+        setInstallSupported(false);
+        // Mostrar el botón de todos modos con instrucciones manuales
+        setShowPrompt(true);
+      }
+    }, 5000);
+
     // Detectar instalación exitosa
     window.addEventListener("appinstalled", () => {
-      console.log("✅ App instalada exitosamente");
       setIsInstalled(true);
       setShowPrompt(false);
-      setDeferredPrompt(null);
     });
 
-    // Verificar si es la primera visita
-    const hasVisited = localStorage.getItem("hasVisited");
-    if (!hasVisited) {
-      localStorage.setItem("hasVisited", "true");
-      // Mostrar mensaje de bienvenida para iOS después de 5 segundos
-      if (isIOSDevice) {
-        setTimeout(() => {
-          if (!localStorage.getItem("installPromptClosed")) {
-            setShowPrompt(true);
-          }
-        }, 5000);
-      }
-    }
-
     return () => {
+      clearTimeout(timeout);
       window.removeEventListener(
         "beforeinstallprompt",
         handleBeforeInstallPrompt,
       );
     };
-  }, [isInstalled]);
+  }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-
-    if (outcome === "accepted") {
-      console.log("✅ Usuario aceptó la instalación");
-      setShowPrompt(false);
+    if (deferredPrompt) {
+      // Instalación automática
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        setShowPrompt(false);
+      }
+      setDeferredPrompt(null);
     } else {
-      console.log("❌ Usuario rechazó la instalación");
+      // Si no hay deferredPrompt, mostrar instrucciones manuales
+      if (isIOS) {
+        alert(
+          "Para instalar en iOS: toca Compartir → 'Agregar a pantalla de inicio'",
+        );
+      } else {
+        alert(
+          "Abre el menú del navegador (tres puntos) y selecciona 'Instalar aplicación' o 'Agregar a pantalla de inicio'.",
+        );
+      }
     }
-
-    setDeferredPrompt(null);
   };
 
   const handleClose = () => {
@@ -92,22 +90,41 @@ const InstallPrompt = () => {
     localStorage.setItem("installPromptClosed", "true");
   };
 
-  // No mostrar si ya está instalado
-  if (isInstalled) return null;
+  if (isInstalled || !showPrompt) return null;
 
-  // iOS
-  if (isIOS && showPrompt) {
-    return (
-      <div className="install-prompt ios">
-        <div className="install-prompt__content">
-          <button className="install-prompt__close" onClick={handleClose}>
-            ×
-          </button>
-          <div className="install-prompt__icon">📱</div>
-          <h3 className="install-prompt__title">Instalar App</h3>
-          <p className="install-prompt__text">
-            Instala nuestra app para acceder más rápido:
-          </p>
+  // Estilos y estructura (similar a la tuya, pero con mensajes adaptados)
+  return (
+    <div className={`install-prompt ${isIOS ? "ios" : ""}`}>
+      <div className="install-prompt__content">
+        <button className="install-prompt__close" onClick={handleClose}>
+          ×
+        </button>
+        <div className="install-prompt__icon">{isIOS ? "📱" : "🚀"}</div>
+        <h3 className="install-prompt__title">
+          {isIOS ? "Instalar App" : "¡Instala nuestra App!"}
+        </h3>
+        <p className="install-prompt__text">
+          {installSupported
+            ? "Haz clic en 'Instalar ahora' para agregar el icono a tu pantalla de inicio."
+            : "Para acceder rápidamente, instala esta app en tu dispositivo:"}
+        </p>
+
+        {!installSupported && !isIOS && (
+          <div className="install-prompt__manual">
+            <p>
+              🔧 <strong>Instalación manual:</strong>
+            </p>
+            <ol>
+              <li>Abre el menú del navegador (⋮)</li>
+              <li>
+                Selecciona "Instalar aplicación" o "Agregar a pantalla de
+                inicio"
+              </li>
+            </ol>
+          </div>
+        )}
+
+        {isIOS && (
           <ol className="install-prompt__steps">
             <li>
               Toca <strong>Compartir</strong>{" "}
@@ -120,52 +137,25 @@ const InstallPrompt = () => {
               Toca <strong>Agregar</strong>
             </li>
           </ol>
-          <button className="install-prompt__button" onClick={handleClose}>
-            Entendido
+        )}
+
+        <div className="install-prompt__buttons">
+          <button
+            className="install-prompt__button--primary"
+            onClick={handleInstallClick}
+          >
+            Instalar ahora
+          </button>
+          <button
+            className="install-prompt__button--secondary"
+            onClick={handleClose}
+          >
+            Ahora no
           </button>
         </div>
       </div>
-    );
-  }
-
-  // Android/Desktop
-  if (showPrompt) {
-    return (
-      <div className="install-prompt">
-        <div className="install-prompt__content">
-          <button className="install-prompt__close" onClick={handleClose}>
-            ×
-          </button>
-          <div className="install-prompt__icon">🚀</div>
-          <h3 className="install-prompt__title">¡Instala nuestra App!</h3>
-          <p className="install-prompt__text">
-            Accede más rápido y no pierdas el enlace
-          </p>
-          <div className="install-prompt__benefits">
-            <span>⚡ Más rápido</span>
-            <span>📌 Icono en pantalla</span>
-            <span>💾 Sin perder el acceso</span>
-          </div>
-          <div className="install-prompt__buttons">
-            <button
-              className="install-prompt__button--primary"
-              onClick={handleInstallClick}
-            >
-              Instalar ahora
-            </button>
-            <button
-              className="install-prompt__button--secondary"
-              onClick={handleClose}
-            >
-              Ahora no
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
+    </div>
+  );
 };
 
 export default InstallPrompt;
