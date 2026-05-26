@@ -66,7 +66,7 @@ export const updateAdminUser = (userData) => {
         return false;
       }
     } catch (error) {
-      console.error("Error actualizando usuario:", error);
+      console.error("❌ Error actualizando usuario:", error);
       Swal.fire({
         icon: "error",
         title: "Error de conexión",
@@ -135,7 +135,6 @@ export const deleteAdminUser = (userId) => {
   return async (dispatch, getState) => {
     const { adminUsers } = getState();
 
-    // Proteger: no eliminar el último usuario
     if (adminUsers.users.length <= 1) {
       Swal.fire("Error", "No se puede eliminar el último usuario", "error");
       return false;
@@ -183,7 +182,6 @@ export const setActiveAdminUser = (user) => ({
   payload: user,
 });
 
-// Limpiar usuario activo
 export const clearActiveAdminUser = () => ({
   type: types.adminUserClearActive,
 });

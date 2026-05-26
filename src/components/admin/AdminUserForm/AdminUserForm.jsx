@@ -72,7 +72,6 @@ const AdminUserForm = ({ user, onSubmit, onCancel }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // ✅ CORREGIDO: handleSubmit ahora llama a onSubmit (prop) en lugar de dispatch directo
   const handleFormSubmit = (e) => {
     e.preventDefault();
 
@@ -88,14 +87,16 @@ const AdminUserForm = ({ user, onSubmit, onCancel }) => {
     };
 
     // Solo incluir campos de contraseña si se están cambiando
-    if (formData.currentPassword && formData.newPassword) {
+    const changingPassword = formData.currentPassword && formData.newPassword;
+    if (changingPassword) {
       submitData.password_user = formData.currentPassword;
       submitData.new_password = formData.newPassword;
     }
 
     console.log("📤 [AdminUserForm] Datos a enviar:", submitData);
+    console.log("🔐 ¿Cambiando contraseña?", changingPassword);
 
-    // ✅ Llamar a la función onSubmit que viene del padre (AdminUsersManager)
+    // Llamar a la función onSubmit que viene del padre
     onSubmit(submitData);
   };
 
@@ -106,7 +107,6 @@ const AdminUserForm = ({ user, onSubmit, onCancel }) => {
       [name]: value,
     }));
 
-    // Limpiar error del campo cuando se empiece a escribir
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -147,7 +147,6 @@ const AdminUserForm = ({ user, onSubmit, onCancel }) => {
           </button>
         </div>
 
-        {/* ✅ CORREGIDO: usa handleFormSubmit */}
         <form onSubmit={handleFormSubmit} className="admin-user-form__content">
           <div className="admin-user-form__group">
             <label htmlFor="username" className="admin-user-form__label">
