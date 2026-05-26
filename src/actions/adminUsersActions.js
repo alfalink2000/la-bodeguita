@@ -28,14 +28,14 @@ export const getAdminUsers = () => {
 export const updateAdminUser = (userData) => {
   return async (dispatch) => {
     try {
-      console.log("📤 [updateAdminUser] Enviando:", userData);
-
-      // ✅ Usar fetchAPIConfig en lugar de fetch directo
-      const data = await fetchAPIConfig(
-        "auth/update", // endpoint (sin /api/ porque fetchAPIConfig ya lo agrega)
-        userData, // datos a enviar
-        "PUT", // método
+      console.log(
+        "📤 [updateAdminUser] Datos a enviar:",
+        JSON.stringify(userData, null, 2),
       );
+      console.log("🔑 password_user:", userData.password_user);
+      console.log("🔑 new_password:", userData.new_password);
+
+      const data = await fetchAPIConfig("auth/update", userData, "PUT");
 
       console.log("📥 [updateAdminUser] Respuesta:", data);
 
