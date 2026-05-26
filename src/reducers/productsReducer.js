@@ -14,6 +14,7 @@ const initialState = {
 export const productsReducer = (state = initialState, action) => {
   switch (action.type) {
     case types.productsLoad:
+      console.log("📦 [Reducer] Cargando productos:", action.payload.length);
       return {
         ...state,
         products: [...action.payload],
@@ -33,12 +34,19 @@ export const productsReducer = (state = initialState, action) => {
       };
 
     case types.productAddNew:
-      return {
+      console.log("➕ [Reducer] Agregando nuevo producto:", action.payload);
+      console.log("📊 [Reducer] Productos antes:", state.products.length);
+
+      const newState = {
         ...state,
         products: [...state.products, action.payload],
       };
 
+      console.log("📊 [Reducer] Productos después:", newState.products.length);
+      return newState;
+
     case types.productUpdated:
+      console.log("✏️ [Reducer] Actualizando producto:", action.payload.id);
       return {
         ...state,
         products: state.products.map((product) =>
@@ -48,32 +56,14 @@ export const productsReducer = (state = initialState, action) => {
         ),
       };
 
-    // ✅ CORREGIDO: ELIMINACIÓN INMEDIATA CON COMPARACIÓN CORRECTA
     case types.productDeleted:
       const deletedId = parseInt(action.payload);
       console.log("🗑️ [Reducer] Eliminando producto ID:", deletedId);
-      console.log("📊 [Reducer] Productos antes:", state.products.length);
-
-      const updatedProducts = state.products.filter(
-        (product) => parseInt(product.id) !== deletedId,
-      );
-
-      console.log("📊 [Reducer] Productos después:", updatedProducts.length);
-
-      if (updatedProducts.length === state.products.length) {
-        console.warn(
-          "⚠️ [Reducer] No se eliminó ningún producto - ID no encontrado:",
-          deletedId,
-        );
-        console.log(
-          "📋 [Reducer] IDs disponibles:",
-          state.products.map((p) => p.id),
-        );
-      }
-
       return {
         ...state,
-        products: updatedProducts,
+        products: state.products.filter(
+          (product) => parseInt(product.id) !== deletedId,
+        ),
       };
 
     case types.productSetActive:

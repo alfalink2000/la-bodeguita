@@ -1,9 +1,14 @@
 // components/ProductForm/ProductForm.jsx
 import { useState, useEffect } from "react";
+import { useDispatch } from "react-redux"; // ✅ IMPORTAR
+import { insertProduct, updateProduct } from "../../../actions/productsActions"; // ✅ IMPORTAR
 import StoreSelector from "../StoreSelector/StoreSelector";
+import Swal from "sweetalert2";
 import "./ProductForm.css";
 
-const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
+const ProductForm = ({ product, categories, onCancel }) => {
+  const dispatch = useDispatch(); // ✅ AGREGAR
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -134,26 +139,25 @@ const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
     }
   };
 
-  // ✅ CORREGIDO: Enviar SOLO el producto creado/actualizado, NO FormData
+  // ✅ CORREGIDO: Usar Redux en lugar de fetch directo
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
-      alert("Por favor completa todos los campos requeridos correctamente");
+      const errorMessages = Object.values(errors).join("<br>");
+      Swal.fire({
+        icon: "warning",
+        title: "Campos requeridos",
+        html: errorMessages,
+        confirmButtonText: "Entendido",
+      });
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const API_URL =
-        import.meta.env.VITE_API_URL ||
-        "https://minimarket-backend-6z9m.onrender.com";
-
-      // ✅ CREAR FormData para enviar al backend
       const submitFormData = new FormData();
-
-      // Agregar todos los campos del formulario
       submitFormData.append("name", formData.name.trim());
       submitFormData.append("description", formData.description.trim());
       submitFormData.append("price", formData.price);
@@ -164,63 +168,27 @@ const ProductForm = ({ product, categories, onSubmit, onCancel }) => {
         formData.stock_quantity.toString(),
       );
 
-      // Agregar store_id si existe
       if (formData.store_id) {
         submitFormData.append("store_id", formData.store_id);
       }
 
-      // Agregar imagen si existe
       if (imageFile) {
         submitFormData.append("image", imageFile);
       }
 
-      // ✅ DEBUG: Ver qué se está enviando
-      console.log("📤 Enviando FormData:");
-      for (let pair of submitFormData.entries()) {
-        console.log(pair[0] + ": " + pair[1]);
-      }
-
-      let url = `${API_URL}/api/products/new`;
-      let method = "POST";
-
-      // Si es edición, cambiar URL y método
       if (product && product.id) {
-        url = `${API_URL}/api/products/update/${product.id}`;
-        method = "PUT";
-        console.log("✏️ Modo edición - ID:", product.id);
-      }
-
-      const response = await fetch(url, {
-        method: method,
-        body: submitFormData,
-        // No incluir Content-Type, fetch lo setea automáticamente con el boundary
-      });
-
-      const result = await response.json();
-
-      if (result.ok) {
-        alert(
-          product
-            ? "Producto actualizado exitosamente"
-            : "Producto creado exitosamente",
-        );
-
-        // ✅ CORREGIDO: Llamar a onSubmit con el producto JSON, NO con FormData
-        if (onSubmit) {
-          // Pasamos el producto que viene en la respuesta
-          onSubmit(result.product);
-        }
-
-        // Cerrar el formulario
-        onCancel();
+        submitFormData.append("id", product.id);
+        await dispatch(updateProduct(submitFormData));
       } else {
-        alert(result.msg || "Error al guardar el producto");
+        await dispatch(insertProduct(submitFormData));
       }
+
+      console.log("✅ [ProductForm] Operación completada, cerrando formulario");
+
+      // ✅ Cerrar formulario
+      onCancel();
     } catch (error) {
-      console.error("❌ Error detallado:", error);
-      alert(
-        `Error al ${product ? "actualizar" : "crear"} producto: ${error.message}`,
-      );
+      console.error("❌ Error:", error);
     } finally {
       setIsLoading(false);
     }

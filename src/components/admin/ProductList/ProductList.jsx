@@ -33,6 +33,17 @@ const ProductList = ({ products, onEdit, onDelete }) => {
   const [stores, setStores] = useState([]);
   const [isLoadingStores, setIsLoadingStores] = useState(true);
 
+  // ✅ DEBUG: Ver productos recibidos
+  useEffect(() => {
+    console.log("📋 [ProductList] Productos recibidos:", products.length);
+    if (products.length > 0) {
+      console.log(
+        "📋 [ProductList] Último producto:",
+        products[products.length - 1],
+      );
+    }
+  }, [products]);
+
   // Cargar tiendas
   useEffect(() => {
     const loadStores = async () => {

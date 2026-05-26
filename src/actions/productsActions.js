@@ -1,4 +1,4 @@
-// actions/productsActions.js - MEJORADO
+// actions/productsActions.js
 import { fetchAPIConfig } from "../helpers/fetchAPIConfig";
 import { fetchPublic } from "../helpers/fetchPublic";
 import { types } from "../types/types";
@@ -6,7 +6,6 @@ import Swal from "sweetalert2";
 
 export const getProducts = (forceRefresh = false) => {
   return async (dispatch, getState) => {
-    // ✅ SI YA TENEMOS PRODUCTOS Y NO ES FORZADO, NO RECARGAR
     if (!forceRefresh && getState().products.products.length > 0) {
       const lastUpdate = getState().products.lastUpdate;
       const now = Date.now();
@@ -44,12 +43,13 @@ export const getProducts = (forceRefresh = false) => {
 };
 
 export const insertProduct = (formData) => {
-  return async (dispatch) => {
+  return async (dispatch, getState) => {
     try {
       Swal.fire({
-        title: "Subiendo imagen...",
-        text: "Por favor espera",
+        title: "Creando producto...",
+        text: "Por favor espera mientras se procesa",
         allowOutsideClick: false,
+        allowEscapeKey: false,
         didOpen: () => {
           Swal.showLoading();
         },
@@ -60,18 +60,63 @@ export const insertProduct = (formData) => {
       Swal.close();
 
       if (body.ok) {
+        console.log(
+          "✅ [insertProduct] Producto recibido del backend:",
+          body.product,
+        );
+
+        // ✅ Agregar al estado
         dispatch(addNewProduct(body.product));
+
+        // ✅ VERIFICAR que se agregó
+        const currentState = getState();
+        console.log(
+          "📊 [insertProduct] Productos en estado después de agregar:",
+          currentState.products.products.length,
+        );
+        console.log(
+          "📋 [insertProduct] Último producto:",
+          currentState.products.products[
+            currentState.products.products.length - 1
+          ],
+        );
+
         Swal.fire({
           icon: "success",
           title: "¡Producto agregado!",
-          text: "Producto registrado correctamente",
+          text: body.msg || "Producto registrado correctamente",
+          timer: 1500,
+          showConfirmButton: false,
         });
       } else {
         Swal.fire("Error", body.msg, "error");
       }
     } catch (error) {
       console.error("Error insertando producto:", error);
-      Swal.fire("Error", "Error de conexión al crear el producto", "error");
+      Swal.close();
+
+      if (
+        error.message.includes("Timeout") ||
+        error.message.includes("tardó demasiado")
+      ) {
+        Swal.fire({
+          icon: "warning",
+          title: "Producto posiblemente creado",
+          text: "Verificando...",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+
+        setTimeout(() => {
+          dispatch(getProducts(true));
+        }, 1500);
+      } else {
+        Swal.fire(
+          "Error",
+          error.message || "Error de conexión al crear el producto",
+          "error",
+        );
+      }
     }
   };
 };
@@ -83,18 +128,13 @@ export const updateProduct = (formData) => {
         title: "Actualizando producto...",
         text: "Por favor espera",
         allowOutsideClick: false,
+        allowEscapeKey: false,
         didOpen: () => {
           Swal.showLoading();
         },
       });
 
       const productId = formData.get("id");
-
-      console.log("🚀 Enviando al servidor:", {
-        id: productId,
-        status: formData.get("status"),
-        stock_quantity: formData.get("stock_quantity"),
-      });
 
       const body = await fetchAPIConfig(
         `products/update/${productId}`,
@@ -103,64 +143,63 @@ export const updateProduct = (formData) => {
         true,
       );
 
-      console.log("📥 Respuesta del servidor:", body);
-
       Swal.close();
 
       if (body.ok) {
         dispatch(updateProductAction(body.product));
 
-        // ✅ CORREGIDO: NO recargar productos después de actualizar
-        // El dispatch de updateProductAction ya actualiza el estado
-
-        Swal.fire(
-          "¡Actualización exitosa!",
-          "Producto actualizado correctamente",
-          "success",
-        );
+        Swal.fire({
+          icon: "success",
+          title: "¡Actualización exitosa!",
+          text: "Producto actualizado correctamente",
+          timer: 2000,
+          showConfirmButton: false,
+        });
       } else {
         Swal.fire("Error", body.msg, "error");
       }
     } catch (error) {
       console.error("Error actualizando producto:", error);
-      Swal.fire(
-        "Error",
-        "Error de conexión al actualizar el producto",
-        "error",
-      );
+      Swal.close();
+
+      if (
+        error.message.includes("Timeout") ||
+        error.message.includes("tardó demasiado")
+      ) {
+        Swal.fire({
+          icon: "warning",
+          title: "Producto posiblemente actualizado",
+          text: "Recargando productos...",
+          timer: 3000,
+          showConfirmButton: false,
+        });
+
+        setTimeout(() => {
+          dispatch(getProducts(true));
+        }, 2000);
+      } else {
+        Swal.fire(
+          "Error",
+          error.message || "Error de conexión al actualizar el producto",
+          "error",
+        );
+      }
     }
   };
 };
 
-export const refreshProductsIfNeeded = () => {
-  return async (dispatch, getState) => {
-    const lastUpdate = getState().products.lastUpdate;
-    const now = Date.now();
-
-    if (!lastUpdate || now - lastUpdate > 30000) {
-      dispatch(getProducts());
-    }
-  };
-};
-
-// ✅ CORREGIDO: deleteProduct SIN recargar productos
-// ✅ CORREGIDO: deleteProduct CON LOGS DETALLADOS
 export const deleteProduct = (id) => {
   return async (dispatch, getState) => {
     console.log("🚀 [deleteProduct] INICIANDO con ID:", id);
 
     try {
-      // ✅ Validar ID
       if (!id) {
-        console.error("❌ [deleteProduct] ID inválido:", id);
         Swal.fire("Error", "ID de producto inválido", "error");
         return;
       }
 
       const productId = parseInt(id);
-      console.log("🔢 [deleteProduct] ID parseado:", productId);
 
-      // ✅ Mostrar confirmación
       const result = await Swal.fire({
         title: "¿Estás seguro?",
         text: "¡No podrás revertir esta acción!",
@@ -172,14 +211,8 @@ export const deleteProduct = (id) => {
         cancelButtonText: "Cancelar",
       });
 
-      if (!result.isConfirmed) {
-        console.log("❌ [deleteProduct] Usuario canceló");
-        return;
-      }
+      if (!result.isConfirmed) return;
 
-      console.log("✅ [deleteProduct] Usuario confirmó");
-
-      // ✅ Mostrar loading
       Swal.fire({
         title: "Eliminando producto...",
         text: "Por favor espera",
@@ -189,48 +222,17 @@ export const deleteProduct = (id) => {
         },
       });
 
-      // ✅ PASO 1: Eliminar del backend
-      console.log(
-        "📡 [deleteProduct] Enviando DELETE a:",
-        `products/delete/${productId}`,
-      );
-
       const body = await fetchAPIConfig(
         `products/delete/${productId}`,
         {},
         "DELETE",
       );
 
-      console.log("📥 [deleteProduct] Respuesta del backend:", body);
+      Swal.close();
 
       if (body.ok) {
-        console.log("✅ [deleteProduct] Backend respondió OK");
-
-        // ✅ PASO 2: Eliminar del estado local
-        console.log(
-          "🗑️ [deleteProduct] Despachando deleteProductAction con ID:",
-          productId,
-        );
         dispatch(deleteProductAction(productId));
 
-        // ✅ PASO 3: Verificar que se eliminó
-        const currentState = getState();
-        const productStillExists = currentState.products.products.find(
-          (p) => parseInt(p.id) === productId,
-        );
-
-        if (productStillExists) {
-          console.warn(
-            "⚠️ [deleteProduct] Producto aún existe, reintentando...",
-          );
-          dispatch(deleteProductAction(productId));
-        } else {
-          console.log(
-            "✅ [deleteProduct] Producto eliminado del estado correctamente",
-          );
-        }
-
-        // ✅ Mostrar éxito
         Swal.fire({
           icon: "success",
           title: "¡Eliminado!",
@@ -239,31 +241,19 @@ export const deleteProduct = (id) => {
           showConfirmButton: false,
         });
       } else {
-        console.error("❌ [deleteProduct] Backend respondió error:", body.msg);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: body.msg || "Error al eliminar el producto",
-        });
+        Swal.fire(
+          "Error",
+          body.msg || "Error al eliminar el producto",
+          "error",
+        );
       }
     } catch (error) {
       console.error("❌ [deleteProduct] Error:", error);
       Swal.close();
-
-      Swal.fire({
-        icon: "error",
-        title: "Error de conexión",
-        text: "No se pudo eliminar el producto. Intenta nuevamente.",
-        confirmButtonText: "Entendido",
-      });
+      Swal.fire("Error", "Error de conexión al eliminar el producto", "error");
     }
   };
 };
-
-export const setActiveProduct = (product) => ({
-  type: types.productSetActive,
-  payload: product,
-});
 
 // Action creators sincrónicos
 const startLoading = () => ({ type: types.productStartLoading });
@@ -283,11 +273,7 @@ const updateProductAction = (product) => ({
   payload: product,
 });
 
-const deleteProductAction = (id) => {
-  const numericId = parseInt(id);
-  console.log("🏭 [deleteProductAction] Creando acción con ID:", numericId);
-  return {
-    type: types.productDeleted,
-    payload: numericId,
-  };
-};
+const deleteProductAction = (id) => ({
+  type: types.productDeleted,
+  payload: parseInt(id),
+});
