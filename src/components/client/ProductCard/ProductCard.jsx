@@ -11,23 +11,18 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
   const dispatch = useDispatch();
   const cartItems = useSelector(selectCartItems);
   const [showQuantity, setShowQuantity] = useState(false);
+  const [isCheckingStock, setIsCheckingStock] = useState(false);
 
   const currency = useSelector(
     (state) => state.appConfig.config?.currency || "MN",
   );
-
   const isAvailable =
     product.status === "available" && product.stock_quantity > 0;
   const cartItem = cartItems.find((item) => item.id === product.id);
   const currentQuantity = cartItem ? cartItem.quantity : 0;
 
-  // ✅ Sincronizar showQuantity con currentQuantity
   useEffect(() => {
-    if (currentQuantity > 0) {
-      setShowQuantity(true);
-    } else {
-      setShowQuantity(false);
-    }
+    setShowQuantity(currentQuantity > 0);
   }, [currentQuantity]);
 
   const getCurrencySymbol = useCallback(() => {
@@ -36,19 +31,17 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
         return "US$";
       case "EUR":
         return "€";
-      case "MN":
       default:
         return "$";
     }
   }, [currency]);
 
-  const formatPrice = useCallback((price) => {
-    return parseFloat(price).toFixed(2);
-  }, []);
+  const formatPrice = useCallback((price) => parseFloat(price).toFixed(2), []);
 
-  const handleCardClick = useCallback(() => {
-    onProductClick?.(product);
-  }, [onProductClick, product]);
+  const handleCardClick = useCallback(
+    () => onProductClick?.(product),
+    [onProductClick, product],
+  );
 
   const handleWhatsAppClick = useCallback(
     (e) => {
@@ -59,24 +52,83 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
   );
 
   const handleAddToCart = useCallback(
-    (e) => {
+    async (e) => {
       e.stopPropagation();
       if (!isAvailable) return;
 
-      dispatch(addToCart(product));
-      // ✅ showQuantity se actualizará automáticamente por el useEffect
+      setIsCheckingStock(true);
+
+      try {
+        const token = localStorage.getItem("token");
+        const API_URL =
+          import.meta.env.VITE_API_URL ||
+          "https://minimarket-backend-6z9m.onrender.com";
+
+        const stockRes = await fetch(`${API_URL}/api/products/get-stock`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-token": token },
+          body: JSON.stringify({ ids: [product.id] }),
+        });
+
+        const stockData = await stockRes.json();
+
+        if (stockData.ok && stockData.stock[product.id]) {
+          const currentStock = stockData.stock[product.id].stock_quantity;
+          const currentStatus = stockData.stock[product.id].status;
+
+          if (currentStock <= 0 || currentStatus !== "available") {
+            Swal.fire({
+              icon: "error",
+              title: "Producto agotado",
+              text: `Lo sentimos, ${product.name} ya no está disponible.`,
+              confirmButtonColor: "#059669",
+            });
+            setIsCheckingStock(false);
+            return;
+          }
+
+          if (currentQuantity >= currentStock) {
+            Swal.fire({
+              icon: "warning",
+              title: "Stock insuficiente",
+              text: `Solo hay ${currentStock} unidades disponibles de ${product.name}.`,
+              confirmButtonColor: "#059669",
+            });
+            setIsCheckingStock(false);
+            return;
+          }
+        }
+
+        dispatch(addToCart(product));
+      } catch (error) {
+        console.error("Error verificando stock:", error);
+        dispatch(addToCart(product));
+      } finally {
+        setIsCheckingStock(false);
+      }
     },
-    [dispatch, product, isAvailable],
+    [dispatch, product, isAvailable, currentQuantity],
   );
 
   const handleQuantityChange = useCallback(
     (e, change) => {
       e.stopPropagation();
       const newQuantity = Math.max(0, currentQuantity + change);
-
-      dispatch(updateCartQuantity(product.id, newQuantity));
+      if (newQuantity === 0) {
+        dispatch(updateCartQuantity(product.id, 0));
+      } else if (newQuantity <= product.stock_quantity) {
+        dispatch(updateCartQuantity(product.id, newQuantity));
+      } else {
+        Swal.fire({
+          icon: "warning",
+          title: "Stock insuficiente",
+          text: `Solo hay ${product.stock_quantity} unidades disponibles.`,
+          confirmButtonColor: "#059669",
+          timer: 2000,
+        });
+      }
     },
-    [dispatch, product.id, currentQuantity],
+    [dispatch, product.id, product.stock_quantity, currentQuantity],
   );
 
   const handleImageError = useCallback((e) => {
@@ -95,16 +147,11 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
           loading="lazy"
         />
         <div
-          className={`product-card__status ${
-            isAvailable ? "available" : "out-of-stock"
-          }`}
+          className={`product-card__status ${isAvailable ? "available" : "out-of-stock"}`}
         >
           {isAvailable ? "🟢 Disponible" : "🔴 Agotado"}
         </div>
-
         <div className="product-card__currency-badge">{currency}</div>
-
-        {/* ✅ Badge de cantidad en carrito - Siempre visible cuando hay cantidad */}
         {currentQuantity > 0 && (
           <div className="product-card__cart-badge">{currentQuantity}</div>
         )}
@@ -112,7 +159,6 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
 
       <div className="product-card__content">
         <h3 className="product-card__name">{product.name}</h3>
-
         <div className="product-card__info-row">
           <div className="product-card__price">
             {getCurrencySymbol()} {formatPrice(product.price)}
@@ -120,28 +166,39 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
           <div className="product-card__category">{product.category?.name}</div>
         </div>
 
+        {/* ✅ Mostrar stock disponible */}
+        <div className="product-card__stock-info">
+          <span className="stock-label">Stock:</span>
+          <span
+            className={`stock-value ${product.stock_quantity <= 5 ? "low-stock" : product.stock_quantity <= 10 ? "medium-stock" : "good-stock"}`}
+          >
+            {product.stock_quantity} unidades
+          </span>
+        </div>
+
         <p className="product-card__description">
           {product.description?.substring(0, 80) || "Producto de calidad..."}
           {product.description && product.description.length > 80 ? "..." : ""}
         </p>
 
-        {/* ✅ Controles de cantidad - Sincronizados con el estado */}
         {showQuantity || currentQuantity > 0 ? (
           <div className="product-card__quantity-controls">
             <button
               className="quantity-btn minus"
               onClick={(e) => handleQuantityChange(e, -1)}
-              disabled={!isAvailable}
+              disabled={!isAvailable || isCheckingStock}
             >
               <FiMinus size={14} />
             </button>
-
             <span className="quantity-display">{currentQuantity}</span>
-
             <button
               className="quantity-btn plus"
               onClick={(e) => handleQuantityChange(e, 1)}
-              disabled={!isAvailable}
+              disabled={
+                !isAvailable ||
+                isCheckingStock ||
+                currentQuantity >= product.stock_quantity
+              }
             >
               <FiPlus size={14} />
             </button>
@@ -151,10 +208,10 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
             <button
               className="product-card__cart-btn"
               onClick={handleAddToCart}
-              disabled={!isAvailable}
+              disabled={!isAvailable || isCheckingStock}
             >
               <FiShoppingCart className="cart-icon" />
-              Agregar
+              {isCheckingStock ? "Verificando..." : "Agregar"}
             </button>
           </div>
         )}

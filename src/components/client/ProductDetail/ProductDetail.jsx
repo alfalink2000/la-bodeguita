@@ -6,6 +6,8 @@ import {
   HiOutlineShieldCheck,
   HiOutlineClock,
 } from "react-icons/hi";
+import { HiOutlineTruck, HiOutlineLocationMarker } from "react-icons/hi";
+
 import { FiPhone } from "react-icons/fi";
 import { FiShoppingCart, FiShare2, FiCheck } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
@@ -364,10 +366,10 @@ const BenefitsSection = React.memo(() => (
 
     <div className="benefit-item-compact">
       <div className="benefit-decoration"></div>
-      <HiOutlineShoppingBag className="benefit-icon" />
+      <HiOutlineTruck className="benefit-icon" />
       <div className="benefit-content">
-        <span className="benefit-title">Retiro</span>
-        <span className="benefit-desc">En tienda</span>
+        <span className="benefit-title">Envío</span>
+        <span className="benefit-desc">A domicilio</span>
       </div>
     </div>
   </div>

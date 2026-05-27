@@ -203,7 +203,9 @@
   border-radius: 12px;
   flex-shrink: 0;
   border: 2px solid #f3f4f6;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .cart-item:hover .cart-item__image {
@@ -879,5 +881,34 @@
 
   .cart-item__total {
     text-align: left;
+  }
+}
+/* Agregar al final de CartModal.css */
+
+.stock-validating {
+  font-size: 0.7rem;
+  margin-left: 0.5rem;
+  color: #f59e0b;
+  animation: pulse 1s infinite;
+}
+
+.cart-item__stock {
+  font-size: 0.65rem;
+  color: #6b7280;
+  margin-top: 0.125rem;
+}
+
+.quantity-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }
