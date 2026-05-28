@@ -38,13 +38,13 @@ const AppConfigManager = () => {
     initialinfo: "",
     show_initialinfo: true,
     currency: "CUP",
+    marquee_text: "",
     delivery_origin_name: "",
     delivery_origin_address: "",
     delivery_origin_lat: "",
     delivery_origin_lng: "",
     delivery_price_per_km: "",
     delivery_minimum_price: "",
-    // ✅ Eliminados: delivery_free_from y delivery_max_distance
   });
 
   const [activeTab, setActiveTab] = useState("general");
@@ -79,7 +79,6 @@ const AppConfigManager = () => {
           delivery_minimum_price: data.config.minimum_price
             ? data.config.minimum_price.toString()
             : "",
-          // ✅ Ya no cargamos delivery_free_from ni delivery_max_distance
         }));
       }
     } catch (err) {
@@ -88,6 +87,7 @@ const AppConfigManager = () => {
   }, []);
 
   useEffect(() => {
+    // Cargar configuración de la app
     dispatch(loadAppConfig());
     loadDeliveryConfig();
   }, [dispatch, loadDeliveryConfig]);
@@ -106,6 +106,7 @@ const AppConfigManager = () => {
         initialinfo: config.initialinfo || "",
         show_initialinfo: config.show_initialinfo !== false,
         currency: config.currency || "CUP",
+        marquee_text: config.marquee_text || "",
       }));
     }
   }, [config]);
@@ -231,13 +232,12 @@ const AppConfigManager = () => {
     });
   };
 
-  // ✅ FUNCIÓN GUARDAR DELIVERY MODIFICADA - Sin límite de distancia ni envío gratis
   const handleSaveDelivery = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
       setSaving(true);
-      
+
       const payload = {
         origin_name: formData.delivery_origin_name || "Punto de partida",
         origin_address: formData.delivery_origin_address || "",
@@ -245,10 +245,8 @@ const AppConfigManager = () => {
         origin_lng: parseFloat(formData.delivery_origin_lng) || -82.366592,
         price_per_km: parseFloat(formData.delivery_price_per_km) || 50,
         minimum_price: parseFloat(formData.delivery_minimum_price) || 100,
-        // ✅ ELIMINADO: free_delivery_from - Ya no existe envío gratis
-        // ✅ ELIMINADO: max_distance_km - Ya no hay límite de distancia
       };
-      
+
       const res = await fetch(`${API_URL}/api/delivery/config`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "x-token": token },
@@ -416,6 +414,37 @@ const AppConfigManager = () => {
                 Opcional. Deja vacío para usar el logo por defecto.
               </small>
             </div>
+
+            {/* Campo para el texto del marquee */}
+            <div className="form-group">
+              <label>📢 Texto del Cartel Informativo (Marquee)</label>
+              <textarea
+                name="marquee_text"
+                value={formData.marquee_text}
+                onChange={handleInputChange}
+                placeholder="Ej: 🚚 Envíos a domicilio — Calculamos el costo según tu ubicación — ¡Recibe tus productos sin salir de casa! 🚚"
+                rows="3"
+                className="marquee-textarea"
+              />
+              <small className="help-text">
+                Este texto aparecerá en el cartel que se desplaza
+                horizontalmente en la parte superior de la aplicación. Puedes
+                usar emojis y texto informativo sobre promociones, envíos, etc.
+              </small>
+            </div>
+
+            {/* Vista previa del marquee */}
+            <div className="marquee-preview">
+              <h4>Vista Previa del Cartel</h4>
+              <div className="marquee-preview-container">
+                <div className="marquee-preview-content">
+                  <span>
+                    {formData.marquee_text ||
+                      "El texto del cartel aparecerá aquí..."}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -433,7 +462,9 @@ const AppConfigManager = () => {
                   return (
                     <div
                       key={currency.code}
-                      className={`currency-card ${formData.currency === currency.code ? "selected" : ""}`}
+                      className={`currency-card ${
+                        formData.currency === currency.code ? "selected" : ""
+                      }`}
                       onClick={() => handleCurrencySelect(currency.code)}
                     >
                       <div className="currency-icon">
@@ -482,7 +513,7 @@ const AppConfigManager = () => {
           </div>
         )}
 
-        {/* ===== DELIVERY - MODIFICADO ===== */}
+        {/* ===== DELIVERY ===== */}
         {activeTab === "delivery" && (
           <div className="tab-content">
             <div className="delivery-config">
@@ -495,11 +526,20 @@ const AppConfigManager = () => {
               </p>
 
               <div
-                className={`delivery-status ${formData.delivery_origin_lat && formData.delivery_origin_lng ? "delivery-status--active" : "delivery-status--inactive"}`}
+                className={`delivery-status ${
+                  formData.delivery_origin_lat && formData.delivery_origin_lng
+                    ? "delivery-status--active"
+                    : "delivery-status--inactive"
+                }`}
               >
                 <div className="delivery-status__indicator">
                   <div
-                    className={`delivery-status__dot ${formData.delivery_origin_lat && formData.delivery_origin_lng ? "delivery-status__dot--green" : "delivery-status__dot--red"}`}
+                    className={`delivery-status__dot ${
+                      formData.delivery_origin_lat &&
+                      formData.delivery_origin_lng
+                        ? "delivery-status__dot--green"
+                        : "delivery-status__dot--red"
+                    }`}
                   ></div>
                 </div>
                 <div className="delivery-status__info">
@@ -538,7 +578,7 @@ const AppConfigManager = () => {
 
               <div className="delivery-section">
                 <h4 className="delivery-section-title">
-                  <HiOutlineLocationMarker /> Punto de Partida (Farmacia)
+                  <HiOutlineLocationMarker /> Punto de Partida
                 </h4>
                 <div className="form-row">
                   <div className="form-group">
@@ -657,8 +697,6 @@ const AppConfigManager = () => {
                   </small>
                 </div>
 
-                {/* ✅ ELIMINADOS: delivery_free_from y delivery_max_distance */}
-
                 <div className="info-note">
                   <HiOutlineInformationCircle />
                   <span>
@@ -666,8 +704,7 @@ const AppConfigManager = () => {
                     <br />
                     ✅ No hay límite máximo de distancia - se calcula cualquier
                     distancia
-                    <br />
-                    ✅ No existe envío gratis por monto de pedido
+                    <br />✅ No existe envío gratis por monto de pedido
                   </span>
                 </div>
               </div>

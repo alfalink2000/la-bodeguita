@@ -14,18 +14,17 @@ const SearchBar = ({
   const textRef = useRef(null);
   const wrapperRef = useRef(null);
 
+  // ✅ Usar el texto dinámico de la configuración, con fallback por defecto
   const marqueeText =
+    appConfig?.marquee_text ||
     "🚚 Envíos a domicilio — Calculamos el costo según tu ubicación — ¡Recibe tus productos sin salir de casa! 🚚";
 
-  // ✅ Calcular velocidad basada en la longitud del texto y el contenedor
+  // Calcular velocidad basada en la longitud del texto y el contenedor
   useEffect(() => {
     const calculateSpeed = () => {
       if (textRef.current && wrapperRef.current) {
-        const textWidth = textRef.current.scrollWidth / 2; // Por duplicado
+        const textWidth = textRef.current.scrollWidth / 2;
         const containerWidth = wrapperRef.current.clientWidth;
-
-        // Velocidad base: 40-60px por segundo
-        // Mientras más largo el texto, más tiempo toma
         const distance = textWidth;
         const speed = Math.max(8, Math.min(20, distance / 50));
         setMarqueeSpeed(speed);
@@ -35,7 +34,7 @@ const SearchBar = ({
     calculateSpeed();
     window.addEventListener("resize", calculateSpeed);
     return () => window.removeEventListener("resize", calculateSpeed);
-  }, []);
+  }, [marqueeText]);
 
   return (
     <div className={`search-bar ${isDesktop ? "search-bar--desktop" : ""}`}>
@@ -72,7 +71,7 @@ const SearchBar = ({
           />
         </div>
 
-        {/* Mensaje de envíos - Desktop (SIEMPRE CON ANIMACIÓN) */}
+        {/* Mensaje de envíos - Desktop */}
         {isDesktop && (
           <div className="search-bar__location-info search-bar__location-info--desktop">
             <HiOutlineLocationMarker className="location-info__icon" />

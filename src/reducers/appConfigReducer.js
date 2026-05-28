@@ -11,8 +11,13 @@ const initialState = {
     business_address: "Av. Principal 123",
     initialinfo:
       "🌟 **Bienvenido a nuestro Minimarket Digital** 🌟\n\n¡Estamos encantados de tenerte aquí! En nuestro minimarket encontrarás productos de calidad, horario extendido y servicio personalizado.",
-    show_initialinfo: true, // ✅ NUEVO CAMPO
+    show_initialinfo: true,
     logo_url: null,
+    currency: "CUP",
+    language: "es",
+    // ✅ AGREGAR marquee_text AL initialState
+    marquee_text:
+      "🚚 Envíos a domicilio — Calculamos el costo según tu ubicación — ¡Recibe tus productos sin salir de casa! 🚚",
   },
   loading: false,
 };
@@ -22,13 +27,13 @@ export const appConfigReducer = (state = initialState, action) => {
     case types.appConfigLoad:
       return {
         ...state,
-        config: { ...action.payload },
+        config: { ...initialState.config, ...action.payload }, // ✅ Fusionar con valores por defecto
       };
 
     case types.appConfigUpdate:
       return {
         ...state,
-        config: { ...action.payload },
+        config: { ...state.config, ...action.payload }, // ✅ Preservar campos existentes
       };
 
     default:

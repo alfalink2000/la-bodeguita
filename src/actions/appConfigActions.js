@@ -1,11 +1,11 @@
-// actions/appConfigActions.js - VERSIÓN QUE PERMITE FALLOS
+// src/actions/appConfigActions.js
 import { fetchAPIConfig } from "../helpers/fetchAPIConfig";
 import { fetchPublic } from "../helpers/fetchPublic";
 import { types } from "../types/types";
 import { applyTheme } from "../utils/themeManager";
 import Swal from "sweetalert2";
 
-// Cargar configuración - AHORA PERMITE FALLAR
+// ✅ EXPORTAR CORRECTAMENTE loadAppConfig
 export const loadAppConfig = () => {
   return async (dispatch) => {
     try {
@@ -25,21 +25,16 @@ export const loadAppConfig = () => {
         return Promise.resolve(body.config);
       } else {
         console.error("❌ Error en respuesta de configuración:", body.msg);
-
-        // ✅ IMPORTANTE: NO USAR CONFIGURACIÓN POR DEFECTO, DEJAR QUE FALLE
         throw new Error(body.msg || "Error cargando configuración");
       }
     } catch (error) {
       console.error("❌ Error de conexión cargando configuración:", error);
-
-      // ✅ IMPORTANTE: NO DISPATCHAR CONFIGURACIÓN POR DEFECTO
-      // Dejamos que el error se propague para activar el modo mantenimiento
       return Promise.reject(error);
     }
   };
 };
 
-// Función separada para cargar configuración por defecto (solo si es necesario)
+// ✅ EXPORTAR loadDefaultConfig
 export const loadDefaultConfig = () => {
   return (dispatch) => {
     const defaultConfig = {
@@ -52,6 +47,10 @@ export const loadDefaultConfig = () => {
       initialinfo:
         "🌟 **Bienvenido a nuestro Minimarket Digital** 🌟\n\n¡Estamos encantados de tenerte aquí!",
       show_initialinfo: true,
+      currency: "USD",
+      language: "es",
+      marquee_text:
+        "🚚 Envíos a domicilio — Calculamos el costo según tu ubicación — ¡Recibe tus productos sin salir de casa! 🚚",
     };
 
     console.log("🔄 Usando configuración local:", defaultConfig.app_name);
@@ -66,7 +65,7 @@ export const loadDefaultConfig = () => {
   };
 };
 
-// Resto del código permanece igual...
+// ✅ EXPORTAR updateAppConfig
 export const updateAppConfig = (configData) => {
   return async (dispatch) => {
     try {
@@ -109,7 +108,7 @@ export const updateAppConfig = (configData) => {
         Swal.fire(
           "Error",
           body.msg || "Error al guardar la configuración",
-          "error"
+          "error",
         );
         return false;
       }
@@ -118,14 +117,14 @@ export const updateAppConfig = (configData) => {
       Swal.fire(
         "Error",
         "Error de conexión al guardar la configuración",
-        "error"
+        "error",
       );
       return false;
     }
   };
 };
 
-// Vista previa del tema
+// ✅ EXPORTAR previewTheme
 export const previewTheme = (themeName) => {
   return () => {
     console.log(`🎨 Aplicando vista previa del tema: ${themeName}`);
@@ -133,7 +132,7 @@ export const previewTheme = (themeName) => {
   };
 };
 
-// Resetear al tema guardado
+// ✅ EXPORTAR resetTheme
 export const resetTheme = () => {
   return (dispatch, getState) => {
     const currentTheme = getState().appConfig.config.theme;
@@ -142,7 +141,7 @@ export const resetTheme = () => {
   };
 };
 
-// Action sincrónica para setear configuración
+// ✅ EXPORTAR setAppConfig
 export const setAppConfig = (config) => ({
   type: types.appConfigLoad,
   payload: config,

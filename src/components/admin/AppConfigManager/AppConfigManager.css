@@ -1210,3 +1210,50 @@
     flex-direction: column;
   }
 }
+/* components/admin/AppConfigManager/AppConfigManager.css - Agregar al final */
+
+/* ===== MARQUEE PREVIEW ===== */
+.marquee-preview {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.marquee-preview h4 {
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+  color: #1e293b;
+}
+
+.marquee-preview-container {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-radius: 100px;
+  padding: 0.75rem 1rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.marquee-preview-content {
+  animation: marqueePreview 10s linear infinite;
+  white-space: nowrap;
+  color: white;
+  font-weight: 500;
+  font-size: 0.85rem;
+  display: inline-block;
+}
+
+@keyframes marqueePreview {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.marquee-textarea {
+  font-family: inherit;
+  resize: vertical;
+}
