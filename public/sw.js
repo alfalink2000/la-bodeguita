@@ -1,5 +1,5 @@
 // public/sw.js
-const CACHE_NAME = "minimarket-v1.0.3";
+const CACHE_NAME = "minimarket-v1.0.4";
 const urlsToCache = ["/", "/index.html", "/manifest.json"];
 
 // Instalar Service Worker
