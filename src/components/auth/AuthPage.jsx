@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa";
 import { HiShoppingBag } from "react-icons/hi";
 import "./Auth.css";
+import "./Auth.desktop.css";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
@@ -47,46 +48,61 @@ const AuthPage = ({ onLoginSuccess }) => {
   // ✅ VALIDACIÓN DE DIRECCIÓN
   const validateAddress = (address, lat, lng) => {
     if (!address || address.trim() === "") {
-      setAddressError("📝 ¡Necesitamos tu dirección! Por favor, ingresa dónde vives para poder entregarte tus pedidos.");
+      setAddressError(
+        "📝 ¡Necesitamos tu dirección! Por favor, ingresa dónde vives para poder entregarte tus pedidos.",
+      );
       return false;
     }
 
     const trimmedAddress = address.trim();
 
     if (trimmedAddress.length < 10) {
-      setAddressError(`📍 "${trimmedAddress}" es muy corto. Una dirección debe tener al menos 10 caracteres.`);
+      setAddressError(
+        `📍 "${trimmedAddress}" es muy corto. Una dirección debe tener al menos 10 caracteres.`,
+      );
       return false;
     }
 
     const coordinatesPattern = /^-?\d+\.\d+,\s*-?\d+\.\d+$/;
     if (coordinatesPattern.test(trimmedAddress)) {
-      setAddressError("🌍 Solo ingresaste coordenadas. Por favor, escribe una dirección completa.");
+      setAddressError(
+        "🌍 Solo ingresaste coordenadas. Por favor, escribe una dirección completa.",
+      );
       return false;
     }
 
     const hasNumbers = /\d/.test(trimmedAddress);
     const hasLetters = /[a-zA-Záéíóúñ]/i.test(trimmedAddress);
-    
+
     if (!hasNumbers || !hasLetters) {
-      setAddressError("🏠 La dirección debe incluir el número de la casa y el nombre de la calle.");
+      setAddressError(
+        "🏠 La dirección debe incluir el número de la casa y el nombre de la calle.",
+      );
       return false;
     }
 
     if (gpsActive && (!lat || !lng)) {
-      setAddressError("📡 No pudimos obtener tu ubicación GPS. Activa la ubicación o escribe tu dirección manualmente.");
+      setAddressError(
+        "📡 No pudimos obtener tu ubicación GPS. Activa la ubicación o escribe tu dirección manualmente.",
+      );
       return false;
     }
 
     if (!gpsActive && (!lat || !lng)) {
-      const commonWords = /(calle|avenida|av|carrera|cr|transversal|entre|#|no|numero|km|sector|reparto|barrio|urbanización)/i;
-      
+      const commonWords =
+        /(calle|avenida|av|carrera|cr|transversal|entre|#|no|numero|km|sector|reparto|barrio|urbanización)/i;
+
       if (!commonWords.test(trimmedAddress)) {
-        setAddressError("🔍 Sé más específico. Incluye calle, número y referencia.");
+        setAddressError(
+          "🔍 Sé más específico. Incluye calle, número y referencia.",
+        );
         return false;
       }
-      
+
       if (!/\d/.test(trimmedAddress)) {
-        setAddressError("🔢 ¿Cuál es el número de tu casa? Por favor, incluye el número.");
+        setAddressError(
+          "🔢 ¿Cuál es el número de tu casa? Por favor, incluye el número.",
+        );
         return false;
       }
     }
@@ -169,13 +185,13 @@ const AuthPage = ({ onLoginSuccess }) => {
     e.preventDefault();
     setError(null);
     setAddressError("");
-    
+
     const isValidAddress = validateAddress(
       registerForm.address,
       registerForm.lat,
-      registerForm.lng
+      registerForm.lng,
     );
-    
+
     if (!isValidAddress) {
       Swal.fire({
         title: "📝 Dirección incompleta",
@@ -198,7 +214,7 @@ const AuthPage = ({ onLoginSuccess }) => {
       });
       return;
     }
-    
+
     setLoading(true);
 
     try {
@@ -240,9 +256,9 @@ const AuthPage = ({ onLoginSuccess }) => {
 
   const handleAddressSearch = async (address) => {
     if (gpsActive) return;
-    
+
     setRegisterForm({ ...registerForm, address });
-    
+
     if (address && address.length >= 5) {
       validateAddress(address, registerForm.lat, registerForm.lng);
     } else if (address && address.length > 0 && address.length < 5) {
@@ -276,7 +292,7 @@ const AuthPage = ({ onLoginSuccess }) => {
 
   const selectAddress = (suggestion) => {
     if (gpsActive) return;
-    
+
     setRegisterForm({
       ...registerForm,
       address: suggestion.display_name,
@@ -287,7 +303,7 @@ const AuthPage = ({ onLoginSuccess }) => {
     setAddressError("");
     setError(null);
     validateAddress(suggestion.display_name, suggestion.lat, suggestion.lng);
-    
+
     Swal.fire({
       title: "✅ ¡Dirección válida!",
       text: "Tu dirección ha sido reconocida correctamente.",
@@ -304,7 +320,10 @@ const AuthPage = ({ onLoginSuccess }) => {
     setGpsActive(true);
 
     if (!navigator.geolocation) {
-      showErrorAlert("Tu navegador no soporta geolocalización.", "GPS no soportado");
+      showErrorAlert(
+        "Tu navegador no soporta geolocalización.",
+        "GPS no soportado",
+      );
       setGpsLoading(false);
       setGpsActive(false);
       return;
@@ -331,7 +350,10 @@ const AuthPage = ({ onLoginSuccess }) => {
           });
           const data = await res.json();
 
-          let addressText = data.ok && data.display_name ? data.display_name : `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+          let addressText =
+            data.ok && data.display_name
+              ? data.display_name
+              : `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 
           setRegisterForm({
             ...registerForm,
@@ -339,12 +361,15 @@ const AuthPage = ({ onLoginSuccess }) => {
             lng: longitude,
             address: addressText,
           });
-          
+
           validateAddress(addressText, latitude, longitude);
 
           Swal.fire({
             title: "📍 ¡Ubicación registrada!",
-            text: addressText.length > 80 ? addressText.substring(0, 80) + "..." : addressText,
+            text:
+              addressText.length > 80
+                ? addressText.substring(0, 80) + "..."
+                : addressText,
             icon: "success",
             timer: 2000,
             showConfirmButton: false,
@@ -357,8 +382,10 @@ const AuthPage = ({ onLoginSuccess }) => {
             lng: longitude,
             address: coordText,
           });
-          setAddressError("⚠️ No pudimos obtener una dirección clara. Por favor, escribe tu dirección manualmente.");
-          
+          setAddressError(
+            "⚠️ No pudimos obtener una dirección clara. Por favor, escribe tu dirección manualmente.",
+          );
+
           Swal.fire({
             title: "📍 Ubicación obtenida",
             text: "Por favor, completa tu dirección manualmente.",
@@ -373,18 +400,22 @@ const AuthPage = ({ onLoginSuccess }) => {
         let errorMsg = "";
         switch (err.code) {
           case err.PERMISSION_DENIED:
-            errorMsg = "Permiso de ubicación denegado. Escribe tu dirección manualmente.";
+            errorMsg =
+              "Permiso de ubicación denegado. Escribe tu dirección manualmente.";
             break;
           case err.POSITION_UNAVAILABLE:
-            errorMsg = "Ubicación no disponible. Escribe tu dirección manualmente.";
+            errorMsg =
+              "Ubicación no disponible. Escribe tu dirección manualmente.";
             break;
           case err.TIMEOUT:
-            errorMsg = "Tiempo de espera agotado. Escribe tu dirección manualmente.";
+            errorMsg =
+              "Tiempo de espera agotado. Escribe tu dirección manualmente.";
             break;
           default:
-            errorMsg = "Error obteniendo ubicación. Escribe tu dirección manualmente.";
+            errorMsg =
+              "Error obteniendo ubicación. Escribe tu dirección manualmente.";
         }
-        
+
         showErrorAlert(errorMsg, "Error de GPS");
         setGpsLoading(false);
         setGpsActive(false);
@@ -408,7 +439,7 @@ const AuthPage = ({ onLoginSuccess }) => {
         <div className="particle particle-5"></div>
       </div>
 
-      <div className="auth-card">
+      <div className="auth-card" data-tab={activeTab}>
         <div className="auth-logo">
           <div className="auth-logo-icon">
             <HiShoppingBag size={28} />
@@ -487,7 +518,10 @@ const AuthPage = ({ onLoginSuccess }) => {
         )}
 
         {activeTab === "register" && (
-          <form className="auth-form auth-form--register" onSubmit={handleRegister}>
+          <form
+            className="auth-form auth-form--register"
+            onSubmit={handleRegister}
+          >
             {/* Fila 1: Usuario y Contraseña */}
             <div className="form-row">
               <div className="form-group">
@@ -500,7 +534,10 @@ const AuthPage = ({ onLoginSuccess }) => {
                   placeholder="Nombre de usuario"
                   value={registerForm.username}
                   onChange={(e) =>
-                    setRegisterForm({ ...registerForm, username: e.target.value })
+                    setRegisterForm({
+                      ...registerForm,
+                      username: e.target.value,
+                    })
                   }
                   required
                 />
@@ -516,7 +553,10 @@ const AuthPage = ({ onLoginSuccess }) => {
                   placeholder="Mínimo 6 caracteres"
                   value={registerForm.password}
                   onChange={(e) =>
-                    setRegisterForm({ ...registerForm, password: e.target.value })
+                    setRegisterForm({
+                      ...registerForm,
+                      password: e.target.value,
+                    })
                   }
                   required
                   minLength={6}
@@ -604,23 +644,29 @@ const AuthPage = ({ onLoginSuccess }) => {
                   <input
                     type="text"
                     className={`form-input ${addressError ? "form-input--error" : registerForm.address && !addressError && registerForm.address.length >= 10 ? "form-input--success" : ""}`}
-                    placeholder={gpsActive ? "Dirección obtenida por GPS" : "Ej: Calle 23 #456 entre L y M, Vedado"}
+                    placeholder={
+                      gpsActive
+                        ? "Dirección obtenida por GPS"
+                        : "Ej: Calle 23 #456 entre L y M, Vedado"
+                    }
                     value={registerForm.address}
                     onChange={(e) => handleAddressSearch(e.target.value)}
                     disabled={gpsActive}
                     required
                   />
-                  
+
                   {addressError && (
                     <div className="input-status-icon error">
                       <FaExclamationTriangle />
                     </div>
                   )}
-                  {registerForm.address && !addressError && registerForm.address.length >= 10 && (
-                    <div className="input-status-icon success">
-                      <FaCheckCircle />
-                    </div>
-                  )}
+                  {registerForm.address &&
+                    !addressError &&
+                    registerForm.address.length >= 10 && (
+                      <div className="input-status-icon success">
+                        <FaCheckCircle />
+                      </div>
+                    )}
                 </div>
 
                 {addressError && (
@@ -638,19 +684,23 @@ const AuthPage = ({ onLoginSuccess }) => {
                     <div className="helper-icon">📝</div>
                     <div className="helper-content">
                       <strong>Ejemplo:</strong>
-                      <small>"Calle 23 #456 entre L y M, Vedado, La Habana"</small>
+                      <small>
+                        "Calle 23 #456 entre L y M, Vedado, La Habana"
+                      </small>
                     </div>
                   </div>
                 )}
 
-                {registerForm.address && !addressError && registerForm.address.length >= 10 && (
-                  <div className="address-success-message">
-                    <FaCheckCircle />
-                    <div>
-                      <strong>¡Dirección válida!</strong>
+                {registerForm.address &&
+                  !addressError &&
+                  registerForm.address.length >= 10 && (
+                    <div className="address-success-message">
+                      <FaCheckCircle />
+                      <div>
+                        <strong>¡Dirección válida!</strong>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {!gpsActive && addressSuggestions.length > 0 && (
                   <div className="address-suggestions">
@@ -679,7 +729,7 @@ const AuthPage = ({ onLoginSuccess }) => {
                         confirmButtonColor: "#059669",
                         cancelButtonColor: "#ef4444",
                         confirmButtonText: "Sí",
-                        cancelButtonText: "Cancelar"
+                        cancelButtonText: "Cancelar",
                       }).then((result) => {
                         if (result.isConfirmed) {
                           setGpsActive(false);
@@ -703,16 +753,20 @@ const AuthPage = ({ onLoginSuccess }) => {
               <span>Al registrarte aceptas nuestros términos</span>
             </div>
 
-            <button 
-              type="submit" 
-              className="auth-submit" 
+            <button
+              type="submit"
+              className="auth-submit"
               disabled={loading || (!gpsActive && !registerForm.address)}
             >
-              {loading ? <span className="auth-spinner"></span> : "Crear cuenta"}
+              {loading ? (
+                <span className="auth-spinner"></span>
+              ) : (
+                "Crear cuenta"
+              )}
             </button>
           </form>
         )}
-        
+
         <div className="auth-footer">
           <p>
             {activeTab === "login" ? "¿Sin cuenta? " : "¿Ya tienes cuenta? "}
