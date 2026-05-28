@@ -65,21 +65,11 @@ export const insertProduct = (formData) => {
           body.product,
         );
 
-        // ✅ Agregar al estado
+        // ✅ Agregar al estado local (para respuesta inmediata)
         dispatch(addNewProduct(body.product));
 
-        // ✅ VERIFICAR que se agregó
-        const currentState = getState();
-        console.log(
-          "📊 [insertProduct] Productos en estado después de agregar:",
-          currentState.products.products.length,
-        );
-        console.log(
-          "📋 [insertProduct] Último producto:",
-          currentState.products.products[
-            currentState.products.products.length - 1
-          ],
-        );
+        // ✅ FORZAR RECARGA COMPLETA DE PRODUCTOS (para asegurar consistencia)
+        await dispatch(getProducts(true));
 
         Swal.fire({
           icon: "success",
@@ -121,6 +111,7 @@ export const insertProduct = (formData) => {
   };
 };
 
+// actions/productsActions.js
 export const updateProduct = (formData) => {
   return async (dispatch) => {
     try {
@@ -146,7 +137,11 @@ export const updateProduct = (formData) => {
       Swal.close();
 
       if (body.ok) {
+        // ✅ Actualizar en estado local
         dispatch(updateProductAction(body.product));
+
+        // ✅ FORZAR RECARGA COMPLETA DE PRODUCTOS
+        await dispatch(getProducts(true));
 
         Swal.fire({
           icon: "success",
@@ -188,6 +183,7 @@ export const updateProduct = (formData) => {
   };
 };
 
+// actions/productsActions.js
 export const deleteProduct = (id) => {
   return async (dispatch, getState) => {
     console.log("🚀 [deleteProduct] INICIANDO con ID:", id);
@@ -231,7 +227,11 @@ export const deleteProduct = (id) => {
       Swal.close();
 
       if (body.ok) {
+        // ✅ Eliminar del estado local
         dispatch(deleteProductAction(productId));
+
+        // ✅ FORZAR RECARGA COMPLETA DE PRODUCTOS
+        await dispatch(getProducts(true));
 
         Swal.fire({
           icon: "success",
