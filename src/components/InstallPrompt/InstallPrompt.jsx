@@ -9,19 +9,45 @@ const InstallPrompt = () => {
   const [isIOS, setIsIOS] = useState(false);
   const [installSupported, setInstallSupported] = useState(true);
 
-  useEffect(() => {
-    const isIOSDevice =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    setIsIOS(isIOSDevice);
+  // ✅ Verificar si ya fue instalada (desde localStorage)
+  const checkIfAppWasInstalled = () => {
+    const wasInstalled = localStorage.getItem("app_was_installed") === "true";
+    if (wasInstalled) {
+      console.log("✅ App ya fue instalada previamente (desde localStorage)");
+      setIsInstalled(true);
+      return true;
+    }
+    return false;
+  };
 
-    // Verificar si ya está instalada
+  // ✅ Verificar modo standalone (abierto desde el icono)
+  const checkStandaloneMode = () => {
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       window.navigator.standalone === true;
+
     if (isStandalone) {
+      console.log("✅ App abierta en modo standalone");
       setIsInstalled(true);
+      return true;
+    }
+    return false;
+  };
+
+  useEffect(() => {
+    // 1. Verificar si está abierta en modo standalone
+    if (checkStandaloneMode()) {
       return;
     }
+
+    // 2. Verificar si ya fue instalada en el pasado
+    if (checkIfAppWasInstalled()) {
+      return;
+    }
+
+    const isIOSDevice =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    setIsIOS(isIOSDevice);
 
     // Escuchar evento de instalación (Android/Chrome)
     const handleBeforeInstallPrompt = (e) => {
@@ -29,29 +55,39 @@ const InstallPrompt = () => {
       e.preventDefault();
       setDeferredPrompt(e);
       setInstallSupported(true);
-      // Mostrar el botón personalizado inmediatamente
-      setShowPrompt(true);
+
+      // Verificar nuevamente antes de mostrar
+      if (!checkStandaloneMode() && !checkIfAppWasInstalled()) {
+        setShowPrompt(true);
+      }
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-    // Si después de 5 segundos no se disparó el evento, asumimos que no es instalable
+    // ✅ Cuando se instala la app, guardar en localStorage
+    const handleAppInstalled = () => {
+      console.log("✅ App instalada exitosamente - guardando en localStorage");
+      localStorage.setItem("app_was_installed", "true");
+      setIsInstalled(true);
+      setShowPrompt(false);
+    };
+
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    // Si después de 5 segundos no se disparó el evento
     const timeout = setTimeout(() => {
-      if (!deferredPrompt && !isStandalone) {
+      if (
+        !deferredPrompt &&
+        !checkStandaloneMode() &&
+        !checkIfAppWasInstalled()
+      ) {
         console.warn(
           "⚠️ beforeinstallprompt no se disparó. PWA no instalable automáticamente.",
         );
         setInstallSupported(false);
-        // Mostrar el botón de todos modos con instrucciones manuales
         setShowPrompt(true);
       }
     }, 5000);
-
-    // Detectar instalación exitosa
-    window.addEventListener("appinstalled", () => {
-      setIsInstalled(true);
-      setShowPrompt(false);
-    });
 
     return () => {
       clearTimeout(timeout);
@@ -59,12 +95,12 @@ const InstallPrompt = () => {
         "beforeinstallprompt",
         handleBeforeInstallPrompt,
       );
+      window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
-      // Instalación automática
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === "accepted") {
@@ -72,7 +108,6 @@ const InstallPrompt = () => {
       }
       setDeferredPrompt(null);
     } else {
-      // Si no hay deferredPrompt, mostrar instrucciones manuales
       if (isIOS) {
         alert(
           "Para instalar en iOS: toca Compartir → 'Agregar a pantalla de inicio'",
@@ -90,9 +125,14 @@ const InstallPrompt = () => {
     localStorage.setItem("installPromptClosed", "true");
   };
 
-  if (isInstalled || !showPrompt) return null;
+  // ✅ No mostrar si ya está instalada (modo standalone o por localStorage)
+  if (isInstalled) {
+    console.log("🔒 App ya instalada, no mostrar prompt");
+    return null;
+  }
 
-  // Estilos y estructura (similar a la tuya, pero con mensajes adaptados)
+  if (!showPrompt) return null;
+
   return (
     <div className={`install-prompt ${isIOS ? "ios" : ""}`}>
       <div className="install-prompt__content">
