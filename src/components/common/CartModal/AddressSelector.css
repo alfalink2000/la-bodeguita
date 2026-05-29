@@ -1,0 +1,478 @@
+/* AddressSelector.css - Versión solo GPS */
+
+.address-selector {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 8px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.address-selector-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.address-icon {
+  font-size: 18px;
+  color: #059669;
+}
+
+.address-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 30px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #059669;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.address-list {
+  max-height: 280px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.address-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.address-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.address-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.address-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  margin-bottom: 6px;
+}
+
+.address-item:hover {
+  background: #f9fafb;
+  border-color: #e5e7eb;
+}
+
+.address-item.selected {
+  background: #f0fdf4;
+  border-color: #059669;
+}
+
+.address-radio {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.radio-checked {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #059669;
+  border: 2px solid #059669;
+  position: relative;
+}
+
+.radio-checked::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+}
+
+.radio-unchecked {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  background: white;
+}
+
+.address-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.address-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.address-full {
+  font-size: 12px;
+  color: #4b5563;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.default-badge {
+  display: inline-block;
+  font-size: 10px;
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+.address-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.address-item:hover .address-actions {
+  opacity: 1;
+}
+
+.address-action-btn {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.address-action-btn:hover {
+  background: #e5e7eb;
+  color: #059669;
+}
+
+.address-action-btn.delete:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.no-addresses {
+  text-align: center;
+  padding: 30px 20px;
+  color: #9ca3af;
+}
+
+.no-addresses p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.no-addresses-hint {
+  font-size: 11px;
+  margin-top: 6px !important;
+  color: #cbd5e1;
+}
+
+/* ===== FORMULARIO AGREGAR DIRECCIÓN (SOLO GPS) ===== */
+.add-address-form {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 13px;
+}
+
+.close-form {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #9ca3af;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-form:hover {
+  background: #f3f4f6;
+  color: #ef4444;
+}
+
+/* Botón GPS grande */
+.gps-address-btn-large {
+  width: 100%;
+  padding: 20px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: all 0.2s;
+}
+
+.gps-address-btn-large:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.gps-address-btn-large:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.gps-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Info card GPS */
+.gps-info-card-selector {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: #f0fdf4;
+  border-radius: 12px;
+  border: 1px solid #86efac;
+}
+
+.gps-info-icon {
+  font-size: 32px;
+}
+
+.gps-info-text strong {
+  display: block;
+  color: #065f46;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.gps-info-text p {
+  margin: 4px 0;
+  font-size: 12px;
+  color: #047857;
+}
+
+/* Botón agregar dirección */
+.add-address-btn {
+  width: 100%;
+  padding: 12px;
+  background: #f3f4f6;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.add-address-btn:hover {
+  background: #e5e7eb;
+  border-color: #059669;
+  color: #059669;
+}
+
+/* Animación */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive móvil */
+@media (max-width: 480px) {
+  .address-selector {
+    padding: 12px;
+  }
+  
+  .address-item {
+    padding: 10px;
+  }
+  
+  .address-full {
+    font-size: 11px;
+  }
+  
+  .gps-address-btn-large {
+    padding: 16px;
+    font-size: 14px;
+  }
+  
+  .add-address-btn {
+    padding: 10px;
+    font-size: 12px;
+  }
+  
+  .gps-info-card-selector {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .gps-info-icon {
+    font-size: 24px;
+  }
+  
+  .gps-info-text strong {
+    font-size: 13px;
+  }
+  
+  .gps-info-text p {
+    font-size: 11px;
+  }
+}
+
+/* Mensaje de permiso bloqueado - SIMPLE */
+.gps-permission-denied {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  background: #fef2f2;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  border: 1px solid #fecaca;
+  align-items: center;
+}
+
+.permission-icon {
+  font-size: 24px;
+}
+
+.permission-text {
+  flex: 1;
+}
+
+.permission-text strong {
+  display: block;
+  color: #991b1b;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.permission-text p {
+  font-size: 12px;
+  color: #7f1d1d;
+  margin: 0;
+}
+/* Mensaje de timeout */
+.gps-timeout-error {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  background: #fffbeb;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  border: 1px solid #fde68a;
+  align-items: center;
+}
+
+.timeout-icon {
+  font-size: 24px;
+}
+
+.timeout-text {
+  flex: 1;
+}
+
+.timeout-text strong {
+  display: block;
+  color: #92400e;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.timeout-text p {
+  font-size: 12px;
+  color: #78350f;
+  margin: 0 0 8px 0;
+}
+
+.timeout-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.timeout-retry-btn:hover {
+  background: #d97706;
+  transform: translateY(-1px);
+}
+
+/* Spinner de carga
+.gps-loading-spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto;
+  border: 3px solid #e5e7eb;
+  border-top-color: #059669;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+} */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

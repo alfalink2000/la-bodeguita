@@ -1,0 +1,216 @@
+/* components/InstallPrompt/InstallPrompt.css */
+
+/* Contenedor principal */
+.install-prompt {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  z-index: 9999;
+  animation: slideUp 0.3s ease-out;
+}
+
+/* iOS específico */
+.install-prompt.ios {
+  bottom: auto;
+  top: 20px;
+}
+
+/* Tarjeta de contenido */
+.install-prompt__content {
+  background: white;
+  border-radius: 20px;
+  padding: 24px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  position: relative;
+  max-width: 400px;
+  margin: 0 auto;
+  border: 1px solid #e5e7eb;
+}
+
+/* Botón cerrar */
+.install-prompt__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #9ca3af;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.install-prompt__close:hover {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+/* Icono principal */
+.install-prompt__icon {
+  font-size: 56px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+/* Título */
+.install-prompt__title {
+  font-size: 22px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 8px;
+  color: #1f2937;
+}
+
+/* Texto descriptivo */
+.install-prompt__text {
+  text-align: center;
+  color: #6b7280;
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Sección de instalación manual (cuando no hay beforeinstallprompt) */
+.install-prompt__manual {
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #92400e;
+}
+
+.install-prompt__manual p {
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.install-prompt__manual ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.install-prompt__manual li {
+  margin-bottom: 4px;
+}
+
+/* Pasos para iOS */
+.install-prompt__steps {
+  text-align: left;
+  margin: 20px 0;
+  padding-left: 20px;
+}
+
+.install-prompt__steps li {
+  margin-bottom: 12px;
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.ios-icon {
+  display: inline-block;
+  background: #f3f4f6;
+  padding: 4px 8px;
+  border-radius: 8px;
+  margin-left: 6px;
+  font-size: 16px;
+}
+
+/* Beneficios (opcional) */
+.install-prompt__benefits {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.install-prompt__benefits span {
+  flex: 1;
+  text-align: center;
+  padding: 8px;
+  background: #f9fafb;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #4b5563;
+}
+
+/* Contenedor de botones */
+.install-prompt__buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* Estilos base para botones */
+.install-prompt__button--primary,
+.install-prompt__button--secondary {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+/* Botón principal (Instalar ahora) */
+.install-prompt__button--primary {
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.install-prompt__button--primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+/* Botón secundario (Ahora no) */
+.install-prompt__button--secondary {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.install-prompt__button--secondary:hover {
+  background: #e5e7eb;
+}
+
+/* Animación de entrada */
+@keyframes slideUp {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive para escritorio */
+@media (min-width: 768px) {
+  .install-prompt {
+    left: auto;
+    right: 20px;
+    bottom: 20px;
+    width: 380px;
+  }
+
+  .install-prompt.ios {
+    left: auto;
+    right: 20px;
+    top: 20px;
+    bottom: auto;
+  }
+}

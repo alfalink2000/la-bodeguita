@@ -1,0 +1,256 @@
+/* SearchBar.css - ANIMACIÓN SIEMPRE ACTIVA */
+
+.search-bar {
+  position: relative;
+  width: 100%;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+/* ===== CONTENEDOR PRINCIPAL ===== */
+.search-bar--desktop .search-bar__content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+/* ===== INPUT DE BÚSQUEDA ===== */
+.search-bar__input-container {
+  position: relative;
+  flex: 1;
+  max-width: 70%;
+}
+
+.search-bar__icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
+  width: 1.25rem;
+  height: 1.25rem;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.search-bar__input {
+  width: 100%;
+  padding: 0.75rem 0.75rem 0.75rem 2.75rem;
+  background-color: var(--white);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  color: var(--gray-800);
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+  font-family: inherit;
+}
+
+.search-bar__input::placeholder {
+  color: var(--gray-400);
+}
+
+.search-bar__input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  transform: translateY(-1px);
+}
+
+.search-bar__input:hover {
+  border-color: var(--gray-300);
+}
+
+/* ===== INFO DE UBICACIÓN / ENVÍOS ===== */
+.search-bar__location-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #059669, #047857);
+  color: white;
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.search-bar__location-info:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ===== DESKTOP: Al lado del input ===== */
+.search-bar__location-info--desktop {
+  flex: 0 0 30%;
+}
+
+/* ===== MÓVIL: Arriba del input ===== */
+.search-bar__location-info--mobile {
+  display: flex !important;
+  width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+}
+
+.search-bar__location-info--mobile .location-info__icon {
+  font-size: 0.95rem;
+}
+
+/* ===== ICONO DE UBICACIÓN ===== */
+.location-info__icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+/* ===== MARQUESINA CONTINUA - SIEMPRE ACTIVA ===== */
+.location-info__text-wrapper {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  min-width: 0;
+}
+
+.location-info__container {
+  display: inline-block;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+/* ✅ ANIMACIÓN SIEMPRE ACTIVA (sin condición) */
+.location-info__container.animate {
+  animation: marqueeScroll linear infinite;
+}
+
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Pausar animación al pasar el mouse */
+.search-bar__location-info:hover .location-info__container.animate {
+  animation-play-state: paused;
+}
+
+.marquee-spacer {
+  display: inline-block;
+  width: 48px;
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* Tablets y móviles */
+@media (max-width: 1023px) {
+  .search-bar__location-info--mobile {
+    display: flex !important;
+  }
+
+  .search-bar__location-info--desktop {
+    display: none !important;
+  }
+
+  .search-bar__input-container {
+    max-width: 100% !important;
+    flex: 1 !important;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .search-bar__location-info--mobile {
+    display: none !important;
+  }
+
+  .search-bar__location-info--desktop {
+    display: flex !important;
+  }
+
+  .search-bar--desktop .search-bar__content {
+    max-width: 100%;
+  }
+
+  /* ✅ Ajustes específicos para desktop */
+  .search-bar__location-info--desktop .location-info__container.animate {
+    animation-duration: 15s !important; /* Velocidad más suave en desktop */
+  }
+
+  .search-bar__location-info--desktop .marquee-spacer {
+    width: 32px;
+  }
+}
+
+/* Móviles */
+@media (max-width: 768px) {
+  .search-bar__input-container {
+    max-width: 100% !important;
+    flex: 1 !important;
+  }
+
+  .search-bar__input {
+    padding: 0.75rem 0.75rem 0.75rem 2.75rem;
+    font-size: 0.875rem;
+  }
+
+  .search-bar__icon {
+    left: 0.75rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .search-bar__location-info--mobile {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .marquee-spacer {
+    width: 32px;
+  }
+
+  /* ✅ Ajuste para móvil */
+  @keyframes marqueeScroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-33.333%);
+    }
+  }
+}
+
+/* Móviles pequeños */
+@media (max-width: 480px) {
+  .search-bar__icon {
+    left: 0.75rem;
+  }
+
+  .search-bar__location-info--mobile {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .search-bar__location-info--mobile .location-info__icon {
+    font-size: 0.8rem;
+  }
+
+  .marquee-spacer {
+    width: 24px;
+  }
+}
+
+/* ===== ACCESIBILIDAD ===== */
+@media (prefers-reduced-motion: reduce) {
+  .location-info__container.animate {
+    animation: none !important;
+  }
+}

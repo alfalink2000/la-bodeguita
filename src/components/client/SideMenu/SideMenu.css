@@ -1,0 +1,369 @@
+/* =============================================
+   SIDE MENU - MENÚ LATERAL DESPLEGABLE
+   ============================================= */
+
+/* Overlay */
+.sidemenu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(2px);
+}
+
+.sidemenu-overlay--visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Contenedor del menú */
+.sidemenu {
+  position: fixed;
+  top: 0;
+  right: -320px;
+  width: 300px;
+  max-width: 85vw;
+  height: 100vh;
+  background: var(--white);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-xl);
+  transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+
+.sidemenu--open {
+  right: 0;
+}
+
+/* Header */
+.sidemenu__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(
+    135deg,
+    var(--primary-green),
+    var(--primary-green-dark)
+  );
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.sidemenu__header-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sidemenu__header-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidemenu__header-icon-svg {
+  font-size: 1.25rem;
+  stroke-width: 2;
+}
+
+.sidemenu__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.sidemenu__close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border-radius: var(--radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.sidemenu__close:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: rotate(90deg);
+}
+
+.sidemenu__close-icon {
+  font-size: 1.35rem;
+  stroke-width: 2;
+}
+
+/* Información del usuario */
+.sidemenu__user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.sidemenu__user-avatar {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(
+    135deg,
+    var(--primary-blue-light),
+    var(--accent-teal-light)
+  );
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidemenu__user-avatar-icon {
+  font-size: 1.75rem;
+  color: var(--primary-blue);
+  stroke-width: 1.5;
+}
+
+.sidemenu__user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  overflow: hidden;
+}
+
+.sidemenu__user-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidemenu__user-role {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  font-weight: 500;
+}
+
+/* Navegación */
+.sidemenu__nav {
+  flex: 1;
+  padding: 0.75rem 0;
+}
+
+.sidemenu__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidemenu__item {
+  margin: 0.125rem 0.5rem;
+}
+
+.sidemenu__link {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--gray-700);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+  text-align: left;
+  text-decoration: none;
+}
+
+.sidemenu__link:hover {
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
+.sidemenu__link:active {
+  background: var(--gray-200);
+  transform: scale(0.98);
+}
+
+.sidemenu__link-icon {
+  font-size: 1.35rem;
+  stroke-width: 1.5;
+  flex-shrink: 0;
+  color: var(--gray-500);
+  transition: color 0.2s ease;
+}
+
+.sidemenu__link:hover .sidemenu__link-icon {
+  color: var(--primary-green);
+}
+
+.sidemenu__link-text {
+  flex: 1;
+}
+
+/* Botones especiales */
+.sidemenu__link--logout {
+  color: var(--error) !important;
+}
+
+.sidemenu__link--logout .sidemenu__link-icon {
+  color: var(--error) !important;
+}
+
+.sidemenu__link--logout:hover {
+  background: var(--error-light) !important;
+}
+
+.sidemenu__link--login {
+  color: var(--primary-green) !important;
+}
+
+.sidemenu__link--login .sidemenu__link-icon {
+  color: var(--primary-green) !important;
+}
+
+.sidemenu__link--login:hover {
+  background: var(--primary-green-light) !important;
+}
+
+/* Divisor */
+.sidemenu__divider {
+  height: 1px;
+  background: var(--gray-200);
+  margin: 0.75rem 1.5rem;
+}
+
+/* Footer */
+.sidemenu__footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--gray-200);
+  text-align: center;
+  position: sticky;
+  bottom: 0;
+  background: var(--white);
+}
+
+.sidemenu__version {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  font-weight: 500;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+  .sidemenu {
+    width: 280px;
+  }
+
+  .sidemenu__header {
+    padding: 1rem 1.25rem;
+  }
+
+  .sidemenu__title {
+    font-size: 1.05rem;
+  }
+
+  .sidemenu__user-info {
+    padding: 1rem 1.25rem;
+  }
+
+  .sidemenu__link {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.9rem;
+  }
+
+  .sidemenu__link-icon {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .sidemenu {
+    width: 260px;
+  }
+}
+
+/* ===== ACCESIBILIDAD ===== */
+@media (prefers-reduced-motion: reduce) {
+  .sidemenu,
+  .sidemenu-overlay {
+    transition: none;
+  }
+
+  .sidemenu__close:hover {
+    transform: none;
+  }
+}
+
+.sidemenu__link:focus-visible {
+  outline: 2px solid var(--primary-green);
+  outline-offset: -2px;
+}
+
+.sidemenu__close:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+/* Scrollbar personalizado */
+.sidemenu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidemenu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidemenu::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: var(--radius-full);
+}
+
+.sidemenu::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-400);
+}
+/* Agregar al final de SideMenu.css */
+
+.sidemenu__footer {
+  padding: 1rem;
+  border-top: 1px solid var(--gray-100);
+  text-align: center;
+  margin-top: auto;
+}
+
+.sidemenu__version {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.sidemenu__footer-text {
+  font-size: 0.65rem;
+  color: var(--primary-green);
+  display: block;
+}

@@ -1,0 +1,217 @@
+/* Auth.desktop.css - Estilos exclusivos para desktop (min-width: 768px) */
+
+@media (min-width: 768px) {
+  .auth-container {
+    padding: 1rem;
+  }
+
+  /* ==========================================
+     LOGIN: tarjeta pequeña (380px)
+     ========================================== */
+  .auth-card[data-tab="login"] {
+    max-width: 380px;
+  }
+
+  /* ==========================================
+     REGISTRO: tarjeta expandida (900px)
+     ========================================== */
+  .auth-card[data-tab="register"] {
+    max-width: 900px;
+    padding: 1.75rem 2rem;
+  }
+
+  /* Logo más compacto en ambas */
+  .auth-logo {
+    margin-bottom: 0.75rem;
+  }
+
+  .auth-logo-icon {
+    width: 52px;
+    height: 52px;
+  }
+
+  .auth-logo h1 {
+    font-size: 1.4rem;
+  }
+
+  /* Tabs más pequeños */
+  .auth-tabs {
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 1rem;
+  }
+
+  /* ==========================================
+     FORMULARIO LOGIN - Centrado y compacto
+     ========================================== */
+  .auth-form--login {
+    max-width: 280px;
+    margin: 0 auto;
+  }
+
+  /* ==========================================
+     FORMULARIO REGISTRO - Grid profesional
+     ========================================== */
+  .auth-card[data-tab="register"] .auth-form--register {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.875rem;
+  }
+
+  .auth-card[data-tab="register"] .auth-form--register .form-full-width {
+    grid-column: span 2;
+  }
+
+  .auth-card[data-tab="register"] .auth-form--register .auth-terms {
+    grid-column: span 2;
+  }
+
+  .auth-card[data-tab="register"] .auth-form--register .auth-submit {
+    grid-column: span 2;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Grupos más compactos */
+  .auth-card[data-tab="register"] .auth-form--register .form-group {
+    gap: 0.15rem;
+  }
+
+  .auth-card[data-tab="register"] .auth-form--register .form-label {
+    font-size: 0.7rem;
+  }
+
+  .auth-card[data-tab="register"] .auth-form--register .form-input {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  /* Sección de dirección */
+  .auth-card[data-tab="register"] .location-section {
+    margin-top: 0;
+  }
+
+  /* Botón GPS */
+  .auth-card[data-tab="register"] .gps-main-btn {
+    padding: 0.55rem 1rem;
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Tarjeta info GPS */
+  .auth-card[data-tab="register"] .gps-info-card {
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .auth-card[data-tab="register"] .gps-info-icon {
+    font-size: 1.2rem;
+  }
+
+  .auth-card[data-tab="register"] .gps-info-text strong {
+    font-size: 0.7rem;
+  }
+
+  .auth-card[data-tab="register"] .gps-info-text p {
+    font-size: 0.65rem;
+  }
+
+  /* Indicador GPS activo */
+  .auth-card[data-tab="register"] .gps-active-indicator {
+    padding: 0.4rem 0.6rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .auth-card[data-tab="register"] .gps-active-indicator strong {
+    font-size: 0.7rem;
+  }
+
+  .auth-card[data-tab="register"] .gps-active-indicator p {
+    font-size: 0.6rem;
+  }
+
+  /* Separador */
+  .auth-card[data-tab="register"] .location-divider {
+    margin: 0.4rem 0;
+  }
+
+  .auth-card[data-tab="register"] .location-divider span {
+    font-size: 0.6rem;
+  }
+
+  /* Botón manual */
+  .auth-card[data-tab="register"] .unlock-manual-btn {
+    margin-top: 0.3rem;
+    padding: 0.35rem;
+    font-size: 0.65rem;
+  }
+
+  /* Helpers */
+  .auth-card[data-tab="register"] .address-helper {
+    padding: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  .auth-card[data-tab="register"] .helper-icon {
+    font-size: 0.9rem;
+  }
+
+  .auth-card[data-tab="register"] .helper-content strong {
+    font-size: 0.7rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .auth-card[data-tab="register"] .helper-content small {
+    font-size: 0.6rem;
+  }
+
+  /* Mensajes */
+  .auth-card[data-tab="register"] .address-success-message,
+  .auth-card[data-tab="register"] .address-error-message {
+    padding: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  .auth-card[data-tab="register"] .address-success-message svg,
+  .auth-card[data-tab="register"] .error-icon {
+    font-size: 0.9rem;
+  }
+
+  .auth-card[data-tab="register"] .address-success-message strong,
+  .auth-card[data-tab="register"] .error-content strong {
+    font-size: 0.7rem;
+  }
+
+  .auth-card[data-tab="register"] .error-content p {
+    font-size: 0.65rem;
+  }
+
+  /* Términos */
+  .auth-card[data-tab="register"] .auth-terms {
+    margin-top: 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  /* Botón submit */
+  .auth-card[data-tab="register"] .auth-submit {
+    padding: 0.55rem;
+    font-size: 0.85rem;
+    margin-top: 0;
+  }
+
+  /* Footer */
+  .auth-footer {
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+  }
+
+  .auth-footer p {
+    font-size: 0.7rem;
+  }
+
+  .auth-switch-btn {
+    font-size: 0.7rem;
+  }
+}
