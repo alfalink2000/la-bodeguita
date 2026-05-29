@@ -275,9 +275,16 @@
 }
 
 @keyframes shakeError {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
 }
 
 /* Texto de ayuda */
@@ -711,4 +718,96 @@
   .up-content-wrapper {
     padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
   }
+}
+/* ===== SECCIÓN DE CAMBIO DE CONTRASEÑA ===== */
+.up-password-section {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--gray-200);
+}
+
+.up-password-divider {
+  text-align: center;
+  margin: 0.75rem 0;
+  position: relative;
+}
+
+.up-password-divider::before,
+.up-password-divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 60px);
+  height: 1px;
+  background: var(--gray-200);
+}
+
+.up-password-divider::before {
+  left: 0;
+}
+
+.up-password-divider::after {
+  right: 0;
+}
+
+.up-password-divider span {
+  background: var(--white);
+  padding: 0 0.75rem;
+  font-size: 0.7rem;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.up-password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.up-password-wrapper input {
+  flex: 1;
+  padding-right: 2.5rem;
+}
+
+.up-password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--gray-400);
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.up-password-toggle:hover {
+  color: var(--gray-600);
+}
+
+.up-change-password-btn {
+  width: 100%;
+  padding: 0.625rem;
+  margin-top: 0.5rem;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: var(--radius);
+  color: #92400e;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.up-change-password-btn:hover:not(:disabled) {
+  background: #f59e0b;
+  color: white;
+}
+
+.up-change-password-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

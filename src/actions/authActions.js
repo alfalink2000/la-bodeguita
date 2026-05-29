@@ -1,4 +1,4 @@
-// actions/authActions.js - CORREGIDO
+// actions/authActions.js - VERSIÓN COMPLETA CORREGIDA
 import { fetchConToken, fetchSinToken } from "../helpers/fetchAdmin";
 import { types } from "../types/types";
 import Swal from "sweetalert2";
@@ -58,8 +58,7 @@ export const StartLogin = (username, password) => {
         localStorage.setItem("token", body.token);
         localStorage.setItem("token-init-date", new Date().getTime());
 
-        // ✅ EXTRAER EL USUARIO CORRECTAMENTE (body.user existe)
-        const userData = body.user || body; // Algunas respuestas pueden tener user anidado
+        const userData = body.user || body;
 
         console.log("📝 Datos del usuario a guardar:", {
           uid: userData.id || userData.uid,
@@ -68,7 +67,6 @@ export const StartLogin = (username, password) => {
           full_name: userData.full_name,
         });
 
-        // ✅ GUARDAR TODOS LOS DATOS DEL USUARIO
         dispatch(
           login({
             uid: userData.id || userData.uid,
@@ -83,6 +81,8 @@ export const StartLogin = (username, password) => {
             phone: userData.phone || "",
           }),
         );
+
+        await dispatch(startLoadUserAddresses());
       } else {
         let errorMessage = body.msg || "Credenciales incorrectas";
 
@@ -136,6 +136,160 @@ export const StartLogin = (username, password) => {
       });
     } finally {
       dispatch(finishLoading());
+    }
+  };
+};
+
+// ✅ CARGAR DIRECCIONES DEL USUARIO
+export const startLoadUserAddresses = () => {
+  return async (dispatch, getState) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return [];
+
+      const res = await fetch(`${API_URL}/api/users/addresses`, {
+        headers: { "x-token": token },
+      });
+      const data = await res.json();
+
+      if (data.ok && data.addresses) {
+        dispatch({
+          type: types.authLoadUserAddresses,
+          payload: data.addresses,
+        });
+        return data.addresses;
+      }
+      return [];
+    } catch (error) {
+      console.error("Error cargando direcciones:", error);
+      return [];
+    }
+  };
+};
+
+// ✅ ACTUALIZAR PERFIL COMPLETO
+export const updateUserProfile = (userData) => {
+  return async (dispatch) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return false;
+
+      const res = await fetch(`${API_URL}/api/auth/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-token": token,
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await res.json();
+
+      if (data.ok && data.user) {
+        dispatch({
+          type: types.authUpdateProfile,
+          payload: data.user,
+        });
+
+        await dispatch(startLoadUserAddresses());
+
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error actualizando perfil:", error);
+      return false;
+    }
+  };
+};
+
+// ✅ AGREGAR NUEVA DIRECCIÓN
+export const addUserAddress = (addressData) => {
+  return async (dispatch) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return false;
+
+      const res = await fetch(`${API_URL}/api/users/addresses`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-token": token,
+        },
+        body: JSON.stringify(addressData),
+      });
+
+      const data = await res.json();
+
+      if (data.ok && data.address) {
+        dispatch({
+          type: types.authAddUserAddress,
+          payload: data.address,
+        });
+        return data.address;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error agregando dirección:", error);
+      return false;
+    }
+  };
+};
+
+// ✅ ELIMINAR DIRECCIÓN
+export const deleteUserAddress = (addressId) => {
+  return async (dispatch) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return false;
+
+      const res = await fetch(`${API_URL}/api/users/addresses/${addressId}`, {
+        method: "DELETE",
+        headers: { "x-token": token },
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        dispatch({
+          type: types.authRemoveUserAddress,
+          payload: addressId,
+        });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error eliminando dirección:", error);
+      return false;
+    }
+  };
+};
+
+// ✅ ESTABLECER DIRECCIÓN PREDETERMINADA
+export const setDefaultUserAddress = (addressId) => {
+  return async (dispatch, getState) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return false;
+
+      const res = await fetch(
+        `${API_URL}/api/users/addresses/${addressId}/default`,
+        {
+          method: "PUT",
+          headers: { "x-token": token },
+        },
+      );
+
+      const data = await res.json();
+
+      if (data.ok) {
+        await dispatch(startLoadUserAddresses());
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error estableciendo dirección predeterminada:", error);
+      return false;
     }
   };
 };

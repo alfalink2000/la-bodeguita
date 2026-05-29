@@ -10,7 +10,6 @@ export const types = {
   authGetUsers: "[auth] Get users",
   authUpdateProfile: "[auth] Update profile",
 
-  // ✅ AGREGAR ESTOS TYPES QUE TU ACTION NECESITA
   authStartLoading: "[auth] Start loading",
   authFinishLoading: "[auth] Finish loading",
 
@@ -54,7 +53,8 @@ export const types = {
   cartUpdateQuantity: "[cart] Update quantity",
   cartClear: "[cart] Clear cart",
   cartToggleModal: "[cart] Toggle modal",
-  cartReset: "[Cart] Reset", // Agregar esta línea
+  cartReset: "[Cart] Reset",
+  cartSetSelectedAddress: "[cart] Set selected address",
 
   // ========== ORDERS ==========
   ordersLoad: "[orders] Load orders",
@@ -88,4 +88,11 @@ export const types = {
   chatAddMessage: "[chat] Add message",
   chatUpdateUnreadCount: "[chat] Update unread count",
   chatReset: "[chat] Reset",
+
+  // ========== AUTH ADDRESS TYPES ==========
+  authLoadUserAddresses: "[auth] Load user addresses",
+  authUpdateUserAddress: "[auth] Update user address",
+  authUpdateAddressInList: "[auth] Update address in list",
+  authAddUserAddress: "[auth] Add user address",
+  authRemoveUserAddress: "[auth] Remove user address",
 };

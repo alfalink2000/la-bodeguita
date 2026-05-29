@@ -3,7 +3,6 @@ import { types } from "../types/types";
 
 const initialState = {
   checking: true,
-  loading: false,
   uid: null,
   name: null,
   role: null,
@@ -14,65 +13,85 @@ const initialState = {
   lat: null,
   lng: null,
   phone: null,
+  userAddresses: [],
   isLoggedIn: false,
 };
 
 export const authReducer = (state = initialState, action) => {
-  if (!action || !action.type) {
-    return state;
-  }
-
   switch (action.type) {
-    case types.authStartLogin:
-    case types.authStartLoading:
-      return {
-        ...state,
-        loading: true,
-      };
-
     case types.authLogin:
       return {
         ...state,
+        ...action.payload,
         checking: false,
-        loading: false,
-        uid: action.payload.uid,
-        name: action.payload.name,
-        role: action.payload.role,
-        full_name: action.payload.full_name,
-        email: action.payload.email,
-        address: action.payload.address,
-        city: action.payload.city,
-        lat: action.payload.lat,
-        lng: action.payload.lng,
-        phone: action.payload.phone,
         isLoggedIn: true,
-      };
-
-    // ✅ NUEVO: Actualizar perfil
-    case types.authUpdateProfile:
-      return {
-        ...state,
-        full_name: action.payload.full_name || state.full_name,
-        phone: action.payload.phone || state.phone,
-        address: action.payload.address || state.address,
-        lat: action.payload.lat || state.lat,
-        lng: action.payload.lng || state.lng,
-        email: action.payload.email || state.email,
-      };
-
-    case types.authCheckingFinish:
-    case types.authFinishLoading:
-      return {
-        ...state,
-        checking: false,
-        loading: false,
       };
 
     case types.authLogout:
       return {
         ...initialState,
         checking: false,
-        loading: false,
+        isLoggedIn: false,
+      };
+
+    case types.authCheckingFinish:
+      return {
+        ...state,
+        checking: false,
+      };
+
+    case types.authStartLoading:
+      return {
+        ...state,
+        checking: true,
+      };
+
+    case types.authFinishLoading:
+      return {
+        ...state,
+        checking: false,
+      };
+
+    case types.authUpdateUserAddress:
+      return {
+        ...state,
+        address: action.payload.address,
+        lat: action.payload.lat,
+        lng: action.payload.lng,
+      };
+
+    case types.authLoadUserAddresses:
+      return {
+        ...state,
+        userAddresses: action.payload,
+      };
+
+    case types.authUpdateAddressInList:
+      return {
+        ...state,
+        userAddresses: state.userAddresses.map((addr) =>
+          addr.id === action.payload.id ? { ...addr, ...action.payload } : addr,
+        ),
+      };
+
+    case types.authAddUserAddress:
+      return {
+        ...state,
+        userAddresses: [...state.userAddresses, action.payload],
+      };
+
+    case types.authRemoveUserAddress:
+      return {
+        ...state,
+        userAddresses: state.userAddresses.filter(
+          (addr) => addr.id !== action.payload,
+        ),
+      };
+
+    case types.authUpdateProfile:
+      return {
+        ...state,
+        ...action.payload,
       };
 
     default:

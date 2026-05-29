@@ -1,5 +1,6 @@
-// components/client/CartModal/CartModal.jsx
+// components/client/CartModal/CartModal.jsx - Versión completa con Redux
 import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { FiX, FiPlus, FiMinus, FiTrash2, FiShoppingCart } from "react-icons/fi";
 import {
   HiOutlineClipboardCheck,
@@ -7,7 +8,6 @@ import {
   HiOutlineLocationMarker,
   HiOutlineRefresh,
 } from "react-icons/hi";
-import { useDispatch, useSelector } from "react-redux";
 import {
   selectCartItems,
   selectCartTotal,
@@ -19,6 +19,7 @@ import {
   toggleCartModal,
   clearCart,
 } from "../../../actions/cartActions";
+import { startLoadUserAddresses } from "../../../actions/authActions";
 import Swal from "sweetalert2";
 import AddressSelector from "./AddressSelector";
 import "./CartModal.css";
@@ -34,17 +35,18 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
   const total = useSelector(selectCartTotal);
   const appConfig = useSelector((state) => state.appConfig.config);
   const currency = appConfig?.currency || "CUP";
+
+  const userAddresses = useSelector((state) => state.auth.userAddresses || []);
+  const authUser = useSelector((state) => state.auth);
+
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [validatingStock, setValidatingStock] = useState(false);
-
   const [deliveryInfo, setDeliveryInfo] = useState(null);
   const [calculatingDelivery, setCalculatingDelivery] = useState(false);
   const [deliveryConfig, setDeliveryConfig] = useState(null);
   const [needsManualContact, setNeedsManualContact] = useState(false);
-
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [showAddressSelector, setShowAddressSelector] = useState(false);
-  const [userAddresses, setUserAddresses] = useState([]);
   const [addressSelectedByUser, setAddressSelectedByUser] = useState(false);
 
   const getCurrencySymbol = () => {
@@ -58,38 +60,58 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
     }
   };
 
-  // ✅ FUNCIÓN PARA VALIDAR STOCK DEL CARRITO
+  useEffect(() => {
+    if (isOpen && isLoggedIn && userAddresses.length === 0) {
+      dispatch(startLoadUserAddresses());
+    }
+  }, [isOpen, isLoggedIn, userAddresses.length, dispatch]);
+
+  useEffect(() => {
+    if (userAddresses.length > 0 && !selectedAddress) {
+      const defaultAddress = userAddresses.find((addr) => addr.is_default);
+      if (defaultAddress) {
+        setSelectedAddress(defaultAddress);
+        setAddressSelectedByUser(true);
+        if (defaultAddress.lat && defaultAddress.lng) {
+          calculateDeliveryWithAddress(defaultAddress);
+        } else {
+          setNeedsManualContact(true);
+        }
+      } else if (userAddresses.length > 0 && !selectedAddress) {
+        setSelectedAddress(userAddresses[0]);
+        setAddressSelectedByUser(true);
+        if (userAddresses[0].lat && userAddresses[0].lng) {
+          calculateDeliveryWithAddress(userAddresses[0]);
+        } else {
+          setNeedsManualContact(true);
+        }
+      }
+    }
+  }, [userAddresses, selectedAddress]);
+
   const validateCartStock = async () => {
     if (cartItems.length === 0) return;
-
     setValidatingStock(true);
-
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         setValidatingStock(false);
         return;
       }
-
       const itemsToValidate = cartItems.map((item) => ({
         id: item.id,
         quantity: item.quantity,
       }));
-
       const res = await fetch(`${API_URL}/api/products/validate-stock`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-token": token },
         body: JSON.stringify({ items: itemsToValidate }),
       });
-
       const data = await res.json();
-
       if (data.ok && !data.allAvailable) {
         const outOfStockItems = data.validation.filter((v) => !v.available);
-
         if (outOfStockItems.length > 0) {
           let hasChanges = false;
-
           for (const item of outOfStockItems) {
             if (item.currentStock === 0) {
               dispatch(removeFromCart(item.id));
@@ -99,37 +121,30 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
               hasChanges = true;
             }
           }
-
           if (hasChanges) {
             Swal.fire({
               icon: "warning",
               title: "Stock actualizado",
-              html: `
-                <p>Algunos productos han cambiado su disponibilidad:</p>
-                <ul style="text-align: left; max-height: 200px; overflow-y: auto;">
-                  ${outOfStockItems
-                    .map(
-                      (item) =>
-                        `<li><strong>${item.name}</strong>: solicitado ${item.requested}, disponible ${item.currentStock}</li>`,
-                    )
-                    .join("")}
-                </ul>
-                <p style="margin-top: 10px;">Hemos actualizado tu carrito automáticamente.</p>
-              `,
+              html: `<p>Algunos productos han cambiado su disponibilidad:</p><ul>${outOfStockItems
+                .map(
+                  (item) =>
+                    `<li><strong>${item.name}</strong>: solicitado ${item.requested}, disponible ${item.currentStock}</li>`,
+                )
+                .join(
+                  "",
+                )}</ul><p>Hemos actualizado tu carrito automáticamente.</p>`,
               confirmButtonColor: "#059669",
-              confirmButtonText: "Entendido",
             });
           }
         }
       }
     } catch (error) {
-      console.error("Error validando stock del carrito:", error);
+      console.error("Error validando stock:", error);
     } finally {
       setValidatingStock(false);
     }
   };
 
-  // ✅ VALIDAR STOCK CADA VEZ QUE SE ABRE EL CARRITO O CAMBIAN LOS ITEMS
   useEffect(() => {
     if (isOpen && cartItems.length > 0) {
       validateCartStock();
@@ -142,11 +157,9 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
       setDeliveryInfo(null);
       return;
     }
-
     setCalculatingDelivery(true);
     setDeliveryInfo(null);
     setNeedsManualContact(false);
-
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/api/orders/calculate-delivery`, {
@@ -158,10 +171,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
           lng: address.lng,
         }),
       });
-
       const data = await res.json();
-      console.log("📦 Respuesta cálculo con dirección:", data);
-
       if (data.ok) {
         setDeliveryInfo({
           price: data.price,
@@ -194,7 +204,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
     setSelectedAddress(address);
     setAddressSelectedByUser(true);
     setShowAddressSelector(false);
-
     if (address && address.lat && address.lng) {
       calculateDeliveryWithAddress(address);
     } else {
@@ -204,36 +213,21 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
   };
 
   const handleAddressAdded = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const addressesRes = await fetch(`${API_URL}/api/users/addresses`, {
-        headers: { "x-token": token },
-      });
-      const addressesData = await addressesRes.json();
+    await dispatch(startLoadUserAddresses());
+  };
 
-      if (addressesData.ok && addressesData.addresses) {
-        setUserAddresses(addressesData.addresses);
-        if (onAddressesLoaded) onAddressesLoaded(addressesData.addresses);
-
-        const newAddress =
-          addressesData.addresses[addressesData.addresses.length - 1];
-        if (newAddress) handleAddressSelect(newAddress);
-      }
-    } catch (err) {
-      console.error("Error recargando direcciones:", err);
-    }
+  const handleAddressDeleted = () => {
+    dispatch(startLoadUserAddresses());
   };
 
   useEffect(() => {
-    const loadDeliveryConfigAndAddresses = async () => {
+    const loadDeliveryConfig = async () => {
       try {
         const token = localStorage.getItem("token");
-
         const configRes = await fetch(`${API_URL}/api/delivery/config`, {
           headers: token ? { "x-token": token } : {},
         });
         const configData = await configRes.json();
-
         if (configData.ok && configData.config) {
           setDeliveryConfig({
             isConfigured: !!(
@@ -249,29 +243,13 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
         } else {
           setDeliveryConfig({ isConfigured: false });
         }
-
-        if (token && cartItems.length > 0) {
-          const addressesRes = await fetch(`${API_URL}/api/users/addresses`, {
-            headers: { "x-token": token },
-          });
-          const addressesData = await addressesRes.json();
-
-          if (addressesData.ok && addressesData.addresses) {
-            setUserAddresses(addressesData.addresses);
-            setSelectedAddress(null);
-            setAddressSelectedByUser(false);
-            setDeliveryInfo(null);
-            setNeedsManualContact(false);
-          }
-        }
       } catch (err) {
-        console.error("Error cargando configuración:", err);
+        console.error("Error cargando delivery config:", err);
         setDeliveryConfig({ isConfigured: false });
       }
     };
-
     if (isOpen && cartItems.length > 0) {
-      loadDeliveryConfigAndAddresses();
+      loadDeliveryConfig();
     } else if (isOpen && cartItems.length === 0) {
       setDeliveryInfo(null);
       setNeedsManualContact(false);
@@ -328,7 +306,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
       onShowLogin?.();
       return;
     }
-
     if (cartItems.length === 0) {
       Swal.fire({
         icon: "warning",
@@ -338,7 +315,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
       });
       return;
     }
-
     if (!selectedAddress) {
       Swal.fire({
         icon: "warning",
@@ -348,7 +324,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
       });
       return;
     }
-
     const subtotal = total;
     const currencySymbol = getCurrencySymbol();
 
@@ -431,7 +406,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
     deliveryPrice,
   ) => {
     setCreatingOrder(true);
-
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -443,13 +417,11 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
         setCreatingOrder(false);
         return;
       }
-
       const addressToUse = selectedAddress || {
         address: "",
         lat: null,
         lng: null,
       };
-
       const orderData = {
         items: cartItems.map((item) => ({
           id: item.id,
@@ -470,25 +442,20 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
           ? "Requiere contacto manual para dirección"
           : `Dirección: ${addressToUse.address}`,
       };
-
       const res = await fetch(`${API_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-token": token },
         body: JSON.stringify(orderData),
       });
-
       const data = await res.json();
-
       if (data.ok) {
         if (onOrderCreated) onOrderCreated();
         dispatch(clearCart());
         dispatch(toggleCartModal());
         setCreatingOrder(false);
-
         const finalTotal =
           wantsDeliveryFlag && deliveryPrice ? total + deliveryPrice : total;
         const currencySymbol = getCurrencySymbol();
-
         if (needsManualContactFlag) {
           try {
             await fetch(`${API_URL}/api/chat/send`, {
@@ -502,13 +469,11 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
             console.error("Error enviando mensaje:", err);
           }
         }
-
         let message = needsManualContactFlag
           ? "📞 Un asesor te contactará para coordinar el envío."
           : wantsDeliveryFlag
             ? "🚚 Recibirás tu pedido en tu domicilio."
             : "📦 Retira tu pedido en nuestra tienda.";
-
         await Swal.fire({
           title: "✅ ¡Pedido realizado!",
           html: `<div style="text-align: center;"><p><strong>Pedido #${data.pedido.id}</strong></p><p>${message}</p><p style="font-weight: 700; color: #059669;">Total: ${currencySymbol} ${finalTotal.toFixed(2)}</p></div>`,
@@ -517,12 +482,18 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
         });
       } else {
         setCreatingOrder(false);
-
         if (data.outOfStock && data.outOfStock.length > 0) {
           Swal.fire({
             icon: "error",
             title: "Stock insuficiente",
-            html: `<p>No se pudo completar el pedido:</p><ul style="text-align: left;">${data.outOfStock.map((item) => `<li>${item.name}: solicitado ${item.requested}, disponible ${item.available}</li>`).join("")}</ul><p>Por favor, actualiza tu carrito e intenta de nuevo.</p>`,
+            html: `<p>No se pudo completar el pedido:</p><ul>${data.outOfStock
+              .map(
+                (item) =>
+                  `<li>${item.name}: solicitado ${item.requested}, disponible ${item.available}</li>`,
+              )
+              .join(
+                "",
+              )}</ul><p>Por favor, actualiza tu carrito e intenta de nuevo.</p>`,
             confirmButtonColor: "#059669",
           });
           validateCartStock();
@@ -676,8 +647,9 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
                           <AddressSelector
                             selectedAddress={selectedAddress}
                             onAddressSelect={handleAddressSelect}
-                            onAddressesLoaded={setUserAddresses}
+                            onAddressesLoaded={() => {}}
                             onAddressAdded={handleAddressAdded}
+                            onAddressDeleted={handleAddressDeleted}
                             token={localStorage.getItem("token")}
                           />
                         </div>

@@ -17,9 +17,12 @@ import {
   HiOutlineAtSymbol,
   HiOutlineChevronDown,
   HiOutlineChevronUp,
+  HiOutlineLockClosed,
+  HiOutlineEye,
+  HiOutlineEyeOff,
 } from "react-icons/hi";
 import Swal from "sweetalert2";
-import { startLogout } from "../../../actions/authActions";
+import { startLogout, updateUserProfile } from "../../../actions/authActions";
 import { resetCart } from "../../../actions/cartActions";
 import "./UserProfile.css";
 
@@ -41,12 +44,21 @@ const UserProfile = ({
   const [editForm, setEditForm] = useState({
     username: "",
     email: "",
-    full_name: "",
     phone: "",
     address: "",
     lat: null,
     lng: null,
   });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [unreadOrdersCount, setUnreadOrdersCount] =
@@ -80,7 +92,6 @@ const UserProfile = ({
       setEditForm({
         username: userData.username || userData.name || "",
         email: userData.email || "",
-        full_name: userData.full_name || "",
         phone: userData.phone || "",
         address: userData.address || "",
         lat: userData.lat || null,
@@ -206,12 +217,97 @@ const UserProfile = ({
     return true;
   };
 
+  const validatePasswordForm = () => {
+    const errors = {};
+
+    if (!passwordData.currentPassword.trim()) {
+      errors.currentPassword = "La contraseña actual es obligatoria";
+    }
+
+    if (passwordData.newPassword && passwordData.newPassword.length < 6) {
+      errors.newPassword =
+        "La nueva contraseña debe tener al menos 6 caracteres";
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      errors.confirmPassword = "Las contraseñas no coinciden";
+    }
+
+    setPasswordErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleChangePassword = async () => {
+    if (!validatePasswordForm()) {
+      const errorMessages = Object.values(passwordErrors).join("<br>");
+      Swal.fire({
+        icon: "warning",
+        title: "Errores en el formulario",
+        html: errorMessages,
+        confirmButtonColor: "#059669",
+      });
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`${API_URL}/api/auth/profile/password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-token": token,
+        },
+        body: JSON.stringify({
+          current_password: passwordData.currentPassword,
+          new_password: passwordData.newPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        Swal.fire({
+          icon: "success",
+          title: "Contraseña actualizada",
+          text: "Tu contraseña ha sido cambiada correctamente",
+          confirmButtonColor: "#059669",
+        });
+
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        setPasswordErrors({});
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: data.msg || "No se pudo cambiar la contraseña",
+          confirmButtonColor: "#ef4444",
+        });
+      }
+    } catch (err) {
+      console.error("Error cambiando contraseña:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error de conexión",
+        text: "No se pudo conectar con el servidor",
+        confirmButtonColor: "#ef4444",
+      });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const handleEditToggle = () => {
     if (isEditing) {
       setEditForm({
         username: userData?.username || userData?.name || "",
         email: userData?.email || "",
-        full_name: userData?.full_name || "",
         phone: userData?.phone || "",
         address: userData?.address || "",
         lat: userData?.lat || null,
@@ -219,6 +315,12 @@ const UserProfile = ({
       });
       setEmailError("");
       setUsernameError("");
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setPasswordErrors({});
     }
     setIsEditing(!isEditing);
   };
@@ -339,6 +441,7 @@ const UserProfile = ({
     );
   };
 
+  // ✅ HANDLE SAVE PROFILE - USANDO REDUX
   const handleSaveProfile = async () => {
     if (!editForm.username || editForm.username.trim() === "") {
       Swal.fire({
@@ -373,11 +476,9 @@ const UserProfile = ({
     }
 
     setSaving(true);
-    const token = localStorage.getItem("token");
 
     const bodyData = {
       username: editForm.username.trim(),
-      full_name: editForm.full_name?.trim() || "",
       phone: editForm.phone?.trim() || "",
       address: editForm.address?.trim() || "",
     };
@@ -402,18 +503,9 @@ const UserProfile = ({
     }
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/profile`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-token": token,
-        },
-        body: JSON.stringify(bodyData),
-      });
+      const success = await dispatch(updateUserProfile(bodyData));
 
-      const data = await res.json();
-
-      if (data.ok) {
+      if (success) {
         Swal.fire({
           icon: "success",
           title: "Perfil actualizado",
@@ -422,17 +514,6 @@ const UserProfile = ({
         });
 
         setIsEditing(false);
-
-        if (data.user) {
-          Object.assign(userData, data.user);
-        }
-      } else {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: data.msg || "No se pudo actualizar el perfil",
-          confirmButtonColor: "#ef4444",
-        });
       }
     } catch (err) {
       console.error("Error al guardar perfil:", err);
@@ -472,7 +553,6 @@ const UserProfile = ({
   return (
     <div className="user-profile-overlay" onClick={onClose}>
       <div className="user-profile-modal" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
         <div className="up-header">
           <button className="up-close" onClick={onClose}>
             <HiOutlineX size={20} />
@@ -486,7 +566,6 @@ const UserProfile = ({
           <p className="up-role">@{userData?.username || userData?.name}</p>
         </div>
 
-        {/* Tabs */}
         <div className="up-tabs">
           <button
             className={`up-tab ${activeTab === "profile" ? "up-tab--active" : ""}`}
@@ -507,11 +586,9 @@ const UserProfile = ({
           </button>
         </div>
 
-        {/* Content */}
         <div className="up-content-wrapper">
           {activeTab === "profile" ? (
             <div className="up-profile-section">
-              {/* Campo: Nombre de usuario */}
               <div className="up-field">
                 <label>
                   <HiOutlineIdentification size={14} /> Usuario de acceso
@@ -543,7 +620,6 @@ const UserProfile = ({
                 )}
               </div>
 
-              {/* Campo: Email */}
               <div className="up-field">
                 <label>
                   <HiOutlineAtSymbol size={14} /> Correo electrónico
@@ -578,26 +654,6 @@ const UserProfile = ({
                 )}
               </div>
 
-              {/* Campo: Nombre completo */}
-              <div className="up-field">
-                <label>
-                  <HiOutlineUser size={14} /> Nombre completo
-                </label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editForm.full_name}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, full_name: e.target.value })
-                    }
-                    placeholder="Tu nombre completo"
-                  />
-                ) : (
-                  <span>{userData?.full_name || "No registrado"}</span>
-                )}
-              </div>
-
-              {/* Campo: Teléfono */}
               <div className="up-field">
                 <label>
                   <HiOutlinePhone size={14} /> Teléfono
@@ -616,7 +672,6 @@ const UserProfile = ({
                 )}
               </div>
 
-              {/* Campo: Dirección con GPS */}
               <div className="up-field">
                 <label>
                   <HiOutlineLocationMarker size={14} /> Dirección
@@ -661,7 +716,144 @@ const UserProfile = ({
                 )}
               </div>
 
-              {/* Botones de acción */}
+              {isEditing && (
+                <div className="up-password-section">
+                  <div className="up-password-divider">
+                    <span>Cambiar Contraseña (Opcional)</span>
+                  </div>
+
+                  <div className="up-field">
+                    <label>
+                      <HiOutlineLockClosed size={14} /> Contraseña actual
+                    </label>
+                    <div className="up-password-wrapper">
+                      <input
+                        type={showCurrentPassword ? "text" : "password"}
+                        value={passwordData.currentPassword}
+                        onChange={(e) =>
+                          setPasswordData({
+                            ...passwordData,
+                            currentPassword: e.target.value,
+                          })
+                        }
+                        placeholder="Ingresa tu contraseña actual"
+                        className={
+                          passwordErrors.currentPassword ? "up-input-error" : ""
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="up-password-toggle"
+                        onClick={() =>
+                          setShowCurrentPassword(!showCurrentPassword)
+                        }
+                      >
+                        {showCurrentPassword ? (
+                          <HiOutlineEyeOff size={16} />
+                        ) : (
+                          <HiOutlineEye size={16} />
+                        )}
+                      </button>
+                    </div>
+                    {passwordErrors.currentPassword && (
+                      <span className="up-error-text">
+                        {passwordErrors.currentPassword}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="up-field">
+                    <label>
+                      <HiOutlineLockClosed size={14} /> Nueva contraseña
+                    </label>
+                    <div className="up-password-wrapper">
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        value={passwordData.newPassword}
+                        onChange={(e) =>
+                          setPasswordData({
+                            ...passwordData,
+                            newPassword: e.target.value,
+                          })
+                        }
+                        placeholder="Mínimo 6 caracteres"
+                        className={
+                          passwordErrors.newPassword ? "up-input-error" : ""
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="up-password-toggle"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                      >
+                        {showNewPassword ? (
+                          <HiOutlineEyeOff size={16} />
+                        ) : (
+                          <HiOutlineEye size={16} />
+                        )}
+                      </button>
+                    </div>
+                    {passwordErrors.newPassword && (
+                      <span className="up-error-text">
+                        {passwordErrors.newPassword}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="up-field">
+                    <label>
+                      <HiOutlineLockClosed size={14} /> Confirmar nueva
+                      contraseña
+                    </label>
+                    <div className="up-password-wrapper">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={passwordData.confirmPassword}
+                        onChange={(e) =>
+                          setPasswordData({
+                            ...passwordData,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                        placeholder="Confirma tu nueva contraseña"
+                        className={
+                          passwordErrors.confirmPassword ? "up-input-error" : ""
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="up-password-toggle"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                      >
+                        {showConfirmPassword ? (
+                          <HiOutlineEyeOff size={16} />
+                        ) : (
+                          <HiOutlineEye size={16} />
+                        )}
+                      </button>
+                    </div>
+                    {passwordErrors.confirmPassword && (
+                      <span className="up-error-text">
+                        {passwordErrors.confirmPassword}
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="up-change-password-btn"
+                    onClick={handleChangePassword}
+                    disabled={changingPassword}
+                  >
+                    {changingPassword
+                      ? "Actualizando..."
+                      : "Actualizar Contraseña"}
+                  </button>
+                </div>
+              )}
+
               <div className="up-actions">
                 {isEditing ? (
                   <>
@@ -762,7 +954,6 @@ const UserProfile = ({
                           </span>
                         </div>
 
-                        {/* ===== PRODUCTOS - SOLO AL EXPANDIR ===== */}
                         <div className="up-order-products">
                           <button
                             className="up-products-toggle-btn"
@@ -794,7 +985,9 @@ const UserProfile = ({
                                     </span>
                                     <span className="up-product-price">
                                       {getCurrencySymbol()}
-                                      {(parseFloat(item.price) * item.quantity).toFixed(2)}
+                                      {(
+                                        parseFloat(item.price) * item.quantity
+                                      ).toFixed(2)}
                                     </span>
                                   </div>
                                 </div>
@@ -824,14 +1017,14 @@ const UserProfile = ({
                                     {
                                       method: "PUT",
                                       headers: { "x-token": token },
-                                    }
+                                    },
                                   );
                                   const data = await res.json();
                                   if (data.ok) {
                                     Swal.fire(
                                       "Pedido cancelado",
                                       "",
-                                      "success"
+                                      "success",
                                     );
                                     loadOrders();
                                   } else {

@@ -1,4 +1,4 @@
-// components/client/ProductDetail/ProductDetail.jsx
+// ProductDetail.jsx - Versión completa corregida
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   HiOutlineArrowLeft,
@@ -7,7 +7,6 @@ import {
   HiOutlineClock,
 } from "react-icons/hi";
 import { HiOutlineTruck, HiOutlineLocationMarker } from "react-icons/hi";
-
 import { FiPhone } from "react-icons/fi";
 import { FiShoppingCart, FiShare2, FiCheck } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
@@ -35,6 +34,8 @@ const ProductDetail = ({ product, onBack, onWhatsAppClick }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState("");
+  // ✅ Estado local para la cantidad mostrada en notificación
+  const [notificationQuantity, setNotificationQuantity] = useState(0);
 
   // Obtener cantidad actual en carrito
   const cartItem = cartItems.find((item) => item.id === product?.id);
@@ -50,6 +51,7 @@ const ProductDetail = ({ product, onBack, onWhatsAppClick }) => {
     if (showNotification) {
       const timer = setTimeout(() => {
         setShowNotification(false);
+        setNotificationQuantity(0); // Resetear al cerrar
       }, 3000);
       return () => clearTimeout(timer);
     }
@@ -85,9 +87,12 @@ const ProductDetail = ({ product, onBack, onWhatsAppClick }) => {
     onWhatsAppClick(product.name);
   }, [onWhatsAppClick, product?.name]);
 
-  // ✅ Manejar agregar al carrito con notificación
+  // ✅ Manejar agregar al carrito con notificación CORREGIDA
   const handleAddToCart = useCallback(() => {
     if (!isAvailable) return;
+
+    // ✅ Calcular nueva cantidad ANTES de despachar
+    const newQuantity = currentQuantity + 1;
 
     dispatch(addToCart(product));
 
@@ -95,15 +100,15 @@ const ProductDetail = ({ product, onBack, onWhatsAppClick }) => {
     const isDesktop = window.innerWidth >= 768;
 
     if (isDesktop) {
-      // Desktop: SweetAlert o toast elegante
       setNotificationMessage("✅ Producto agregado al carrito");
-      setShowNotification(true);
     } else {
-      // Mobile: Badge flotante o notificación
       setNotificationMessage("✓ Agregado al carrito");
-      setShowNotification(true);
     }
-  }, [dispatch, product, isAvailable]);
+
+    // ✅ Usar la nueva cantidad calculada
+    setNotificationQuantity(newQuantity);
+    setShowNotification(true);
+  }, [dispatch, product, isAvailable, currentQuantity]);
 
   const handleShare = useCallback(async () => {
     if (navigator.share) {
@@ -119,6 +124,7 @@ const ProductDetail = ({ product, onBack, onWhatsAppClick }) => {
     } else {
       navigator.clipboard.writeText(window.location.href);
       setNotificationMessage("🔗 Enlace copiado");
+      setNotificationQuantity(0);
       setShowNotification(true);
       setTimeout(() => setShowNotification(false), 2000);
     }
@@ -150,7 +156,9 @@ const ProductDetail = ({ product, onBack, onWhatsAppClick }) => {
                 {notificationMessage}
               </span>
               <span className="cart-notification__subtitle">
-                {currentQuantity + 1} producto(s) en tu carrito
+                {/* ✅ Usar notificationQuantity en lugar de currentQuantity + 1 */}
+                {notificationQuantity} producto
+                {notificationQuantity !== 1 ? "s" : ""} en tu carrito
               </span>
             </div>
             <button
@@ -392,7 +400,6 @@ const ActionSection = React.memo(
             </span>
             <span className="button-sub-text">Compra rápida y segura</span>
           </div>
-          {/* ✅ BADGE DE CANTIDAD EN EL BOTÓN (Mobile) */}
           {currentQuantity > 0 && (
             <div className="cart-quantity-badge">{currentQuantity}</div>
           )}

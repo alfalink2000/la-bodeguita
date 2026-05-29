@@ -6,6 +6,7 @@ const initialState = {
   isCartOpen: false,
   total: 0,
   itemsCount: 0,
+  selectedAddressId: null,
 };
 
 export const cartReducer = (state = initialState, action) => {
@@ -57,6 +58,13 @@ export const cartReducer = (state = initialState, action) => {
 
     case types.cartReset: // ✅ Manejar reset completo
       return initialState;
+
+    // ✅ NUEVO: Establecer dirección seleccionada en el carrito
+    case types.cartSetSelectedAddress:
+      return {
+        ...state,
+        selectedAddressId: action.payload,
+      };
 
     default:
       return state;
