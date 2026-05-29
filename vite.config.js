@@ -7,7 +7,13 @@ export default defineConfig({
   build: {
     outDir: "dist",
     assetsDir: "assets",
-    // Sin rollupOptions.output.manualChunks
+    rollupOptions: {
+      output: {
+        entryFileNames: "assets/[name]-[hash].js",
+        chunkFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash].[ext]",
+      },
+    },
   },
   server: {
     port: 3000,
