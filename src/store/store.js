@@ -1,4 +1,4 @@
-// store/store.js - CON REDUX PERSIST
+// store/store.js - VERSIÓN OPTIMIZADA
 import { createStore, combineReducers, applyMiddleware, compose } from "redux";
 import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
@@ -26,39 +26,48 @@ const reducers = combineReducers({
   chat: chatReducer,
 });
 
-// ✅ CONFIGURACIÓN DE PERSISTENCIA
+// ✅ CONFIGURACIÓN DE PERSISTENCIA OPTIMIZADA
 const persistConfig = {
   key: "root",
   storage,
   stateReconciler: autoMergeLevel2,
-  whitelist: ["products", "categories", "appConfig", "cart"], // Qué datos persistir
-  timeout: 5000,
-  version: 2, // Versión para migraciones futuras
+  whitelist: ["products", "categories", "appConfig", "cart"],
+  blacklist: ["auth", "chat", "orders", "adminUsers", "stores"], // ✅ Explícito lo que NO persistir
+  timeout: 10000, // ✅ Aumentado a 10 segundos para evitar timeouts
+  version: 2,
 };
 
 const persistedReducer = persistReducer(persistConfig, reducers);
 
-// ✅ MIDDLEWARE DE DEBUG MEJORADO
+// 🔥 MIDDLEWARE DE DEBUG OPTIMIZADO
 const debugMiddleware = (store) => (next) => (action) => {
-  // Solo log actions importantes para no saturar la consola
+  // Solo log en desarrollo y para acciones importantes
+  if (process.env.NODE_ENV !== "development") {
+    return next(action);
+  }
+
+  // Lista de acciones que queremos monitorear
   const importantActions = [
-    "LOAD_APP_CONFIG",
-    "GET_PRODUCTS",
-    "GET_CATEGORIES",
-    "LOAD_APP_CONFIG_SUCCESS",
-    "GET_PRODUCTS_SUCCESS",
-    "GET_CATEGORIES_SUCCESS",
-    "LOAD_APP_CONFIG_FAILURE",
-    "GET_PRODUCTS_FAILURE",
-    "GET_CATEGORIES_FAILURE",
+    "appConfigLoad",
+    "productsLoad",
+    "categoriesLoad",
+    "authLogin",
+    "authLogout",
+    "cartAddItem",
+    "cartClear",
+    "orderAddNew",
   ];
 
-  if (importantActions.includes(action.type)) {
-    console.group(`🔍 REDUX ACTION: ${action.type}`);
+  // Verificar si el action.type contiene alguna de las importantes
+  const shouldLog = importantActions.some((important) =>
+    action.type?.includes(important),
+  );
+
+  if (shouldLog) {
+    console.group(`🔍 REDUX: ${action.type}`);
     console.log("Payload:", action.payload);
-    console.log("State antes:", store.getState());
     const result = next(action);
-    console.log("State después:", store.getState());
+    console.log("State:", store.getState());
     console.groupEnd();
     return result;
   }
@@ -76,10 +85,14 @@ export const store = createStore(
   composeEnhancers(applyMiddleware(thunk, debugMiddleware)),
 );
 
-export const persistor = persistStore(store);
+export const persistor = persistStore(store, null, () => {
+  if (process.env.NODE_ENV === "development") {
+    console.log("✅ Redux Persist: Estado restaurado");
+  }
+});
 
 // Para debug en desarrollo
-if (import.meta.env.MODE === "development") {
+if (process.env.NODE_ENV === "development") {
   window.store = store;
   window.persistor = persistor;
 }

@@ -1,10 +1,30 @@
-// helpers/fetchAPIConfig.js
+// helpers/fetchAPIConfig.js - VERSIÓN LIMPIA
 const baseUrl =
   (import.meta.env.VITE_API_URL || "http://localhost:4000") + "/api";
-
 const isDevelopment = import.meta.env.VITE_NODE_ENV === "development";
+const TIMEOUT = 60000; // 60 segundos para imágenes grandes
 
-export const fetchAPIConfig = (
+const fetchWithTimeout = async (url, options, timeout = TIMEOUT) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === "AbortError") {
+      throw new Error("Timeout: La petición tardó demasiado");
+    }
+    throw error;
+  }
+};
+
+export const fetchAPIConfig = async (
   endpoint,
   data,
   method = "GET",
@@ -14,7 +34,7 @@ export const fetchAPIConfig = (
   const token = localStorage.getItem("token") || "";
 
   if (isDevelopment) {
-    console.log("🌐 Realizando petición a:", url);
+    console.log("🌐 Petición a:", url);
   }
 
   const config = {
@@ -24,58 +44,26 @@ export const fetchAPIConfig = (
     },
   };
 
-  // ✅ TIMEOUT AUMENTADO A 60 SEGUNDOS para imágenes grandes
-  const timeout = 60000; // 60 segundos
+  if (!isFormData && method !== "GET") {
+    config.headers["Content-Type"] = "application/json";
+    config.body = JSON.stringify(data);
+  } else if (isFormData && method !== "GET") {
+    config.body = data;
+  }
 
-  if (method === "GET") {
-    const fetchPromise = fetch(url, config);
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error("Timeout: La petición tardó demasiado")),
-        timeout,
-      ),
-    );
+  try {
+    const response = await fetchWithTimeout(url, config);
+    const body = await response.json();
 
-    return Promise.race([fetchPromise, timeoutPromise]).then(
-      async (response) => {
-        // ✅ Leer el cuerpo de la respuesta como JSON
-        const body = await response.json();
-
-        if (!response.ok) {
-          throw new Error(body.msg || `HTTP error! status: ${response.status}`);
-        }
-
-        return body;
-      },
-    );
-  } else {
-    if (isFormData) {
-      // ✅ NO establecer Content-Type para FormData
-      config.body = data;
-    } else {
-      config.headers["Content-Type"] = "application/json";
-      config.body = JSON.stringify(data);
+    if (!response.ok) {
+      throw new Error(body.msg || `HTTP error! status: ${response.status}`);
     }
 
-    const fetchPromise = fetch(url, config);
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error("Timeout: La petición tardó demasiado")),
-        timeout,
-      ),
-    );
-
-    return Promise.race([fetchPromise, timeoutPromise]).then(
-      async (response) => {
-        // ✅ Leer el cuerpo de la respuesta como JSON
-        const body = await response.json();
-
-        if (!response.ok) {
-          throw new Error(body.msg || `HTTP error! status: ${response.status}`);
-        }
-
-        return body;
-      },
-    );
+    return body;
+  } catch (error) {
+    if (isDevelopment) {
+      console.error("❌ Error en fetchAPIConfig:", error);
+    }
+    throw error;
   }
 };

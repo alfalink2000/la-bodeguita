@@ -1,4 +1,4 @@
-// reducers/adminUsersReducer.js
+// reducers/adminUsersReducer.js - VERSIÓN OPTIMIZADA
 import { types } from "../types/types";
 
 const initialState = {
@@ -13,6 +13,7 @@ export const adminUsersReducer = (state = initialState, action) => {
       return {
         ...state,
         users: [...action.payload],
+        loading: false, // ✅ Asegurar que loading se resetee
       };
 
     case types.adminUserSetActive:
@@ -31,7 +32,7 @@ export const adminUsersReducer = (state = initialState, action) => {
       return {
         ...state,
         users: state.users.map((user) =>
-          user.id === action.payload.id ? { ...user, ...action.payload } : user
+          user.id === action.payload.id ? { ...user, ...action.payload } : user,
         ),
         activeUser: null,
       };
@@ -42,7 +43,7 @@ export const adminUsersReducer = (state = initialState, action) => {
         users: state.users.map((user) =>
           user.id === action.payload.userId
             ? { ...user, is_active: action.payload.isActive }
-            : user
+            : user,
         ),
       };
 

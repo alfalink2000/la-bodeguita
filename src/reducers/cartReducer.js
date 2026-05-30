@@ -1,4 +1,4 @@
-// reducers/cartReducer.js
+// reducers/cartReducer.js - VERSIÓN OPTIMIZADA
 import { types } from "../types/types";
 
 const initialState = {
@@ -11,7 +11,7 @@ const initialState = {
 
 export const cartReducer = (state = initialState, action) => {
   switch (action.type) {
-    case types.cartAddItem:
+    case types.cartAddItem: {
       const existingItem = state.items.find(
         (item) => item.id === action.payload.id,
       );
@@ -30,24 +30,30 @@ export const cartReducer = (state = initialState, action) => {
         ...state,
         items: [...state.items, newItem],
       });
+    }
 
     case types.cartRemoveItem:
-      const filteredItems = state.items.filter(
-        (item) => item.id !== action.payload,
-      );
-      return calculateTotals({ ...state, items: filteredItems });
+      return calculateTotals({
+        ...state,
+        items: state.items.filter((item) => item.id !== action.payload),
+      });
 
     case types.cartUpdateQuantity:
-      const updatedItems = state.items
-        .map((item) =>
-          item.id === action.payload.id
-            ? { ...item, quantity: Math.max(0, action.payload.quantity) }
-            : item,
-        )
-        .filter((item) => item.quantity > 0);
-      return calculateTotals({ ...state, items: updatedItems });
+      return calculateTotals({
+        ...state,
+        items: state.items
+          .map((item) =>
+            item.id === action.payload.id
+              ? { ...item, quantity: Math.max(0, action.payload.quantity) }
+              : item,
+          )
+          .filter((item) => item.quantity > 0),
+      });
 
     case types.cartClear:
+      return { ...initialState, selectedAddressId: state.selectedAddressId }; // ✅ Preservar dirección si existe
+
+    case types.cartReset:
       return initialState;
 
     case types.cartToggleModal:
@@ -56,10 +62,6 @@ export const cartReducer = (state = initialState, action) => {
         isCartOpen: !state.isCartOpen,
       };
 
-    case types.cartReset: // ✅ Manejar reset completo
-      return initialState;
-
-    // ✅ NUEVO: Establecer dirección seleccionada en el carrito
     case types.cartSetSelectedAddress:
       return {
         ...state,

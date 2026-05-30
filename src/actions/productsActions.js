@@ -1,4 +1,4 @@
-// actions/productsActions.js
+// actions/productsActions.js - VERSIÓN OPTIMIZADA
 import { fetchAPIConfig } from "../helpers/fetchAPIConfig";
 import { fetchPublic } from "../helpers/fetchPublic";
 import { types } from "../types/types";
@@ -10,31 +10,26 @@ export const getProducts = (forceRefresh = false) => {
       const lastUpdate = getState().products.lastUpdate;
       const now = Date.now();
       if (lastUpdate && now - lastUpdate < 10000) {
-        console.log("🔄 Productos ya cargados recientemente, omitiendo...");
+        console.log("🔄 Productos ya cargados recientemente");
         return Promise.resolve();
       }
     }
 
-    console.log("📦 Cargando productos...");
     dispatch(startLoading());
 
     try {
       const body = await fetchPublic("products/getProducts");
 
       if (body.ok) {
-        console.log(
-          `✅ ${body.products.length} productos cargados exitosamente`,
-        );
         dispatch(loadProducts(body.products));
         return Promise.resolve();
       } else {
-        console.error("❌ Error en respuesta de productos:", body.msg);
         return Promise.reject(
           new Error(body.msg || "Error cargando productos"),
         );
       }
     } catch (error) {
-      console.error("❌ Error de conexión en getProducts:", error);
+      console.error("❌ Error en getProducts:", error);
       return Promise.reject(error);
     } finally {
       dispatch(finishLoading());
@@ -43,16 +38,12 @@ export const getProducts = (forceRefresh = false) => {
 };
 
 export const insertProduct = (formData) => {
-  return async (dispatch, getState) => {
+  return async (dispatch) => {
     try {
       Swal.fire({
         title: "Creando producto...",
-        text: "Por favor espera mientras se procesa",
         allowOutsideClick: false,
-        allowEscapeKey: false,
-        didOpen: () => {
-          Swal.showLoading();
-        },
+        didOpen: () => Swal.showLoading(),
       });
 
       const body = await fetchAPIConfig("products/new", formData, "POST", true);
@@ -60,21 +51,12 @@ export const insertProduct = (formData) => {
       Swal.close();
 
       if (body.ok) {
-        console.log(
-          "✅ [insertProduct] Producto recibido del backend:",
-          body.product,
-        );
-
-        // ✅ Agregar al estado local (para respuesta inmediata)
         dispatch(addNewProduct(body.product));
-
-        // ✅ FORZAR RECARGA COMPLETA DE PRODUCTOS (para asegurar consistencia)
         await dispatch(getProducts(true));
 
         Swal.fire({
           icon: "success",
           title: "¡Producto agregado!",
-          text: body.msg || "Producto registrado correctamente",
           timer: 1500,
           showConfirmButton: false,
         });
@@ -82,51 +64,23 @@ export const insertProduct = (formData) => {
         Swal.fire("Error", body.msg, "error");
       }
     } catch (error) {
-      console.error("Error insertando producto:", error);
+      console.error("❌ Error insertando producto:", error);
       Swal.close();
-
-      if (
-        error.message.includes("Timeout") ||
-        error.message.includes("tardó demasiado")
-      ) {
-        Swal.fire({
-          icon: "warning",
-          title: "Producto posiblemente creado",
-          text: "Verificando...",
-          timer: 2000,
-          showConfirmButton: false,
-        });
-
-        setTimeout(() => {
-          dispatch(getProducts(true));
-        }, 1500);
-      } else {
-        Swal.fire(
-          "Error",
-          error.message || "Error de conexión al crear el producto",
-          "error",
-        );
-      }
+      Swal.fire("Error", error.message || "Error de conexión", "error");
     }
   };
 };
 
-// actions/productsActions.js
 export const updateProduct = (formData) => {
   return async (dispatch) => {
     try {
       Swal.fire({
         title: "Actualizando producto...",
-        text: "Por favor espera",
         allowOutsideClick: false,
-        allowEscapeKey: false,
-        didOpen: () => {
-          Swal.showLoading();
-        },
+        didOpen: () => Swal.showLoading(),
       });
 
       const productId = formData.get("id");
-
       const body = await fetchAPIConfig(
         `products/update/${productId}`,
         formData,
@@ -137,16 +91,12 @@ export const updateProduct = (formData) => {
       Swal.close();
 
       if (body.ok) {
-        // ✅ Actualizar en estado local
         dispatch(updateProductAction(body.product));
-
-        // ✅ FORZAR RECARGA COMPLETA DE PRODUCTOS
         await dispatch(getProducts(true));
 
         Swal.fire({
           icon: "success",
           title: "¡Actualización exitosa!",
-          text: "Producto actualizado correctamente",
           timer: 2000,
           showConfirmButton: false,
         });
@@ -154,89 +104,49 @@ export const updateProduct = (formData) => {
         Swal.fire("Error", body.msg, "error");
       }
     } catch (error) {
-      console.error("Error actualizando producto:", error);
+      console.error("❌ Error actualizando producto:", error);
       Swal.close();
-
-      if (
-        error.message.includes("Timeout") ||
-        error.message.includes("tardó demasiado")
-      ) {
-        Swal.fire({
-          icon: "warning",
-          title: "Producto posiblemente actualizado",
-          text: "Recargando productos...",
-          timer: 3000,
-          showConfirmButton: false,
-        });
-
-        setTimeout(() => {
-          dispatch(getProducts(true));
-        }, 2000);
-      } else {
-        Swal.fire(
-          "Error",
-          error.message || "Error de conexión al actualizar el producto",
-          "error",
-        );
-      }
+      Swal.fire("Error", error.message || "Error de conexión", "error");
     }
   };
 };
 
-// actions/productsActions.js
 export const deleteProduct = (id) => {
-  return async (dispatch, getState) => {
-    console.log("🚀 [deleteProduct] INICIANDO con ID:", id);
+  return async (dispatch) => {
+    if (!id) {
+      Swal.fire("Error", "ID de producto inválido", "error");
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: "¿Estás seguro?",
+      text: "¡No podrás revertir esta acción!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar",
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
-      if (!id) {
-        Swal.fire("Error", "ID de producto inválido", "error");
-        return;
-      }
-
-      const productId = parseInt(id);
-
-      const result = await Swal.fire({
-        title: "¿Estás seguro?",
-        text: "¡No podrás revertir esta acción!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085d6",
-        confirmButtonText: "Sí, eliminar",
-        cancelButtonText: "Cancelar",
-      });
-
-      if (!result.isConfirmed) return;
-
       Swal.fire({
         title: "Eliminando producto...",
-        text: "Por favor espera",
         allowOutsideClick: false,
-        didOpen: () => {
-          Swal.showLoading();
-        },
+        didOpen: () => Swal.showLoading(),
       });
 
-      const body = await fetchAPIConfig(
-        `products/delete/${productId}`,
-        {},
-        "DELETE",
-      );
+      const body = await fetchAPIConfig(`products/delete/${id}`, {}, "DELETE");
 
       Swal.close();
 
       if (body.ok) {
-        // ✅ Eliminar del estado local
-        dispatch(deleteProductAction(productId));
-
-        // ✅ FORZAR RECARGA COMPLETA DE PRODUCTOS
+        dispatch(deleteProductAction(id));
         await dispatch(getProducts(true));
 
         Swal.fire({
           icon: "success",
           title: "¡Eliminado!",
-          text: "Producto eliminado correctamente",
           timer: 1500,
           showConfirmButton: false,
         });
@@ -248,9 +158,9 @@ export const deleteProduct = (id) => {
         );
       }
     } catch (error) {
-      console.error("❌ [deleteProduct] Error:", error);
+      console.error("❌ Error eliminando producto:", error);
       Swal.close();
-      Swal.fire("Error", "Error de conexión al eliminar el producto", "error");
+      Swal.fire("Error", "Error de conexión", "error");
     }
   };
 };
@@ -262,17 +172,14 @@ const loadProducts = (products) => ({
   type: types.productsLoad,
   payload: products,
 });
-
 const addNewProduct = (product) => ({
   type: types.productAddNew,
   payload: product,
 });
-
 const updateProductAction = (product) => ({
   type: types.productUpdated,
   payload: product,
 });
-
 const deleteProductAction = (id) => ({
   type: types.productDeleted,
   payload: parseInt(id),

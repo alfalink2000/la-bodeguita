@@ -1,4 +1,4 @@
-// components/InstallPrompt/InstallPrompt.jsx
+// components/InstallPrompt/InstallPrompt.jsx - VERSIÓN OPTIMIZADA
 import { useState, useEffect } from "react";
 import "./InstallPrompt.css";
 
@@ -9,25 +9,20 @@ const InstallPrompt = () => {
   const [isIOS, setIsIOS] = useState(false);
   const [installSupported, setInstallSupported] = useState(true);
 
-  // ✅ Verificar si ya fue instalada (desde localStorage)
   const checkIfAppWasInstalled = () => {
     const wasInstalled = localStorage.getItem("app_was_installed") === "true";
     if (wasInstalled) {
-      console.log("✅ App ya fue instalada previamente (desde localStorage)");
       setIsInstalled(true);
       return true;
     }
     return false;
   };
 
-  // ✅ Verificar modo standalone (abierto desde el icono)
   const checkStandaloneMode = () => {
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       window.navigator.standalone === true;
-
     if (isStandalone) {
-      console.log("✅ App abierta en modo standalone");
       setIsInstalled(true);
       return true;
     }
@@ -35,28 +30,18 @@ const InstallPrompt = () => {
   };
 
   useEffect(() => {
-    // 1. Verificar si está abierta en modo standalone
-    if (checkStandaloneMode()) {
-      return;
-    }
-
-    // 2. Verificar si ya fue instalada en el pasado
-    if (checkIfAppWasInstalled()) {
-      return;
-    }
+    if (checkStandaloneMode()) return;
+    if (checkIfAppWasInstalled()) return;
 
     const isIOSDevice =
       /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     setIsIOS(isIOSDevice);
 
-    // Escuchar evento de instalación (Android/Chrome)
     const handleBeforeInstallPrompt = (e) => {
-      console.log("✅ beforeinstallprompt capturado");
       e.preventDefault();
       setDeferredPrompt(e);
       setInstallSupported(true);
 
-      // Verificar nuevamente antes de mostrar
       if (!checkStandaloneMode() && !checkIfAppWasInstalled()) {
         setShowPrompt(true);
       }
@@ -64,9 +49,7 @@ const InstallPrompt = () => {
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-    // ✅ Cuando se instala la app, guardar en localStorage
     const handleAppInstalled = () => {
-      console.log("✅ App instalada exitosamente - guardando en localStorage");
       localStorage.setItem("app_was_installed", "true");
       setIsInstalled(true);
       setShowPrompt(false);
@@ -74,16 +57,12 @@ const InstallPrompt = () => {
 
     window.addEventListener("appinstalled", handleAppInstalled);
 
-    // Si después de 5 segundos no se disparó el evento
     const timeout = setTimeout(() => {
       if (
         !deferredPrompt &&
         !checkStandaloneMode() &&
         !checkIfAppWasInstalled()
       ) {
-        console.warn(
-          "⚠️ beforeinstallprompt no se disparó. PWA no instalable automáticamente.",
-        );
         setInstallSupported(false);
         setShowPrompt(true);
       }
@@ -125,12 +104,7 @@ const InstallPrompt = () => {
     localStorage.setItem("installPromptClosed", "true");
   };
 
-  // ✅ No mostrar si ya está instalada (modo standalone o por localStorage)
-  if (isInstalled) {
-    console.log("🔒 App ya instalada, no mostrar prompt");
-    return null;
-  }
-
+  if (isInstalled) return null;
   if (!showPrompt) return null;
 
   return (

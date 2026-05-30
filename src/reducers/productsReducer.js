@@ -1,4 +1,4 @@
-// reducers/productsReducer.js
+// reducers/productsReducer.js - VERSIÓN OPTIMIZADA
 import { types } from "../types/types";
 
 const initialState = {
@@ -14,7 +14,10 @@ const initialState = {
 export const productsReducer = (state = initialState, action) => {
   switch (action.type) {
     case types.productsLoad:
-      console.log("📦 [Reducer] Cargando productos:", action.payload.length);
+      // 🔥 OPTIMIZACIÓN: Log solo en desarrollo
+      if (process.env.NODE_ENV === "development") {
+        console.log("📦 [Reducer] Cargando productos:", action.payload.length);
+      }
       return {
         ...state,
         products: [...action.payload],
@@ -34,19 +37,18 @@ export const productsReducer = (state = initialState, action) => {
       };
 
     case types.productAddNew:
-      console.log("➕ [Reducer] Agregando nuevo producto:", action.payload);
-      console.log("📊 [Reducer] Productos antes:", state.products.length);
-
-      const newState = {
+      if (process.env.NODE_ENV === "development") {
+        console.log("➕ [Reducer] Agregando nuevo producto");
+      }
+      return {
         ...state,
         products: [...state.products, action.payload],
       };
 
-      console.log("📊 [Reducer] Productos después:", newState.products.length);
-      return newState;
-
     case types.productUpdated:
-      console.log("✏️ [Reducer] Actualizando producto:", action.payload.id);
+      if (process.env.NODE_ENV === "development") {
+        console.log("✏️ [Reducer] Actualizando producto:", action.payload.id);
+      }
       return {
         ...state,
         products: state.products.map((product) =>
@@ -57,12 +59,13 @@ export const productsReducer = (state = initialState, action) => {
       };
 
     case types.productDeleted:
-      const deletedId = parseInt(action.payload);
-      console.log("🗑️ [Reducer] Eliminando producto ID:", deletedId);
+      if (process.env.NODE_ENV === "development") {
+        console.log("🗑️ [Reducer] Eliminando producto ID:", action.payload);
+      }
       return {
         ...state,
         products: state.products.filter(
-          (product) => parseInt(product.id) !== deletedId,
+          (product) => parseInt(product.id) !== parseInt(action.payload),
         ),
       };
 
@@ -90,7 +93,7 @@ export const productsReducer = (state = initialState, action) => {
         },
       };
 
-    case types.productTogglePopular:
+    case types.productTogglePopular: {
       const isPopular = state.featuredProducts.popular.includes(action.payload);
       return {
         ...state,
@@ -103,8 +106,9 @@ export const productsReducer = (state = initialState, action) => {
             : [...state.featuredProducts.popular, action.payload],
         },
       };
+    }
 
-    case types.productToggleOnSale:
+    case types.productToggleOnSale: {
       const isOnSale = state.featuredProducts.onSale.includes(action.payload);
       return {
         ...state,
@@ -117,6 +121,7 @@ export const productsReducer = (state = initialState, action) => {
             : [...state.featuredProducts.onSale, action.payload],
         },
       };
+    }
 
     default:
       return state;

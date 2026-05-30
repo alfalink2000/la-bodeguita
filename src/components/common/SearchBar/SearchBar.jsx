@@ -1,4 +1,4 @@
-// components/common/SearchBar/SearchBar.jsx
+// components/common/SearchBar/SearchBar.jsx - VERSIÓN OPTIMIZADA
 import { Search } from "lucide-react";
 import { HiOutlineLocationMarker } from "react-icons/hi";
 import { useEffect, useRef, useState } from "react";
@@ -14,17 +14,14 @@ const SearchBar = ({
   const textRef = useRef(null);
   const wrapperRef = useRef(null);
 
-  // ✅ Usar el texto dinámico de la configuración, con fallback por defecto
   const marqueeText =
     appConfig?.marquee_text ||
     "🚚 Envíos a domicilio — Calculamos el costo según tu ubicación — ¡Recibe tus productos sin salir de casa! 🚚";
 
-  // Calcular velocidad basada en la longitud del texto y el contenedor
   useEffect(() => {
     const calculateSpeed = () => {
       if (textRef.current && wrapperRef.current) {
         const textWidth = textRef.current.scrollWidth / 2;
-        const containerWidth = wrapperRef.current.clientWidth;
         const distance = textWidth;
         const speed = Math.max(8, Math.min(20, distance / 50));
         setMarqueeSpeed(speed);
@@ -38,7 +35,6 @@ const SearchBar = ({
 
   return (
     <div className={`search-bar ${isDesktop ? "search-bar--desktop" : ""}`}>
-      {/* Mensaje de envíos - Móvil */}
       {!isDesktop && (
         <div className="search-bar__location-info search-bar__location-info--mobile">
           <HiOutlineLocationMarker className="location-info__icon" />
@@ -71,7 +67,6 @@ const SearchBar = ({
           />
         </div>
 
-        {/* Mensaje de envíos - Desktop */}
         {isDesktop && (
           <div className="search-bar__location-info search-bar__location-info--desktop">
             <HiOutlineLocationMarker className="location-info__icon" />

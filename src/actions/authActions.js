@@ -1,4 +1,4 @@
-// actions/authActions.js - VERSIÓN COMPLETA CORREGIDA
+// actions/authActions.js - VERSIÓN OPTIMIZADA COMPLETA
 import { fetchConToken, fetchSinToken } from "../helpers/fetchAdmin";
 import { types } from "../types/types";
 import Swal from "sweetalert2";
@@ -7,17 +7,10 @@ const API_URL =
   import.meta.env.VITE_API_URL ||
   "https://minimarket-backend-6z9m.onrender.com";
 
-export const checkingFinish = () => ({
-  type: types.authCheckingFinish,
-});
-
-export const startLoading = () => ({
-  type: types.authStartLogin,
-});
-
-export const finishLoading = () => ({
-  type: types.authCheckingFinish,
-});
+// 🔥 OPTIMIZACIÓN: Eliminar acciones duplicadas
+export const startLoading = () => ({ type: types.authStartLogin });
+export const finishLoading = () => ({ type: types.authCheckingFinish });
+export const checkingFinish = () => ({ type: types.authCheckingFinish });
 
 export const StartLogin = (username, password) => {
   return async (dispatch) => {
@@ -35,14 +28,7 @@ export const StartLogin = (username, password) => {
         "POST",
       );
 
-      console.log("📦 Body completo recibido del backend:", body);
-      console.log("👤 Role recibido:", body?.user?.role);
-      console.log("📞 Teléfono recibido:", body?.user?.phone);
-      console.log("👤 Nombre recibido:", body?.user?.full_name);
-
-      if (!body) {
-        throw new Error("El servidor no respondió correctamente");
-      }
+      if (!body) throw new Error("El servidor no respondió correctamente");
 
       if (body.ok) {
         Swal.fire({
@@ -51,21 +37,12 @@ export const StartLogin = (username, password) => {
           text: "Bienvenido al sistema",
           showConfirmButton: false,
           timer: 1500,
-          background: "#f0f9ff",
-          iconColor: "#10b981",
         });
 
         localStorage.setItem("token", body.token);
         localStorage.setItem("token-init-date", new Date().getTime());
 
         const userData = body.user || body;
-
-        console.log("📝 Datos del usuario a guardar:", {
-          uid: userData.id || userData.uid,
-          name: userData.username || userData.name,
-          role: userData.role,
-          full_name: userData.full_name,
-        });
 
         dispatch(
           login({
@@ -84,8 +61,6 @@ export const StartLogin = (username, password) => {
 
         await dispatch(startLoadUserAddresses());
       } else {
-        let errorMessage = body.msg || "Credenciales incorrectas";
-
         const errorMessages = {
           "Usuario no encontrado": "El usuario no existe en el sistema",
           "Contraseña incorrecta": "La contraseña es incorrecta",
@@ -95,35 +70,29 @@ export const StartLogin = (username, password) => {
           "Usuario o contraseña incorrecta": "Usuario o contraseña incorrectos",
         };
 
-        errorMessage = errorMessages[errorMessage] || errorMessage;
+        const errorMessage =
+          errorMessages[body.msg] || body.msg || "Credenciales incorrectas";
 
         Swal.fire({
           icon: "error",
           title: "Error de autenticación",
           text: errorMessage,
           confirmButtonColor: "#ef4444",
-          background: "#fef2f2",
-          iconColor: "#dc2626",
         });
       }
     } catch (error) {
-      console.error("❌ Error completo en login:", error);
+      console.error("❌ Error en login:", error);
 
-      let errorMessage = "Ha ocurrido un error inesperado";
       let errorTitle = "Error";
+      let errorMessage = "Ha ocurrido un error inesperado";
 
-      if (
-        error.name === "TypeError" &&
-        error.message.includes("Failed to fetch")
-      ) {
+      if (error.message.includes("Failed to fetch")) {
         errorTitle = "Error de conexión";
         errorMessage =
-          "No se pudo conectar con el servidor. Verifica tu conexión a internet.";
+          "No se pudo conectar con el servidor. Verifica tu conexión.";
       } else if (error.message.includes("respuesta no es JSON")) {
         errorTitle = "Error del servidor";
         errorMessage = "El servidor respondió con un formato inválido.";
-      } else {
-        errorMessage = error.message || errorMessage;
       }
 
       Swal.fire({
@@ -131,8 +100,6 @@ export const StartLogin = (username, password) => {
         title: errorTitle,
         text: errorMessage,
         confirmButtonColor: "#ef4444",
-        background: "#fef2f2",
-        iconColor: "#dc2626",
       });
     } finally {
       dispatch(finishLoading());
@@ -161,7 +128,7 @@ export const startLoadUserAddresses = () => {
       }
       return [];
     } catch (error) {
-      console.error("Error cargando direcciones:", error);
+      console.error("❌ Error cargando direcciones:", error);
       return [];
     }
   };
@@ -192,12 +159,11 @@ export const updateUserProfile = (userData) => {
         });
 
         await dispatch(startLoadUserAddresses());
-
         return true;
       }
       return false;
     } catch (error) {
-      console.error("Error actualizando perfil:", error);
+      console.error("❌ Error actualizando perfil:", error);
       return false;
     }
   };
@@ -230,7 +196,7 @@ export const addUserAddress = (addressData) => {
       }
       return false;
     } catch (error) {
-      console.error("Error agregando dirección:", error);
+      console.error("❌ Error agregando dirección:", error);
       return false;
     }
   };
@@ -259,7 +225,7 @@ export const deleteUserAddress = (addressId) => {
       }
       return false;
     } catch (error) {
-      console.error("Error eliminando dirección:", error);
+      console.error("❌ Error eliminando dirección:", error);
       return false;
     }
   };
@@ -267,7 +233,7 @@ export const deleteUserAddress = (addressId) => {
 
 // ✅ ESTABLECER DIRECCIÓN PREDETERMINADA
 export const setDefaultUserAddress = (addressId) => {
-  return async (dispatch, getState) => {
+  return async (dispatch) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return false;
@@ -288,7 +254,7 @@ export const setDefaultUserAddress = (addressId) => {
       }
       return false;
     } catch (error) {
-      console.error("Error estableciendo dirección predeterminada:", error);
+      console.error("❌ Error estableciendo dirección predeterminada:", error);
       return false;
     }
   };
@@ -300,13 +266,11 @@ export const startLoadUserProfile = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      console.log("🔄 Cargando perfil desde /api/auth/profile");
+      console.log("🔄 Cargando perfil...");
       const resp = await fetch(`${API_URL}/api/auth/profile`, {
         headers: { "x-token": token },
       });
       const body = await resp.json();
-
-      console.log("📦 Respuesta del perfil:", body);
 
       if (body.ok && body.user) {
         dispatch({
@@ -331,8 +295,6 @@ export const StartChecking = () => {
       }
 
       const body = await fetchConToken("auth/renew");
-
-      console.log("📦 Respuesta de renew:", body);
 
       if (body && body.ok) {
         localStorage.setItem("token", body.token);
@@ -360,7 +322,7 @@ export const StartChecking = () => {
         dispatch(checkingFinish());
       }
     } catch (error) {
-      console.error("Error en verificación de token:", error);
+      console.error("❌ Error en verificación:", error);
       localStorage.removeItem("token");
       localStorage.removeItem("token-init-date");
       dispatch(checkingFinish());
@@ -368,22 +330,19 @@ export const StartChecking = () => {
   };
 };
 
-export const startLogout = () => {
-  return (dispatch) => {
-    localStorage.clear();
-    dispatch(logout());
-    Swal.fire({
-      icon: "info",
-      title: "Sesión cerrada",
-      text: "Has cerrado sesión correctamente",
-      showConfirmButton: false,
-      timer: 1500,
-      background: "#f0f9ff",
-      iconColor: "#3b82f6",
-    });
-  };
+export const startLogout = () => (dispatch) => {
+  localStorage.clear();
+  dispatch(logout());
+  Swal.fire({
+    icon: "info",
+    title: "Sesión cerrada",
+    text: "Has cerrado sesión correctamente",
+    showConfirmButton: false,
+    timer: 1500,
+  });
 };
 
+// 🔥 OPTIMIZACIÓN: Funciones puras
 const logout = () => ({ type: types.authLogout });
 
 const login = (user) => ({

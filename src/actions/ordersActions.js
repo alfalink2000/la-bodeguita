@@ -1,6 +1,5 @@
-// actions/ordersActions.js
+// actions/ordersActions.js - VERSIÓN OPTIMIZADA
 import { types } from "../types/types";
-import { fetchConToken } from "../helpers/fetchAdmin";
 import Swal from "sweetalert2";
 
 const API_URL =
@@ -23,7 +22,7 @@ export const startLoadMyOrders = () => {
         dispatch({ type: types.ordersLoad, payload: data.pedidos });
       }
     } catch (error) {
-      console.error("Error cargando pedidos:", error);
+      console.error("❌ Error cargando pedidos:", error);
     } finally {
       dispatch({ type: types.ordersFinishLoading });
     }
@@ -55,20 +54,12 @@ export const startCreateOrder = (orderData) => {
         });
         return true;
       } else {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: data.msg || "No se pudo crear el pedido",
-        });
+        Swal.fire("Error", data.msg || "No se pudo crear el pedido", "error");
         return false;
       }
     } catch (error) {
-      console.error("Error creando pedido:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Error de conexión",
-      });
+      console.error("❌ Error creando pedido:", error);
+      Swal.fire("Error", "Error de conexión", "error");
       return false;
     }
   };
@@ -87,14 +78,10 @@ export const startCancelOrder = (orderId) => {
 
       if (data.ok) {
         dispatch({ type: types.orderStatusChanged, payload: data.pedido });
-        Swal.fire({
-          icon: "success",
-          title: "Pedido cancelado",
-          timer: 1500,
-        });
+        Swal.fire("Pedido cancelado", "", "success");
       }
     } catch (error) {
-      console.error("Error cancelando pedido:", error);
+      console.error("❌ Error cancelando pedido:", error);
     }
   };
 };
@@ -116,7 +103,7 @@ export const startLoadAllOrders = (filters = {}) => {
         dispatch({ type: types.ordersLoad, payload: data.pedidos });
       }
     } catch (error) {
-      console.error("Error cargando pedidos:", error);
+      console.error("❌ Error cargando pedidos:", error);
     } finally {
       dispatch({ type: types.ordersFinishLoading });
     }
@@ -140,14 +127,14 @@ export const startChangeOrderStatus = (orderId, status) => {
 
       if (data.ok) {
         dispatch({ type: types.orderStatusChanged, payload: data.pedido });
-        Swal.fire({
-          icon: "success",
-          title: `Pedido ${status === "pending" ? "en proceso" : status}`,
-          timer: 1500,
-        });
+        Swal.fire(
+          `Pedido ${status === "pending" ? "en proceso" : status}`,
+          "",
+          "success",
+        );
       }
     } catch (error) {
-      console.error("Error cambiando estado:", error);
+      console.error("❌ Error cambiando estado:", error);
     }
   };
 };

@@ -1,4 +1,4 @@
-// reducers/authReducer.js
+// reducers/authReducer.js - VERSIÓN OPTIMIZADA
 import { types } from "../types/types";
 
 const initialState = {

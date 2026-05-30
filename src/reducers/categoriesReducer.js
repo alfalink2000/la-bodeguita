@@ -1,4 +1,4 @@
-// reducers/categoriesReducer.js - CON CATCH ALL
+// reducers/categoriesReducer.js - VERSIÓN OPTIMIZADA
 import { types } from "../types/types";
 
 const initialState = {
@@ -25,7 +25,7 @@ export const categoriesReducer = (state = initialState, action) => {
         categories: state.categories.map((category) =>
           category.name === action.payload.oldName
             ? { ...category, name: action.payload.newName }
-            : category
+            : category,
         ),
       };
 
@@ -33,13 +33,18 @@ export const categoriesReducer = (state = initialState, action) => {
       return {
         ...state,
         categories: state.categories.filter(
-          (category) => category.name !== action.payload
+          (category) => category.name !== action.payload,
         ),
       };
 
     default:
-      // ✅ CAPTURA CUALQUIER ACCIÓN NO MANEJADA SIN ERROR
-      console.warn("⚠️ Action no manejada en categoriesReducer:", action.type);
+      // 🔥 OPTIMIZACIÓN: Quitar log innecesario en producción
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "⚠️ Action no manejada en categoriesReducer:",
+          action.type,
+        );
+      }
       return state;
   }
 };

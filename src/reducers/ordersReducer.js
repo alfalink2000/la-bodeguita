@@ -1,4 +1,4 @@
-// reducers/ordersReducer.js
+// reducers/ordersReducer.js - VERSIÓN OPTIMIZADA
 import { types } from "../types/types";
 
 const initialState = {

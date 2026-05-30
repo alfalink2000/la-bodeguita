@@ -1,4 +1,4 @@
-// components/admin/AdminHeader/AdminHeader.jsx
+// components/admin/AdminHeader/AdminHeader.jsx - VERSIÓN OPTIMIZADA
 import "./AdminHeader.css";
 
 const AdminHeader = ({ children }) => (

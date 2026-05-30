@@ -1,4 +1,4 @@
-// components/common/BottomNavigation/BottomNavigation.jsx
+// components/common/BottomNavigation/BottomNavigation.jsx - VERSIÓN OPTIMIZADA
 import { useState, useRef, useEffect } from "react";
 import {
   HiOutlineEye,
@@ -40,31 +40,12 @@ const BottomNavigation = ({
 
   // Sincronizar con el prop
   useEffect(() => {
-    console.log(
-      "🔵 [BottomNavigation] unreadOrdersCount recibido:",
-      unreadOrdersCount,
-    );
     setLocalUnreadCount(unreadOrdersCount);
   }, [unreadOrdersCount]);
 
-  useEffect(() => {
-    console.log(
-      "🔵 [BottomNavigation] localUnreadCount actualizado:",
-      localUnreadCount,
-    );
-  }, [localUnreadCount]);
-
   // Detectar nuevos pedidos para animar el badge
   useEffect(() => {
-    console.log("🔵 [BottomNavigation] Comparando:", {
-      current: unreadOrdersCount,
-      previous: previousOrdersCount.current,
-    });
-
     if (unreadOrdersCount > previousOrdersCount.current) {
-      console.log(
-        "🔵 [BottomNavigation] 🎉 NUEVO PEDIDO DETECTADO! Animando badge...",
-      );
       setShowBadgeAnimation(true);
       setTimeout(() => setShowBadgeAnimation(false), 1000);
     }

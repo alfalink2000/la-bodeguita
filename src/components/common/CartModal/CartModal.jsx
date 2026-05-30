@@ -1,4 +1,4 @@
-// components/client/CartModal/CartModal.jsx - Versión completa con Redux
+// components/client/CartModal/CartModal.jsx - VERSIÓN OPTIMIZADA
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { FiX, FiPlus, FiMinus, FiTrash2, FiShoppingCart } from "react-icons/fi";
@@ -125,14 +125,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
             Swal.fire({
               icon: "warning",
               title: "Stock actualizado",
-              html: `<p>Algunos productos han cambiado su disponibilidad:</p><ul>${outOfStockItems
-                .map(
-                  (item) =>
-                    `<li><strong>${item.name}</strong>: solicitado ${item.requested}, disponible ${item.currentStock}</li>`,
-                )
-                .join(
-                  "",
-                )}</ul><p>Hemos actualizado tu carrito automáticamente.</p>`,
+              html: `<p>Algunos productos han cambiado su disponibilidad. Hemos actualizado tu carrito automáticamente.</p>`,
               confirmButtonColor: "#059669",
             });
           }
@@ -200,7 +193,6 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
   };
 
   const handleAddressSelect = (address) => {
-    console.log("📍 Usuario seleccionó dirección:", address);
     setSelectedAddress(address);
     setAddressSelectedByUser(true);
     setShowAddressSelector(false);
@@ -486,14 +478,7 @@ const CartModal = ({ isLoggedIn, onShowLogin, onOpenChat, onOrderCreated }) => {
           Swal.fire({
             icon: "error",
             title: "Stock insuficiente",
-            html: `<p>No se pudo completar el pedido:</p><ul>${data.outOfStock
-              .map(
-                (item) =>
-                  `<li>${item.name}: solicitado ${item.requested}, disponible ${item.available}</li>`,
-              )
-              .join(
-                "",
-              )}</ul><p>Por favor, actualiza tu carrito e intenta de nuevo.</p>`,
+            html: `<p>No se pudo completar el pedido. Por favor, actualiza tu carrito e intenta de nuevo.</p>`,
             confirmButtonColor: "#059669",
           });
           validateCartStock();

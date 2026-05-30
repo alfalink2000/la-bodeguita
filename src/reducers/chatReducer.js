@@ -1,4 +1,4 @@
-// reducers/chatReducer.js
+// reducers/chatReducer.js - VERSIÓN OPTIMIZADA (sin cambios, ya está bien)
 import { types } from "../types/types";
 
 const initialState = {

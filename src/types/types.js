@@ -1,4 +1,4 @@
-// types/types.js - VERSIÓN COMPLETA CON LOS TYPES QUE NECESITAS
+// types/types.js - VERSIÓN OPTIMIZADA Y ORGANIZADA
 export const types = {
   // ========== AUTH ==========
   authLogin: "[auth] Login",
@@ -9,9 +9,15 @@ export const types = {
   authStartTokenRenew: "[auth] Start token renew",
   authGetUsers: "[auth] Get users",
   authUpdateProfile: "[auth] Update profile",
-
   authStartLoading: "[auth] Start loading",
   authFinishLoading: "[auth] Finish loading",
+
+  // ========== AUTH ADDRESS ==========
+  authLoadUserAddresses: "[auth] Load user addresses",
+  authUpdateUserAddress: "[auth] Update user address",
+  authUpdateAddressInList: "[auth] Update address in list",
+  authAddUserAddress: "[auth] Add user address",
+  authRemoveUserAddress: "[auth] Remove user address",
 
   // ========== PRODUCTS ==========
   productsLoad: "[products] Load products",
@@ -79,7 +85,7 @@ export const types = {
   storeDeleted: "[stores] Deleted store",
   storeSetActive: "[stores] Set active store",
 
-  // ========== CHAT TYPES ==========
+  // ========== CHAT ==========
   chatSetLoading: "[chat] Set loading",
   chatLoadChats: "[chat] Load chats",
   chatLoadMessages: "[chat] Load messages",
@@ -88,11 +94,4 @@ export const types = {
   chatAddMessage: "[chat] Add message",
   chatUpdateUnreadCount: "[chat] Update unread count",
   chatReset: "[chat] Reset",
-
-  // ========== AUTH ADDRESS TYPES ==========
-  authLoadUserAddresses: "[auth] Load user addresses",
-  authUpdateUserAddress: "[auth] Update user address",
-  authUpdateAddressInList: "[auth] Update address in list",
-  authAddUserAddress: "[auth] Add user address",
-  authRemoveUserAddress: "[auth] Remove user address",
 };

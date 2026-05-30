@@ -1,4 +1,4 @@
-// actions/adminUsersActions.js
+// actions/adminUsersActions.js - VERSIÓN OPTIMIZADA
 import { fetchAPIConfig } from "../helpers/fetchAPIConfig";
 import { types } from "../types/types";
 import Swal from "sweetalert2";
@@ -18,7 +18,7 @@ export const getAdminUsers = () => {
         Swal.fire("Error", body.msg || "Error al cargar usuarios", "error");
       }
     } catch (error) {
-      console.error("Error cargando usuarios:", error);
+      console.error("❌ Error cargando usuarios:", error);
       Swal.fire("Error", "Error de conexión al cargar usuarios", "error");
     }
   };
@@ -28,16 +28,12 @@ export const getAdminUsers = () => {
 export const updateAdminUser = (userData) => {
   return async (dispatch) => {
     try {
-      console.log(
-        "📤 [updateAdminUser] Datos a enviar:",
-        JSON.stringify(userData, null, 2),
-      );
-      console.log("🔑 password_user:", userData.password_user);
-      console.log("🔑 new_password:", userData.new_password);
+      // 🔥 OPTIMIZACIÓN: Eliminar logs innecesarios en producción
+      if (process.env.NODE_ENV === "development") {
+        console.log("📤 [updateAdminUser] Datos a enviar:", userData);
+      }
 
       const data = await fetchAPIConfig("auth/update", userData, "PUT");
-
-      console.log("📥 [updateAdminUser] Respuesta:", data);
 
       if (data.ok) {
         dispatch({
@@ -123,7 +119,7 @@ export const toggleUserStatus = (userId, currentStatus) => {
         return false;
       }
     } catch (error) {
-      console.error("Error cambiando estado de usuario:", error);
+      console.error("❌ Error cambiando estado:", error);
       Swal.fire("Error", "Error de conexión", "error");
       return false;
     }
@@ -169,7 +165,7 @@ export const deleteAdminUser = (userId) => {
         return false;
       }
     } catch (error) {
-      console.error("Error eliminando usuario:", error);
+      console.error("❌ Error eliminando usuario:", error);
       Swal.fire("Error", "Error de conexión al eliminar usuario", "error");
       return false;
     }

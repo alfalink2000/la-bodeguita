@@ -1,3 +1,4 @@
+// components/common/CategoryFilter/CategoryFilter.jsx - VERSIÓN OPTIMIZADA
 import { useRef, useEffect, useState } from "react";
 import {
   HiOutlineChevronLeft,
@@ -11,15 +12,14 @@ const CategoryFilter = ({
   selectedCategory,
   onCategoryChange,
   productsCount,
-  title = "Categorías", // Título personalizable
-  icon = "📂", // Icono personalizable
+  title = "Categorías",
+  icon = "📂",
 }) => {
   const scrollContainerRef = useRef(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
   const [isOverflowing, setIsOverflowing] = useState(false);
 
-  // Verificar si hay overflow y mostrar flechas
   const checkOverflow = () => {
     const container = scrollContainerRef.current;
     if (container) {
@@ -82,7 +82,6 @@ const CategoryFilter = ({
       if (selectedButton) {
         const buttonRect = selectedButton.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
-
         if (
           buttonRect.left < containerRect.left ||
           buttonRect.right > containerRect.right
@@ -97,12 +96,10 @@ const CategoryFilter = ({
     }
   }, [selectedCategory]);
 
-  // Determinar si hay pocas categorías (menos de 4 visibles)
   const hasFewCategories = categories.length <= 3;
 
   return (
     <div className="category-filter-wrapper">
-      {/* Header con título y contador */}
       <div className="category-filter-header">
         <div className="category-filter-header__title">
           <span className="category-filter-header__icon">{icon}</span>
@@ -116,7 +113,6 @@ const CategoryFilter = ({
         )}
       </div>
 
-      {/* Contenedor de filtros con decoración cuando hay pocas categorías */}
       <div
         className={`category-filter-container ${hasFewCategories ? "category-filter-container--few-items" : ""}`}
       >
@@ -137,15 +133,9 @@ const CategoryFilter = ({
                 key={category}
                 data-category={category}
                 onClick={() => onCategoryChange(category)}
-                className={`category-filter__button ${
-                  selectedCategory === category
-                    ? "category-filter__button--active"
-                    : ""
-                }`}
+                className={`category-filter__button ${selectedCategory === category ? "category-filter__button--active" : ""}`}
                 aria-pressed={selectedCategory === category}
-                style={{
-                  animationDelay: `${index * 0.03}s`,
-                }}
+                style={{ animationDelay: `${index * 0.03}s` }}
               >
                 <span className="category-filter__button-text">{category}</span>
                 {selectedCategory === category && (
@@ -154,7 +144,6 @@ const CategoryFilter = ({
               </button>
             ))}
 
-            {/* ✅ Elementos decorativos cuando hay pocas categorías */}
             {hasFewCategories && (
               <div className="category-filter__decorations">
                 <div className="decoration-dots">
@@ -182,7 +171,6 @@ const CategoryFilter = ({
         )}
       </div>
 
-      {/* Indicador de scroll */}
       {isOverflowing && (
         <div className="category-filter-scroll-hint">
           <span>← Desliza para ver más →</span>

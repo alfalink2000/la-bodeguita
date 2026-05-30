@@ -1,3 +1,4 @@
+// components/common/MaintenanceMode/MaintenanceMode.jsx - VERSIÓN OPTIMIZADA
 import { useState, useEffect } from "react";
 import "./MaintenanceMode.css";
 
@@ -16,7 +17,6 @@ const MaintenanceMode = ({ onRetry }) => {
       });
     }, 1000);
 
-    // Verificar estado de conexión
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
@@ -32,12 +32,11 @@ const MaintenanceMode = ({ onRetry }) => {
 
   const handleRetry = () => {
     if (countdown === 0) {
-      // Verificar conexión antes de reintentar
       if (navigator.onLine) {
         onRetry();
       } else {
         setIsOnline(false);
-        setCountdown(10); // Reiniciar countdown si sigue sin conexión
+        setCountdown(10);
       }
     }
   };
@@ -45,7 +44,6 @@ const MaintenanceMode = ({ onRetry }) => {
   return (
     <div className="maintenance-mode">
       <div className="maintenance-container">
-        {/* Icono animado de conexión */}
         <div className="maintenance-icon">
           <div className="wifi-icon">
             <div className="wifi-signal signal-1"></div>
@@ -56,14 +54,12 @@ const MaintenanceMode = ({ onRetry }) => {
           <div className="maintenance-emoji">🌐</div>
         </div>
 
-        {/* Código de error */}
         <div className="maintenance-code">
           <span className="code-4">4</span>
           <span className="code-0">0</span>
           <span className="code-4">4</span>
         </div>
 
-        {/* Título y mensaje */}
         <h1 className="maintenance-title">Error de Conexión</h1>
 
         <p className="maintenance-subtitle">
@@ -81,9 +77,7 @@ const MaintenanceMode = ({ onRetry }) => {
 
           <div className="connection-status">
             <div
-              className={`status-indicator ${
-                isOnline ? "status-warning" : "status-error"
-              }`}
+              className={`status-indicator ${isOnline ? "status-warning" : "status-error"}`}
             ></div>
             <p className="status-text">
               {isOnline ? "Servidor no disponible" : "Sin conexión a internet"}
@@ -91,7 +85,6 @@ const MaintenanceMode = ({ onRetry }) => {
           </div>
         </div>
 
-        {/* Soluciones rápidas */}
         <div className="troubleshooting-tips">
           <h3 className="tips-title">Solución rápida:</h3>
           <ul className="tips-list">
@@ -104,13 +97,10 @@ const MaintenanceMode = ({ onRetry }) => {
           </ul>
         </div>
 
-        {/* Botón de reintento */}
         <button
           onClick={handleRetry}
           disabled={countdown > 0}
-          className={`retry-button ${
-            countdown > 0 ? "retry-button--disabled" : "retry-button--active"
-          }`}
+          className={`retry-button ${countdown > 0 ? "retry-button--disabled" : "retry-button--active"}`}
         >
           {countdown > 0 ? (
             <span className="button-content">
@@ -125,7 +115,6 @@ const MaintenanceMode = ({ onRetry }) => {
           )}
         </button>
 
-        {/* Progress bar */}
         <div className="progress-container">
           <div
             className="progress-bar"
@@ -133,7 +122,6 @@ const MaintenanceMode = ({ onRetry }) => {
           ></div>
         </div>
 
-        {/* Información de red */}
         <div className="network-info">
           <div className="network-status">
             <span className="status-label">Estado de red:</span>

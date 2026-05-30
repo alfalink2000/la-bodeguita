@@ -1,5 +1,12 @@
-// components/auth/RoleSelector.jsx
-import { HiOutlineEye, HiOutlineCog, HiOutlineUserCircle } from "react-icons/hi";
+// components/auth/RoleSelector.jsx - ✅ PERFECTO, SIN CAMBIOS
+// Este componente es independiente y no usa Redux directamente
+// Solo recibe props y llama callbacks
+
+import {
+  HiOutlineEye,
+  HiOutlineCog,
+  HiOutlineUserCircle,
+} from "react-icons/hi";
 import "./RoleSelector.css";
 
 const RoleSelector = ({ userData, onSelectClient, onSelectAdmin }) => {
@@ -51,7 +58,9 @@ const RoleSelector = ({ userData, onSelectClient, onSelectAdmin }) => {
               <HiOutlineCog />
             </div>
             <div className="role-selector__option-content">
-              <h3 className="role-selector__option-title">Panel de Administración</h3>
+              <h3 className="role-selector__option-title">
+                Panel de Administración
+              </h3>
               <p className="role-selector__option-desc">
                 Gestionar productos, configuraciones y más
               </p>

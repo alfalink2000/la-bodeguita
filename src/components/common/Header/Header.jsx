@@ -1,4 +1,4 @@
-// components/common/Header/Header.jsx
+// components/common/Header/Header.jsx - VERSIÓN OPTIMIZADA
 import { useState, useEffect } from "react";
 import { HiOutlineInformationCircle, HiOutlineX } from "react-icons/hi";
 import { FiShoppingCart } from "react-icons/fi";
@@ -27,6 +27,7 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
   const closeHelpModal = () => {
     setShowHelpModal(false);
   };
+
   useEffect(() => {
     const handleOpenHelpModal = () => {
       setShowHelpModal(true);
@@ -60,7 +61,6 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
           </div>
 
           <div className="header__right">
-            {/* Icono del carrito */}
             <button
               className="header__cart-btn header-action header-action--icon"
               onClick={handleCartClick}
@@ -72,10 +72,9 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
               )}
             </button>
 
-            {/* Botón de información/ayuda */}
             {showInfoButton && (
               <button
-                className="header__info-btn "
+                className="header__info-btn"
                 onClick={handleInfoClick}
                 title="Ayuda - Configuración de ubicación"
               >
@@ -88,7 +87,6 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
         </div>
       </header>
 
-      {/* Modal de ayuda - Configuración de ubicación */}
       {showHelpModal && (
         <div className="help-modal-overlay" onClick={closeHelpModal}>
           <div className="help-modal" onClick={(e) => e.stopPropagation()}>
@@ -103,7 +101,6 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
             </div>
 
             <div className="help-modal__content">
-              {/* Beneficio 1 */}
               <div className="help-card help-card--gps">
                 <div className="help-card__icon">🎯</div>
                 <div className="help-card__content">
@@ -115,7 +112,6 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
                 </div>
               </div>
 
-              {/* Beneficio 2 */}
               <div className="help-card help-card--warning">
                 <div className="help-card__icon">⚠️</div>
                 <div className="help-card__content">
@@ -128,7 +124,6 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
                 </div>
               </div>
 
-              {/* Beneficio 3 */}
               <div className="help-card help-card--success">
                 <div className="help-card__icon">✅</div>
                 <div className="help-card__content">
@@ -140,7 +135,6 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
                 </div>
               </div>
 
-              {/* Cómo configurar */}
               <div className="help-steps">
                 <h4>📋 ¿Cómo configurar tu ubicación?</h4>
                 <div className="help-steps__list">
@@ -173,7 +167,6 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
                 </div>
               </div>
 
-              {/* Contacto a soporte */}
               <div className="help-contact">
                 <div className="help-contact__icon">💬</div>
                 <div className="help-contact__content">
@@ -186,7 +179,6 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
                     className="help-contact__btn"
                     onClick={() => {
                       closeHelpModal();
-                      // Disparar evento para abrir chat
                       window.dispatchEvent(
                         new CustomEvent("open-chat-from-help"),
                       );
@@ -197,7 +189,6 @@ const Header = ({ title, children, onInfoClick, showInfoButton = false }) => {
                 </div>
               </div>
 
-              {/* Consejo extra */}
               <div className="help-tip">
                 <span className="help-tip__icon">💡</span>
                 <p>

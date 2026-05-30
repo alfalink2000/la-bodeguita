@@ -1,12 +1,36 @@
-// ✅ CORREGIDO PARA VITE - usar variable directa con /api
+// helpers/fetchAdmin.js - VERSIÓN LIMPIA Y OPTIMIZADA
 const baseUrl =
   (import.meta.env.VITE_API_URL || "http://localhost:4000") + "/api";
+const isDevelopment = import.meta.env.VITE_NODE_ENV === "development";
+
+// 🔥 TIMEOUT GLOBAL
+const DEFAULT_TIMEOUT = 30000; // 30 segundos
+
+const fetchWithTimeout = async (url, options, timeout = DEFAULT_TIMEOUT) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === "AbortError") {
+      throw new Error("Timeout: La petición tardó demasiado");
+    }
+    throw error;
+  }
+};
 
 export const fetchSinToken = async (endpoint, data, method = "GET") => {
   const url = `${baseUrl}/${endpoint}`;
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       method,
       headers: {
         "Content-Type": "application/json",
@@ -14,12 +38,7 @@ export const fetchSinToken = async (endpoint, data, method = "GET") => {
       body: data ? JSON.stringify(data) : undefined,
     });
 
-    console.log("🔍 Response status:", response.status);
-    console.log("🔍 Response headers:", response.headers);
-
-    // ✅ LEER LA RESPUESTA COMO TEXTO PRIMERO PARA DEBUG
     const responseText = await response.text();
-    console.log("🔍 Response text:", responseText);
 
     let body;
     try {
@@ -29,9 +48,6 @@ export const fetchSinToken = async (endpoint, data, method = "GET") => {
       throw new Error("La respuesta del servidor no es JSON válido");
     }
 
-    console.log("🔍 Parsed body:", body);
-
-    // ✅ DEVOLVER EL BODY COMPLETO INCLUYENDO EL MENSAJE DE ERROR
     return body;
   } catch (error) {
     console.error("❌ Error en fetchSinToken:", error);
@@ -44,7 +60,7 @@ export const fetchConToken = async (endpoint, data, method = "GET") => {
   const token = localStorage.getItem("token") || "";
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       method,
       headers: {
         "Content-Type": "application/json",
@@ -53,16 +69,13 @@ export const fetchConToken = async (endpoint, data, method = "GET") => {
       body: data ? JSON.stringify(data) : undefined,
     });
 
-    console.log("🔍 Response status (con token):", response.status);
-
     const responseText = await response.text();
-    console.log("🔍 Response text (con token):", responseText);
 
     let body;
     try {
       body = JSON.parse(responseText);
     } catch (parseError) {
-      console.error("❌ Error parseando JSON (con token):", parseError);
+      console.error("❌ Error parseando JSON:", parseError);
       throw new Error("La respuesta del servidor no es JSON válido");
     }
 

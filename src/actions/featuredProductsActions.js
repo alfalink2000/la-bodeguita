@@ -1,56 +1,45 @@
+// actions/featuredProductsActions.js - VERSIÓN OPTIMIZADA
 import { fetchAPIConfig } from "../helpers/fetchAPIConfig";
 import { fetchPublic } from "../helpers/fetchPublic";
 import { types } from "../types/types";
 import Swal from "sweetalert2";
 
-// Obtener productos destacados del backend (RUTA PROTEGIDA - ADMIN)
+// Obtener productos destacados (ADMIN)
 export const getFeaturedProducts = () => {
   return async (dispatch) => {
     try {
-      console.log("🔄 Cargando productos destacados (admin)...");
-
       const body = await fetchAPIConfig("featured-products");
 
       if (body.ok) {
         dispatch(setPopularProducts(body.popular || []));
         dispatch(setOnSaleProducts(body.onSale || []));
-        console.log("✅ Productos destacados cargados:", {
-          popular: body.popular.length,
-          onSale: body.onSale.length,
-        });
       } else {
-        console.error("Error loading featured products:", body.msg);
         dispatch(setPopularProducts([]));
         dispatch(setOnSaleProducts([]));
       }
     } catch (error) {
-      console.error("Error cargando productos destacados:", error);
+      console.error("❌ Error cargando destacados:", error);
       dispatch(setPopularProducts([]));
       dispatch(setOnSaleProducts([]));
     }
   };
 };
 
-// Guardar productos destacados en el backend
+// Guardar productos destacados
 export const saveFeaturedProducts = (featuredData) => {
   return async (dispatch) => {
     try {
-      console.log("💾 Guardando productos destacados...", featuredData);
-
       Swal.fire({
         title: "Guardando...",
         text: "Actualizando productos destacados",
         allowOutsideClick: false,
-        didOpen: () => {
-          Swal.showLoading();
-        },
+        didOpen: () => Swal.showLoading(),
       });
 
-      // ✅ CORREGIDO: Usar POST para guardar
       const body = await fetchAPIConfig(
         "featured-products",
         featuredData,
-        "POST" // ✅ Cambiado a POST
+        "POST",
       );
 
       Swal.close();
@@ -59,30 +48,25 @@ export const saveFeaturedProducts = (featuredData) => {
         Swal.fire({
           icon: "success",
           title: "¡Guardado!",
-          text: "Productos destacados actualizados correctamente",
+          text: "Productos destacados actualizados",
           timer: 2000,
           showConfirmButton: false,
         });
 
-        // ✅ Actualizar el estado con la respuesta del servidor
         dispatch(setPopularProducts(body.popular || []));
         dispatch(setOnSaleProducts(body.onSale || []));
-
-        console.log("✅ Productos destacados guardados:", {
-          popular: body.popular?.length,
-          onSale: body.onSale?.length,
-        });
       } else {
         Swal.fire("Error", body.msg || "Error al guardar", "error");
       }
     } catch (error) {
-      console.error("Error guardando productos destacados:", error);
+      console.error("❌ Error guardando destacados:", error);
+      Swal.close();
       Swal.fire("Error", "Error de conexión al guardar", "error");
     }
   };
 };
 
-// Toggle individual (solo en frontend)
+// Toggle individual (frontend)
 export const toggleProductPopular = (productId) => ({
   type: types.productTogglePopular,
   payload: productId,
@@ -97,14 +81,13 @@ export const toggleProductOnSale = (productId) => ({
 export const toggleProductPopularAndSave = (productId) => {
   return async (dispatch, getState) => {
     dispatch(toggleProductPopular(productId));
-
-    const state = getState();
     setTimeout(() => {
+      const state = getState();
       dispatch(
         saveFeaturedProducts({
           popular: state.products.featuredProducts.popular,
           onSale: state.products.featuredProducts.onSale,
-        })
+        }),
       );
     }, 300);
   };
@@ -113,20 +96,19 @@ export const toggleProductPopularAndSave = (productId) => {
 export const toggleProductOnSaleAndSave = (productId) => {
   return async (dispatch, getState) => {
     dispatch(toggleProductOnSale(productId));
-
-    const state = getState();
     setTimeout(() => {
+      const state = getState();
       dispatch(
         saveFeaturedProducts({
           popular: state.products.featuredProducts.popular,
           onSale: state.products.featuredProducts.onSale,
-        })
+        }),
       );
     }, 300);
   };
 };
 
-// Setters para cargar desde backend
+// Setters
 export const setPopularProducts = (productIds) => ({
   type: types.productSetPopular,
   payload: productIds,
@@ -137,26 +119,18 @@ export const setOnSaleProducts = (productIds) => ({
   payload: productIds,
 });
 
-// CARGAR productos destacados desde el backend (RUTA PÚBLICA - para tienda pública)
+// Cargar productos destacados (PÚBLICO)
 export const loadFeaturedProducts = () => {
   return async (dispatch) => {
     try {
-      console.log("🔄 Cargando productos destacados (público)...");
-
       const body = await fetchPublic("featured-products/public");
 
       if (body.ok) {
-        console.log("✅ Productos destacados cargados (público):", {
-          popular: body.popular.length,
-          onSale: body.onSale.length,
-        });
         dispatch(setPopularProducts(body.popular));
         dispatch(setOnSaleProducts(body.onSale));
-      } else {
-        console.error("Error en respuesta de productos destacados:", body.msg);
       }
     } catch (error) {
-      console.error("Error de conexión cargando productos destacados:", error);
+      console.error("❌ Error cargando destacados públicos:", error);
     }
   };
 };

@@ -1,20 +1,44 @@
-// hooks/useProductsSync.js
-import { useEffect } from "react";
+// hooks/useProductsSync.js - VERSIÓN SIMPLIFICADA PERO OPTIMIZADA
+import { useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { getProducts } from "../actions/productsActions";
 
-export const useProductsSync = (interval = 30000) => {
+export const useProductsSync = (interval = 60000, enabled = true) => {
   const dispatch = useDispatch();
+  const intervalRef = useRef(null);
 
   useEffect(() => {
-    // ✅ Siempre forzar refresh inicial
-    dispatch(getProducts(true));
+    if (!enabled) return;
 
-    // Configurar polling - siempre forzar refresh
-    const pollInterval = setInterval(() => {
-      dispatch(getProducts(true));
-    }, interval);
+    // ✅ Carga inicial sin forzar siempre
+    dispatch(getProducts(false));
 
-    return () => clearInterval(pollInterval);
-  }, [dispatch, interval]);
+    // ✅ Polling inteligente
+    const startPolling = () => {
+      intervalRef.current = setInterval(() => {
+        // ✅ Solo actualizar si la pestaña está visible
+        if (document.visibilityState === "visible") {
+          dispatch(getProducts(false));
+        }
+      }, interval);
+    };
+
+    startPolling();
+
+    // ✅ Sincronizar al volver a la pestaña
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        dispatch(getProducts(true)); // Forzar al volver
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [dispatch, interval, enabled]);
 };

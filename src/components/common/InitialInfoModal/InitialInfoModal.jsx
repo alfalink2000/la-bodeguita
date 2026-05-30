@@ -1,4 +1,4 @@
-// components/common/InitialInfoModal/InitialInfoModal.jsx - CORREGIDO
+// components/common/InitialInfoModal/InitialInfoModal.jsx - VERSIÓN OPTIMIZADA
 import {
   HiX,
   HiInformationCircle,
@@ -10,16 +10,12 @@ import {
 import "./InitialInfoModal.css";
 
 const InitialInfoModal = ({ isOpen, onClose, initialInfo }) => {
-  // ❌ ELIMINA todo el estado isVisible y useEffect
-
-  // Función para formatear el texto con emojis y formato básico
   const formatInitialInfo = (text) => {
     if (!text) return null;
 
     return text.split("\n").map((line, index) => {
       if (line.trim() === "") return <br key={index} />;
 
-      // Detectar líneas que podrían ser títulos (con **)
       if (line.includes("**")) {
         const cleanLine = line.replace(/\*\*/g, "");
         return (
@@ -29,7 +25,6 @@ const InitialInfoModal = ({ isOpen, onClose, initialInfo }) => {
         );
       }
 
-      // Detectar viñetas con emojis
       if (line.match(/^[🛒⏰🚚💬📍🕒🎯🌟⭐✨]/)) {
         return (
           <div key={index} className="info-modal__bullet">
@@ -54,7 +49,6 @@ const InitialInfoModal = ({ isOpen, onClose, initialInfo }) => {
       <div className="info-modal__overlay" onClick={onClose} />
 
       <div className="info-modal__content">
-        {/* Header del modal */}
         <div className="info-modal__header">
           <div className="info-modal__icon">
             <HiInformationCircle />
@@ -65,7 +59,6 @@ const InitialInfoModal = ({ isOpen, onClose, initialInfo }) => {
           </button>
         </div>
 
-        {/* Contenido del modal */}
         <div className="info-modal__body">
           {initialInfo ? (
             <div className="info-modal__text">
@@ -98,7 +91,6 @@ const InitialInfoModal = ({ isOpen, onClose, initialInfo }) => {
           )}
         </div>
 
-        {/* Footer del modal */}
         <div className="info-modal__footer">
           <button className="info-modal__action-btn" onClick={onClose}>
             Entendido

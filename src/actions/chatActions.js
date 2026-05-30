@@ -1,4 +1,4 @@
-// actions/chatActions.js
+// actions/chatActions.js - VERSIÓN OPTIMIZADA
 import { types } from "../types/types";
 import Swal from "sweetalert2";
 
@@ -19,6 +19,34 @@ const fetchWithToken = async (endpoint, options = {}) => {
   return response.json();
 };
 
+// 🔥 OPTIMIZACIÓN: Acciones síncronas agrupadas
+export const setLoading = (isLoading) => ({
+  type: types.chatSetLoading,
+  payload: isLoading,
+});
+export const loadChats = (chats) => ({
+  type: types.chatLoadChats,
+  payload: chats,
+});
+export const loadMessages = (messages) => ({
+  type: types.chatLoadMessages,
+  payload: messages,
+});
+export const selectChat = (chat) => ({
+  type: types.chatSelectChat,
+  payload: chat,
+});
+export const clearSelectedChat = () => ({ type: types.chatClearSelected });
+export const addMessage = (message) => ({
+  type: types.chatAddMessage,
+  payload: message,
+});
+export const updateUnreadCount = (count) => ({
+  type: types.chatUpdateUnreadCount,
+  payload: count,
+});
+export const resetChat = () => ({ type: types.chatReset });
+
 // Cargar TODOS los usuarios registrados (para admin)
 export const startLoadAllUsers = () => {
   return async (dispatch) => {
@@ -26,7 +54,6 @@ export const startLoadAllUsers = () => {
     try {
       const data = await fetchWithToken("/api/chat/admin/users");
       if (data.ok && data.users) {
-        // Convertir usuarios a formato de chat
         const chatsFromUsers = data.users.map((user) => ({
           user: {
             id: user.id,
@@ -40,7 +67,7 @@ export const startLoadAllUsers = () => {
           unreadCount: 0,
           hasMessages: false,
           needsAttention: false,
-          isNewUser: true, // Marcar como usuario sin conversación
+          isNewUser: true,
         }));
 
         dispatch(loadChats(chatsFromUsers));
@@ -48,7 +75,7 @@ export const startLoadAllUsers = () => {
       }
       return [];
     } catch (error) {
-      console.error("Error cargando todos los usuarios:", error);
+      console.error("❌ Error cargando usuarios:", error);
       return [];
     } finally {
       dispatch(setLoading(false));
@@ -56,82 +83,27 @@ export const startLoadAllUsers = () => {
   };
 };
 
-// ============================================
-// ACCIONES SÍNCRONAS
-// ============================================
-export const setLoading = (isLoading) => ({
-  type: types.chatSetLoading,
-  payload: isLoading,
-});
-
-export const loadChats = (chats) => ({
-  type: types.chatLoadChats,
-  payload: chats,
-});
-
-export const loadMessages = (messages) => ({
-  type: types.chatLoadMessages,
-  payload: messages,
-});
-
-export const selectChat = (chat) => ({
-  type: types.chatSelectChat,
-  payload: chat,
-});
-
-export const clearSelectedChat = () => ({
-  type: types.chatClearSelected,
-});
-
-export const addMessage = (message) => ({
-  type: types.chatAddMessage,
-  payload: message,
-});
-
-export const updateUnreadCount = (count) => ({
-  type: types.chatUpdateUnreadCount,
-  payload: count,
-});
-
-export const resetChat = () => ({
-  type: types.chatReset,
-});
-
-// ============================================
-// ACCIONES ASÍNCRONAS - ADMIN
-// ============================================
-
 // Cargar todos los chats (admin)
-// Modificar startLoadChats para intentar cargar todos los usuarios si no hay chats
 export const startLoadChats = () => {
   return async (dispatch) => {
     dispatch(setLoading(true));
     try {
-      console.log("📥 Cargando chats...");
       const data = await fetchWithToken("/api/chat/admin/chats");
 
-      if (data && data.ok) {
+      if (data?.ok) {
         const chats = data.chats || [];
         const totalUnread = chats.reduce(
           (sum, chat) => sum + (chat.unreadCount || 0),
           0,
         );
 
-        console.log(
-          `✅ Chats cargados: ${chats.length}, No leídos: ${totalUnread}`,
-        );
         dispatch(loadChats(chats));
         dispatch(updateUnreadCount(totalUnread));
       } else {
-        console.warn(
-          "⚠️ No se pudieron cargar los chats, cargando todos los usuarios",
-        );
-        // Si no hay chats, cargar todos los usuarios
         await dispatch(startLoadAllUsers());
       }
     } catch (error) {
       console.error("❌ Error en startLoadChats:", error);
-      // Si hay error, intentar cargar todos los usuarios
       await dispatch(startLoadAllUsers());
     } finally {
       dispatch(setLoading(false));
@@ -139,7 +111,7 @@ export const startLoadChats = () => {
   };
 };
 
-// Cargar mensajes de un usuario específico (admin)
+// Cargar mensajes de un usuario específico
 export const startLoadMessages = (userId) => {
   return async (dispatch) => {
     dispatch(setLoading(true));
@@ -149,7 +121,7 @@ export const startLoadMessages = (userId) => {
         dispatch(loadMessages(data.messages || []));
       }
     } catch (error) {
-      console.error("Error cargando mensajes:", error);
+      console.error("❌ Error cargando mensajes:", error);
     } finally {
       dispatch(setLoading(false));
     }
@@ -166,26 +138,20 @@ export const startSendAdminMessage = (userId, message) => {
       });
 
       if (data.ok) {
-        // Agregar mensaje optimistamente
         dispatch(addMessage(data.message));
-        // Recargar chats para actualizar último mensaje
         await dispatch(startLoadChats());
         return true;
       } else {
-        Swal.fire({ icon: "error", title: "Error", text: data.msg });
+        Swal.fire("Error", data.msg, "error");
         return false;
       }
     } catch (error) {
-      console.error("Error enviando mensaje:", error);
-      Swal.fire({ icon: "error", title: "Error", text: "Error de conexión" });
+      console.error("❌ Error enviando mensaje:", error);
+      Swal.fire("Error", "Error de conexión", "error");
       return false;
     }
   };
 };
-
-// ============================================
-// ACCIONES ASÍNCRONAS - CLIENTE
-// ============================================
 
 // Cargar mensajes del cliente
 export const startLoadClientMessages = () => {
@@ -197,7 +163,7 @@ export const startLoadClientMessages = () => {
         dispatch(loadMessages(data.messages || []));
       }
     } catch (error) {
-      console.error("Error cargando mensajes:", error);
+      console.error("❌ Error cargando mensajes:", error);
     } finally {
       dispatch(setLoading(false));
     }
@@ -217,12 +183,12 @@ export const startSendClientMessage = (message) => {
         dispatch(addMessage(data.message));
         return true;
       } else {
-        Swal.fire({ icon: "error", title: "Error", text: data.msg });
+        Swal.fire("Error", data.msg, "error");
         return false;
       }
     } catch (error) {
-      console.error("Error enviando mensaje:", error);
-      Swal.fire({ icon: "error", title: "Error", text: "Error de conexión" });
+      console.error("❌ Error enviando mensaje:", error);
+      Swal.fire("Error", "Error de conexión", "error");
       return false;
     }
   };
@@ -237,7 +203,7 @@ export const startGetUnreadCount = () => {
         dispatch(updateUnreadCount(data.unreadCount || 0));
       }
     } catch (error) {
-      console.error("Error obteniendo contador:", error);
+      console.error("❌ Error obteniendo contador:", error);
     }
   };
 };

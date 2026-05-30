@@ -1,4 +1,4 @@
-// components/common/CartModal/AddressSelector.jsx - Versión completa con Redux
+// components/common/CartModal/AddressSelector.jsx - VERSIÓN OPTIMIZADA
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -144,17 +144,15 @@ const AddressSelector = ({
         clearTimeout(timeoutId);
         loadingSwal.close();
         setGpsLoading(false);
-        switch (err.code) {
-          case err.PERMISSION_DENIED:
-            setPermissionDenied(true);
-            break;
-          default:
-            Swal.fire({
-              icon: "error",
-              title: "Error",
-              text: "Ocurrió un error inesperado. Intenta de nuevo.",
-              confirmButtonColor: "#059669",
-            });
+        if (err.code === err.PERMISSION_DENIED) {
+          setPermissionDenied(true);
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Ocurrió un error inesperado. Intenta de nuevo.",
+            confirmButtonColor: "#059669",
+          });
         }
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },

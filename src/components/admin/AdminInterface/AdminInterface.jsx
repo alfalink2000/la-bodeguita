@@ -1,4 +1,4 @@
-// AdminInterface.jsx - VERSIÓN COMPLETA CORREGIDA
+// components/admin/AdminInterface.jsx - VERSIÓN OPTIMIZADA
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useAppNavigation } from "../../../hooks/useNavigationHistory";
@@ -19,7 +19,6 @@ import {
 } from "react-icons/hi";
 import Swal from "sweetalert2";
 
-// Components
 import AdminHeader from "../AdminHeader/AdminHeader";
 import DashboardStats from "../DashboardStats/DashboardStats";
 import ProductList from "../ProductList/ProductList";
@@ -32,10 +31,9 @@ import AdminChatManager from "../AdminChatManager/AdminChatManager";
 import StoreManager from "../StoreManager/StoreManager";
 import AdminOrdersManager from "../AdminOrdersManager/AdminOrdersManager";
 
-// Actions
 import { getFeaturedProducts } from "../../../actions/featuredProductsActions";
 import { getAdminUsers } from "../../../actions/adminUsersActions";
-import { insertProduct, updateProduct } from "../../../actions/productsActions"; // ✅ ELIMINADO deleteProduct
+import { insertProduct, updateProduct } from "../../../actions/productsActions";
 import {
   insertCategory,
   updateCategory,
@@ -60,27 +58,9 @@ const MENU_ITEMS = [
 ];
 
 const AdminInterface = ({ onLogout }) => {
-  // ✅ Navegación
-  const { saveAction, resetNavigation, canGoBack, getStackInfo } =
-    useAppNavigation({
-      moduleName: "admin",
-      onBack: () => {
-        if (selectedOrder) {
-          setSelectedOrder(null);
-          return true;
-        }
-        if (selectedChatUserId) {
-          setSelectedChatUserId(null);
-          return true;
-        }
-        if (showAddForm) {
-          setShowAddForm(false);
-          setEditingProduct(null);
-          return true;
-        }
-        return false;
-      },
-    });
+  const { saveAction, resetNavigation, getStackInfo } = useAppNavigation({
+    moduleName: "admin",
+  });
 
   const [activeSection, setActiveSection] = useState("dashboard");
   const [showAddForm, setShowAddForm] = useState(false);
@@ -93,50 +73,35 @@ const AdminInterface = ({ onLogout }) => {
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   const dispatch = useDispatch();
-
   const products = useSelector((state) => state.products.products);
   const categories = useSelector((state) => state.categories.categories);
   const adminUsers = useSelector((state) => state.adminUsers.users);
 
-  // ✅ Función para forzar actualización del contador de chats
   const refreshUnreadCount = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-
       const res = await fetch(`${API_URL}/api/chat/unread-count`, {
         headers: { "x-token": token },
       });
       const data = await res.json();
-
-      if (data.ok) {
-        const count = data.unreadCount || 0;
-        console.log(
-          "📊 [AdminInterface] Forzando actualización contador:",
-          count,
-        );
-        setUnreadChats(count);
-      }
+      if (data.ok) setUnreadChats(data.unreadCount || 0);
     } catch (err) {
       console.error("Error actualizando contador:", err);
     }
   }, []);
 
-  // ✅ Función para cargar usuarios que necesitan atención
   const loadUsersNeedingAttention = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-
       const res = await fetch(`${API_URL}/api/orders/admin/all`, {
         headers: { "x-token": token },
       });
       const data = await res.json();
-
       if (data.ok) {
         const pedidos = data.pedidos || [];
         setPendingOrders(pedidos.filter((o) => o.status === "open").length);
-
         const usersWithNeedingContact = new Set();
         pedidos.forEach((pedido) => {
           if (
@@ -144,25 +109,16 @@ const AdminInterface = ({ onLogout }) => {
             pedido.status !== "cancelled" &&
             pedido.status !== "completed"
           ) {
-            if (pedido.user_id) {
-              usersWithNeedingContact.add(pedido.user_id);
-            }
+            if (pedido.user_id) usersWithNeedingContact.add(pedido.user_id);
           }
         });
-
-        const uniqueUsersCount = usersWithNeedingContact.size;
-        console.log(
-          "📊 [AdminInterface] Usuarios únicos que necesitan atención:",
-          uniqueUsersCount,
-        );
-        setUsersNeedingAttention(uniqueUsersCount);
+        setUsersNeedingAttention(usersWithNeedingContact.size);
       }
     } catch (err) {
       console.error("Error cargando estadísticas:", err);
     }
   }, []);
 
-  // ✅ Guardar cambios de sección
   const handleSectionChange = useCallback(
     (sectionId) => {
       if (activeSection !== sectionId) {
@@ -171,7 +127,6 @@ const AdminInterface = ({ onLogout }) => {
         setIsMobileMenuOpen(false);
         setSelectedChatUserId(null);
         setSelectedOrder(null);
-
         if (activeSection === "chats" && sectionId !== "chats") {
           refreshUnreadCount();
           loadUsersNeedingAttention();
@@ -181,35 +136,15 @@ const AdminInterface = ({ onLogout }) => {
     [activeSection, saveAction, refreshUnreadCount, loadUsersNeedingAttention],
   );
 
-  const handleSelectOrder = useCallback(
-    (order) => {
-      setSelectedOrder(order);
-      saveAction("detail", { type: "order", id: order.id });
-    },
-    [saveAction],
-  );
-
   const handleOpenChatFromOrders = useCallback(
     (userId, userName) => {
-      console.log("📌 Abriendo chat desde pedidos para usuario:", userId);
       setSelectedChatUserId(userId);
       setActiveSection("chats");
       saveAction("detail", { type: "chat", userId });
-
       setTimeout(() => {
         loadUsersNeedingAttention();
         refreshUnreadCount();
       }, 500);
-
-      Swal.fire({
-        icon: "info",
-        title: "Chat abierto",
-        text: `Ahora puedes chatear con ${userName || "el cliente"}`,
-        timer: 2000,
-        showConfirmButton: false,
-        toast: true,
-        position: "top-end",
-      });
     },
     [saveAction, loadUsersNeedingAttention, refreshUnreadCount],
   );
@@ -223,36 +158,28 @@ const AdminInterface = ({ onLogout }) => {
     [saveAction],
   );
 
-  // ✅ Escuchar eventos de navegación
   useEffect(() => {
     const handleCloseDetail = (event) => {
       const detailType = event.detail?.data?.type;
-      if (detailType === "order") {
-        setSelectedOrder(null);
-      } else if (detailType === "chat") {
+      if (detailType === "order") setSelectedOrder(null);
+      else if (detailType === "chat") {
         setSelectedChatUserId(null);
         refreshUnreadCount();
         loadUsersNeedingAttention();
       }
     };
-
     const handleCloseModal = (event) => {
-      const modalType = event.detail?.data?.type;
-      if (modalType === "product-form") {
+      if (event.detail?.data?.type === "product-form") {
         setShowAddForm(false);
         setEditingProduct(null);
       }
     };
-
     const handleSectionBack = (event) => {
-      const previousSection = event.detail?.data?.to || "dashboard";
-      setActiveSection(previousSection);
+      setActiveSection(event.detail?.data?.to || "dashboard");
     };
-
     window.addEventListener("admin:close-detail", handleCloseDetail);
     window.addEventListener("admin:close-modal", handleCloseModal);
     window.addEventListener("admin:section-back", handleSectionBack);
-
     return () => {
       window.removeEventListener("admin:close-detail", handleCloseDetail);
       window.removeEventListener("admin:close-modal", handleCloseModal);
@@ -265,19 +192,6 @@ const AdminInterface = ({ onLogout }) => {
     return () => resetNavigation();
   }, [resetNavigation]);
 
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log("📊 Estado navegación admin:", getStackInfo());
-    }
-  }, [
-    getStackInfo,
-    activeSection,
-    selectedOrder,
-    selectedChatUserId,
-    showAddForm,
-  ]);
-
-  // Cargar datos iniciales
   useEffect(() => {
     dispatch(getFeaturedProducts());
     dispatch(getAdminUsers());
@@ -294,39 +208,21 @@ const AdminInterface = ({ onLogout }) => {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-
         const res = await fetch(`${API_URL}/api/chat/unread-count`, {
           headers: { "x-token": token },
         });
         const data = await res.json();
-
-        if (data.ok) {
-          const count = data.unreadCount || 0;
-          console.log("📊 [AdminInterface] Chats no leídos desde API:", count);
-
-          if (activeSection !== "chats") {
-            setUnreadChats(count);
-          }
-        }
+        if (data.ok && activeSection !== "chats")
+          setUnreadChats(data.unreadCount || 0);
       } catch (err) {
         console.error("Error cargando no leídos:", err);
       }
     };
-
     loadUnread();
     const interval = setInterval(loadUnread, 10000);
     return () => clearInterval(interval);
   }, [activeSection]);
 
-  const categoryNames = useMemo(
-    () =>
-      Array.isArray(categories)
-        ? categories.map((cat) => cat.name).filter(Boolean)
-        : [],
-    [categories],
-  );
-
-  // ✅ CORREGIDO: handleSubmit para ProductForm
   const handleSubmit = useCallback(
     (formData) => {
       if (editingProduct) {
@@ -342,13 +238,9 @@ const AdminInterface = ({ onLogout }) => {
   );
 
   const handleEdit = useCallback(
-    (product) => {
-      handleOpenProductForm(product);
-    },
+    (product) => handleOpenProductForm(product),
     [handleOpenProductForm],
   );
-
-  // ❌ ELIMINADO: handleDelete - ProductList usa Redux directamente
 
   const handleCancel = useCallback(() => {
     setShowAddForm(false);
@@ -356,19 +248,13 @@ const AdminInterface = ({ onLogout }) => {
   }, []);
 
   const handleAddCategory = useCallback(
-    (categoryName, storeId) => {
-      dispatch(insertCategory(categoryName, storeId));
-    },
+    (categoryName, storeId) => dispatch(insertCategory(categoryName, storeId)),
     [dispatch],
   );
-
   const handleUpdateCategory = useCallback(
-    (oldName, newName) => {
-      dispatch(updateCategory(oldName, newName));
-    },
+    (oldName, newName) => dispatch(updateCategory(oldName, newName)),
     [dispatch],
   );
-
   const handleDeleteCategory = useCallback(
     (categoryName) => {
       Swal.fire({
@@ -381,9 +267,7 @@ const AdminInterface = ({ onLogout }) => {
         confirmButtonText: "Sí, eliminar",
         cancelButtonText: "Cancelar",
       }).then((result) => {
-        if (result.isConfirmed) {
-          dispatch(deleteCategory(categoryName));
-        }
+        if (result.isConfirmed) dispatch(deleteCategory(categoryName));
       });
     },
     [dispatch],
@@ -410,7 +294,9 @@ const AdminInterface = ({ onLogout }) => {
     });
   }, [dispatch, onLogout]);
 
-  const renderContent = useMemo(() => {
+  const chatBadgeCount = unreadChats + usersNeedingAttention;
+
+  const renderContent = () => {
     switch (activeSection) {
       case "dashboard":
         return (
@@ -421,14 +307,12 @@ const AdminInterface = ({ onLogout }) => {
             unreadChats={unreadChats}
           />
         );
-
       case "stores":
         return (
           <div className="admin-section">
             <StoreManager />
           </div>
         );
-
       case "products":
         return (
           <div className="admin-section">
@@ -441,7 +325,6 @@ const AdminInterface = ({ onLogout }) => {
                 Agregar Producto
               </button>
             </div>
-
             {products.length === 0 ? (
               <div className="admin-section__empty">
                 <HiOutlineCube className="admin-section__empty-icon" />
@@ -455,15 +338,10 @@ const AdminInterface = ({ onLogout }) => {
                 </button>
               </div>
             ) : (
-              <ProductList
-                products={products}
-                onEdit={handleEdit}
-                // ✅ NO pasar onDelete - ProductList maneja la eliminación directamente
-              />
+              <ProductList products={products} onEdit={handleEdit} />
             )}
           </div>
         );
-
       case "categories":
         return (
           <div className="admin-section">
@@ -476,7 +354,6 @@ const AdminInterface = ({ onLogout }) => {
             />
           </div>
         );
-
       case "chats":
         return (
           <div
@@ -486,21 +363,10 @@ const AdminInterface = ({ onLogout }) => {
             <AdminChatManager
               selectedUserId={selectedChatUserId}
               onSelectUser={setSelectedChatUserId}
-              onUnreadCountChange={(count) => {
-                console.log(
-                  "📊 [AdminInterface] onUnreadCountChange recibido:",
-                  count,
-                );
-                setUnreadChats(count);
-              }}
-              onMessageSent={() => {
-                refreshUnreadCount();
-                loadUsersNeedingAttention();
-              }}
+              onUnreadCountChange={(count) => setUnreadChats(count)}
             />
           </div>
         );
-
       case "users":
         return (
           <div className="admin-section">
@@ -510,7 +376,6 @@ const AdminInterface = ({ onLogout }) => {
             <AdminUsersManager users={adminUsers} />
           </div>
         );
-
       case "config":
         return (
           <div className="admin-section">
@@ -518,7 +383,6 @@ const AdminInterface = ({ onLogout }) => {
             <AppConfigManager />
           </div>
         );
-
       case "orders":
         return (
           <div
@@ -528,22 +392,15 @@ const AdminInterface = ({ onLogout }) => {
             <AdminOrdersManager
               token={localStorage.getItem("token")}
               onOpenChatWithUser={handleOpenChatFromOrders}
-              onSelectOrder={handleSelectOrder}
+              onSelectOrder={setSelectedOrder}
               onOrderStatusChange={async () => {
-                console.log(
-                  "📊 [AdminInterface] Notificado cambio de estado de pedido",
-                );
                 await loadUsersNeedingAttention();
                 await refreshUnreadCount();
                 window.dispatchEvent(new CustomEvent("admin:refresh-chats"));
-                setTimeout(() => {
-                  window.dispatchEvent(new CustomEvent("admin:refresh-chats"));
-                }, 1000);
               }}
             />
           </div>
         );
-
       default:
         return (
           <DashboardStats
@@ -554,36 +411,7 @@ const AdminInterface = ({ onLogout }) => {
           />
         );
     }
-  }, [
-    activeSection,
-    products,
-    categories,
-    adminUsers,
-    pendingOrders,
-    usersNeedingAttention,
-    unreadChats,
-    selectedChatUserId,
-    handleEdit,
-    handleAddCategory,
-    handleUpdateCategory,
-    handleDeleteCategory,
-    handleOpenChatFromOrders,
-    handleSelectOrder,
-    handleOpenProductForm,
-    refreshUnreadCount,
-    loadUsersNeedingAttention,
-  ]);
-
-  const chatBadgeCount = unreadChats + usersNeedingAttention;
-
-  console.log(
-    "📊 [AdminInterface] Render - chatBadgeCount:",
-    chatBadgeCount,
-    "unreadChats:",
-    unreadChats,
-    "usersNeedingAttention:",
-    usersNeedingAttention,
-  );
+  };
 
   return (
     <div className="admin-interface">
@@ -602,7 +430,6 @@ const AdminInterface = ({ onLogout }) => {
               </div>
             </div>
           </div>
-
           <div className="admin-header__right">
             <div className="admin-header__user-info">
               <HiOutlineUserCircle className="admin-header__user-icon" />
@@ -611,7 +438,6 @@ const AdminInterface = ({ onLogout }) => {
                 <span className="admin-header__user-role">Super Admin</span>
               </div>
             </div>
-
             <button
               className="admin-interface__mobile-menu"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -625,44 +451,28 @@ const AdminInterface = ({ onLogout }) => {
 
       <div className="admin-interface__layout">
         <nav
-          className={`admin-sidebar ${
-            isMobileMenuOpen ? "admin-sidebar--open" : ""
-          }`}
+          className={`admin-sidebar ${isMobileMenuOpen ? "admin-sidebar--open" : ""}`}
         >
           <div className="admin-sidebar__header">
             <h3 className="admin-sidebar__title">Menú Admin</h3>
           </div>
-
           <div className="admin-sidebar__menu">
             {MENU_ITEMS.map((item) => {
               const Icon = item.icon;
               let badgeCount = 0;
-
-              if (item.id === "chats") {
-                badgeCount = chatBadgeCount;
-              } else if (item.id === "orders") {
-                badgeCount = pendingOrders;
-              }
-
+              if (item.id === "chats") badgeCount = chatBadgeCount;
+              else if (item.id === "orders") badgeCount = pendingOrders;
               return (
                 <button
                   key={item.id}
                   onClick={() => handleSectionChange(item.id)}
-                  className={`admin-sidebar__item ${
-                    activeSection === item.id
-                      ? "admin-sidebar__item--active"
-                      : ""
-                  }`}
+                  className={`admin-sidebar__item ${activeSection === item.id ? "admin-sidebar__item--active" : ""}`}
                 >
                   <Icon className="admin-sidebar__icon" />
                   <span className="admin-sidebar__label">{item.label}</span>
                   {badgeCount > 0 && (
                     <span
-                      className={`admin-sidebar__badge ${
-                        item.id === "chats" && usersNeedingAttention > 0
-                          ? "admin-sidebar__badge--warning"
-                          : ""
-                      }`}
+                      className={`admin-sidebar__badge ${item.id === "chats" && usersNeedingAttention > 0 ? "admin-sidebar__badge--warning" : ""}`}
                     >
                       {badgeCount > 99 ? "99+" : badgeCount}
                     </span>
@@ -670,7 +480,6 @@ const AdminInterface = ({ onLogout }) => {
                 </button>
               );
             })}
-
             <button
               onClick={handleLogout}
               className="admin-sidebar__item admin-sidebar__item--logout"
@@ -680,9 +489,8 @@ const AdminInterface = ({ onLogout }) => {
             </button>
           </div>
         </nav>
-
         <main className="admin-main">
-          <div className="admin-main__content">{renderContent}</div>
+          <div className="admin-main__content">{renderContent()}</div>
         </main>
       </div>
 

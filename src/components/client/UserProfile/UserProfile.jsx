@@ -1,4 +1,4 @@
-// components/client/UserProfile/UserProfile.jsx
+// components/client/UserProfile/UserProfile.jsx - VERSIÓN COMPLETA OPTIMIZADA
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -25,6 +25,18 @@ import Swal from "sweetalert2";
 import { startLogout, updateUserProfile } from "../../../actions/authActions";
 import { resetCart } from "../../../actions/cartActions";
 import "./UserProfile.css";
+
+const selectCurrencySymbol = (state) => {
+  const currency = state.appConfig.config?.currency || "CUP";
+  switch (currency) {
+    case "USD":
+      return "US$";
+    case "EUR":
+      return "€";
+    default:
+      return "$";
+  }
+};
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
@@ -66,19 +78,8 @@ const UserProfile = ({
   const [emailError, setEmailError] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [expandedOrders, setExpandedOrders] = useState({});
-  const appConfig = useSelector((state) => state.appConfig.config);
-  const currency = appConfig?.currency || "CUP";
 
-  const getCurrencySymbol = () => {
-    switch (currency) {
-      case "USD":
-        return "US$";
-      case "EUR":
-        return "€";
-      default:
-        return "$";
-    }
-  };
+  const currencySymbol = useSelector(selectCurrencySymbol);
 
   const toggleExpandOrder = (orderId) => {
     setExpandedOrders((prev) => ({
@@ -387,7 +388,7 @@ const UserProfile = ({
             showConfirmButton: false,
           });
         } catch (err) {
-          console.error("❌ Error en reverse geocoding:", err);
+          console.error("Error en reverse geocoding:", err);
           const coordText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
           setEditForm((prev) => ({
             ...prev,
@@ -408,7 +409,7 @@ const UserProfile = ({
         }
       },
       (error) => {
-        console.error("❌ Error GPS:", error);
+        console.error("Error GPS:", error);
         setGettingLocation(false);
 
         let errorMsg = "No se pudo obtener tu ubicación.";
@@ -441,7 +442,6 @@ const UserProfile = ({
     );
   };
 
-  // ✅ HANDLE SAVE PROFILE - USANDO REDUX
   const handleSaveProfile = async () => {
     if (!editForm.username || editForm.username.trim() === "") {
       Swal.fire({
@@ -939,7 +939,7 @@ const UserProfile = ({
                               <HiOutlineTruck size={12} />
                               {order.delivery_needs_manual_contact
                                 ? "Delivery (Pendiente contacto)"
-                                : `Delivery: ${getCurrencySymbol()}${order.delivery_price || 0}`}
+                                : `Delivery: ${currencySymbol}${order.delivery_price || 0}`}
                             </span>
                           ) : (
                             <span className="up-order-pickup">
@@ -949,7 +949,7 @@ const UserProfile = ({
                           )}
                           <span className="up-order-total">
                             <HiOutlineCurrencyDollar size={12} />
-                            Total: {getCurrencySymbol()}
+                            Total: {currencySymbol}
                             {parseFloat(order.total_amount).toFixed(2)}
                           </span>
                         </div>
@@ -984,7 +984,7 @@ const UserProfile = ({
                                       x{item.quantity}
                                     </span>
                                     <span className="up-product-price">
-                                      {getCurrencySymbol()}
+                                      {currencySymbol}
                                       {(
                                         parseFloat(item.price) * item.quantity
                                       ).toFixed(2)}
