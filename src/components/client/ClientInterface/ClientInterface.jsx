@@ -1,4 +1,4 @@
-// components/client/ClientInterface.jsx - VERSIÓN COMPLETA OPTIMIZADA
+// components/client/ClientInterface.jsx - VERSIÓN COMPLETA CORREGIDA
 import React, {
   useState,
   useMemo,
@@ -41,6 +41,7 @@ import UserProfile from "../UserProfile/UserProfile";
 // Actions & Selectors
 import { loadFeaturedProducts } from "../../../actions/featuredProductsActions";
 import { getStores } from "../../../actions/storesActions";
+import { getCategories } from "../../../actions/categoriesActions";
 import {
   selectProducts,
   selectCategories,
@@ -101,6 +102,7 @@ const ClientInterface = ({
   const stores = useSelector((state) => state.stores.stores);
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const [filteredCategories, setFilteredCategories] = useState([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
   const products = useSelector(selectProducts);
   const categories = useSelector(selectCategories);
@@ -109,22 +111,99 @@ const ClientInterface = ({
   const categoryOptions = useSelector(selectCategoryOptions);
   const appConfig = useSelector((state) => state.appConfig.config);
 
+  // ============================================
+  // PARTE 1: Cargar tiendas al inicio
+  // ============================================
   useEffect(() => {
     if (stores.length === 0) {
       dispatch(getStores());
     }
   }, [dispatch, stores.length]);
 
+  // ============================================
+  // PARTE 2: Seleccionar primera tienda automáticamente
+  // ============================================
   useEffect(() => {
     if (stores.length > 0 && !selectedStoreId) {
       setSelectedStoreId(stores[0].id.toString());
     }
   }, [stores, selectedStoreId]);
 
+  // ============================================
+  // PARTE 3: Cargar categorías cuando cambia la tienda (CORREGIDO)
+  // ============================================
+  useEffect(() => {
+    if (!selectedStoreId) {
+      setFilteredCategories([]);
+      return;
+    }
+
+    const loadCategoriesForSelectedStore = async () => {
+      setIsLoadingCategories(true);
+      try {
+        // ✅ Método 1: Usar el endpoint específico por tienda
+        const res = await fetch(
+          `${API_URL}/api/stores/${selectedStoreId}/categories`,
+        );
+        const data = await res.json();
+
+        if (data.ok && data.categories && data.categories.length > 0) {
+          // Filtrar para eliminar "Todos" si existe
+          const cats = data.categories.filter((cat) => cat.name !== "Todos");
+          setFilteredCategories(cats);
+          console.log(
+            `✅ Cargadas ${cats.length} categorías para tienda ${selectedStoreId}`,
+          );
+        } else {
+          // ✅ Método 2: Fallback - filtrar desde Redux
+          const filtered = categoryOptions.filter(
+            (cat) =>
+              cat.store_id?.toString() === selectedStoreId &&
+              cat.name !== "Todos",
+          );
+          setFilteredCategories(filtered.length > 0 ? filtered : []);
+          console.log(`✅ Filtradas ${filtered.length} categorías desde Redux`);
+        }
+
+        // Resetear categoría seleccionada al cambiar de tienda
+        setSelectedCategory("Todos");
+      } catch (error) {
+        console.error("Error cargando categorías para tienda:", error);
+        // Fallback a filtrado local
+        const filtered = categoryOptions.filter(
+          (cat) =>
+            cat.store_id?.toString() === selectedStoreId &&
+            cat.name !== "Todos",
+        );
+        setFilteredCategories(filtered);
+        setSelectedCategory("Todos");
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    loadCategoriesForSelectedStore();
+  }, [selectedStoreId, categoryOptions]);
+
+  // ============================================
+  // PARTE 4: Cargar todas las categorías al inicio (para Redux)
+  // ============================================
+  useEffect(() => {
+    if (categoryOptions.length === 0) {
+      dispatch(getCategories());
+    }
+  }, [dispatch, categoryOptions.length]);
+
+  // ============================================
+  // PARTE 5: Guardar contador de pedidos no leídos
+  // ============================================
   useEffect(() => {
     localStorage.setItem("unread_orders_count", unreadOrders);
   }, [unreadOrders]);
 
+  // ============================================
+  // PARTE 6: Escuchar evento de nuevo pedido
+  // ============================================
   useEffect(() => {
     if (isListenerRegistered.current) return;
 
@@ -141,6 +220,9 @@ const ClientInterface = ({
     };
   }, []);
 
+  // ============================================
+  // PARTE 7: Resetear al hacer logout
+  // ============================================
   useEffect(() => {
     if (!isLoggedIn) {
       setUnreadOrders(0);
@@ -148,11 +230,17 @@ const ClientInterface = ({
     }
   }, [isLoggedIn]);
 
+  // ============================================
+  // PARTE 8: Resetear contador manualmente
+  // ============================================
   const resetUnreadOrders = useCallback(() => {
     setUnreadOrders(0);
     localStorage.setItem("unread_orders_count", "0");
   }, []);
 
+  // ============================================
+  // PARTE 9: Handlers de navegación
+  // ============================================
   const handleSectionChange = useCallback(
     (sectionId) => {
       if (activeSection !== sectionId) {
@@ -196,6 +284,9 @@ const ClientInterface = ({
     saveAction("modal", { type: "info" });
   }, [saveAction]);
 
+  // ============================================
+  // PARTE 10: Eventos de navegación global
+  // ============================================
   useEffect(() => {
     const handleCloseDetail = () => {
       setSelectedProduct(null);
@@ -251,6 +342,9 @@ const ClientInterface = ({
     }
   }, [getStackInfo, activeSection, selectedProduct, isChatOpen]);
 
+  // ============================================
+  // PARTE 11: Cargar mensajes no leídos
+  // ============================================
   const loadUnreadMessages = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -276,26 +370,9 @@ const ClientInterface = ({
     }
   }, [isLoggedIn, loadUnreadMessages]);
 
-  useEffect(() => {
-    if (!selectedStoreId) {
-      setFilteredCategories(
-        categoryOptions.filter((cat) => cat.name !== "Todos"),
-      );
-      return;
-    }
-    const filtered = categoryOptions.filter(
-      (cat) =>
-        (cat.store_id?.toString() === selectedStoreId || !cat.store_id) &&
-        cat.name !== "Todos",
-    );
-    setFilteredCategories(
-      filtered.length > 0
-        ? filtered
-        : categoryOptions.filter((cat) => cat.name !== "Todos"),
-    );
-    setSelectedCategory("Todos");
-  }, [selectedStoreId, categoryOptions]);
-
+  // ============================================
+  // PARTE 12: Filtrar productos por tienda
+  // ============================================
   const storeFilteredProducts = useMemo(() => {
     if (!selectedStoreId) return products;
     return products.filter(
@@ -303,6 +380,9 @@ const ClientInterface = ({
     );
   }, [products, selectedStoreId]);
 
+  // ============================================
+  // PARTE 13: Mostrar modal de bienvenida
+  // ============================================
   useEffect(() => {
     if (appConfig?.show_initialinfo !== false) {
       const timer = setTimeout(() => setShowInfoModal(true), 1000);
@@ -310,12 +390,18 @@ const ClientInterface = ({
     }
   }, [appConfig?.show_initialinfo]);
 
+  // ============================================
+  // PARTE 14: Cargar productos destacados
+  // ============================================
   useEffect(() => {
     if (Array.isArray(products) && Array.isArray(categories)) {
       dispatch(loadFeaturedProducts());
     }
   }, [dispatch, products, categories]);
 
+  // ============================================
+  // PARTE 15: Detectar tamaño de pantalla
+  // ============================================
   useEffect(() => {
     const checkScreenSize = () => {
       setIsDesktop(window.innerWidth >= 1024);
@@ -325,6 +411,9 @@ const ClientInterface = ({
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
+  // ============================================
+  // PARTE 16: Filtrar productos por búsqueda y categoría
+  // ============================================
   const filteredProducts = useMemo(() => {
     const productsToFilter =
       activeSection === SECTIONS.TODOS
@@ -450,6 +539,9 @@ const ClientInterface = ({
     [InfoButton],
   );
 
+  // ============================================
+  // PARTE 17: Renderizado móvil
+  // ============================================
   const renderMobileLayout = useMemo(
     () => (
       <div className="client-interface__content mobile-layout">
@@ -543,33 +635,38 @@ const ClientInterface = ({
             >
               Todos
             </button>
-            {filteredCategories
-              .filter((cat) => (cat.name || cat) !== "Todos")
-              .map((cat) => (
-                <button
-                  key={cat.id || cat}
-                  className={`category-chip ${
-                    selectedCategory === (cat.name || cat)
-                      ? "category-chip--active"
-                      : ""
-                  }`}
-                  onClick={() => setSelectedCategory(cat.name || cat)}
-                >
-                  {cat.name || cat}
-                </button>
-              ))}
-            {filteredCategories.filter((c) => (c.name || c) !== "Todos")
-              .length <= 3 && (
-              <div className="chips-decoration">
-                <div className="decoration-dots">
-                  <span className="dot"></span>
-                  <span className="dot"></span>
-                  <span className="dot"></span>
-                </div>
-                <div className="decoration-sparkle">✨</div>
-                <div className="decoration-line"></div>
-              </div>
+            {isLoadingCategories ? (
+              <div className="category-chip-loading">Cargando...</div>
+            ) : (
+              filteredCategories
+                .filter((cat) => (cat.name || cat) !== "Todos")
+                .map((cat) => (
+                  <button
+                    key={cat.id || cat.name || cat}
+                    className={`category-chip ${
+                      selectedCategory === (cat.name || cat)
+                        ? "category-chip--active"
+                        : ""
+                    }`}
+                    onClick={() => setSelectedCategory(cat.name || cat)}
+                  >
+                    {cat.name || cat}
+                  </button>
+                ))
             )}
+            {filteredCategories.filter((c) => (c.name || c) !== "Todos")
+              .length <= 3 &&
+              !isLoadingCategories && (
+                <div className="chips-decoration">
+                  <div className="decoration-dots">
+                    <span className="dot"></span>
+                    <span className="dot"></span>
+                    <span className="dot"></span>
+                  </div>
+                  <div className="decoration-sparkle">✨</div>
+                  <div className="decoration-line"></div>
+                </div>
+              )}
           </div>
         </div>
 
@@ -598,9 +695,13 @@ const ClientInterface = ({
       filteredProducts,
       getProductsCount,
       handleProductClick,
+      isLoadingCategories,
     ],
   );
 
+  // ============================================
+  // PARTE 18: Renderizado desktop
+  // ============================================
   const renderDesktopLayout = useMemo(
     () => (
       <div className="client-interface__content desktop-layout">
@@ -667,35 +768,39 @@ const ClientInterface = ({
                 </span>
               </button>
 
-              {filteredCategories
-                .filter((cat) => {
-                  const name = (cat.name || cat).trim();
-                  return (
-                    name !== "Todos" && name !== "todos" && name !== "TODOS"
-                  );
-                })
-                .map((cat) => (
-                  <button
-                    key={cat.id || cat.name || cat}
-                    className={`desktop-section-button ${
-                      selectedCategory === (cat.name || cat)
-                        ? "desktop-section-button--active"
-                        : ""
-                    }`}
-                    onClick={() => setSelectedCategory(cat.name || cat)}
-                  >
-                    <span className="desktop-section-text">
-                      {cat.name || cat}
-                    </span>
-                    <span className="desktop-section-badge">
-                      {
-                        storeFilteredProducts.filter(
-                          (p) => p.category?.name === (cat.name || cat),
-                        ).length
-                      }
-                    </span>
-                  </button>
-                ))}
+              {isLoadingCategories ? (
+                <div className="desktop-loading">Cargando categorías...</div>
+              ) : (
+                filteredCategories
+                  .filter((cat) => {
+                    const name = (cat.name || cat).trim();
+                    return (
+                      name !== "Todos" && name !== "todos" && name !== "TODOS"
+                    );
+                  })
+                  .map((cat) => (
+                    <button
+                      key={cat.id || cat.name || cat}
+                      className={`desktop-section-button ${
+                        selectedCategory === (cat.name || cat)
+                          ? "desktop-section-button--active"
+                          : ""
+                      }`}
+                      onClick={() => setSelectedCategory(cat.name || cat)}
+                    >
+                      <span className="desktop-section-text">
+                        {cat.name || cat}
+                      </span>
+                      <span className="desktop-section-badge">
+                        {
+                          storeFilteredProducts.filter(
+                            (p) => p.category?.name === (cat.name || cat),
+                          ).length
+                        }
+                      </span>
+                    </button>
+                  ))
+              )}
             </div>
           </div>
         </div>
@@ -730,6 +835,7 @@ const ClientInterface = ({
       filteredProducts,
       getProductsCount,
       handleProductClick,
+      isLoadingCategories,
     ],
   );
 

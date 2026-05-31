@@ -1,7 +1,4 @@
-// components/auth/RoleSelector.jsx - ✅ PERFECTO, SIN CAMBIOS
-// Este componente es independiente y no usa Redux directamente
-// Solo recibe props y llama callbacks
-
+// components/auth/RoleSelector.jsx - VERSIÓN ORIGINAL
 import {
   HiOutlineEye,
   HiOutlineCog,

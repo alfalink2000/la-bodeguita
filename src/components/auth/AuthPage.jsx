@@ -1,6 +1,5 @@
-// components/auth/AuthPage.jsx - VERSIÓN COMPLETA OPTIMIZADA
+// components/auth/AuthPage.jsx - VERSIÓN ORIGINAL (SIN OPTIMIZACIONES)
 import { useState } from "react";
-import { useDispatch } from "react-redux";
 import Swal from "sweetalert2";
 import {
   FaUser,
@@ -14,7 +13,6 @@ import {
   FaCheckCircle,
 } from "react-icons/fa";
 import { HiShoppingBag } from "react-icons/hi";
-import { StartLogin } from "../../actions/authActions";
 import "./Auth.css";
 import "./Auth.desktop.css";
 
@@ -23,7 +21,6 @@ const API_URL =
   "https://minimarket-backend-6z9m.onrender.com";
 
 const AuthPage = ({ onLoginSuccess }) => {
-  const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("login");
   const [loading, setLoading] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -32,11 +29,13 @@ const AuthPage = ({ onLoginSuccess }) => {
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [addressError, setAddressError] = useState("");
 
+  // Formulario login
   const [loginForm, setLoginForm] = useState({
     username: "",
     password: "",
   });
 
+  // Formulario registro
   const [registerForm, setRegisterForm] = useState({
     username: "",
     password: "",
@@ -46,6 +45,7 @@ const AuthPage = ({ onLoginSuccess }) => {
     lng: null,
   });
 
+  // ✅ VALIDACIÓN DE DIRECCIÓN
   const validateAddress = (address, lat, lng) => {
     if (!address || address.trim() === "") {
       setAddressError(
@@ -150,20 +150,28 @@ const AuthPage = ({ onLoginSuccess }) => {
     setLoading(true);
 
     try {
-      await dispatch(StartLogin(loginForm.username, loginForm.password));
+      const res = await fetch(`${API_URL}/api/auth`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: loginForm.username,
+          password_hash: loginForm.password,
+        }),
+      });
+      const data = await res.json();
 
-      setTimeout(() => {
-        const token = localStorage.getItem("token");
-        if (token) {
-          showSuccessAlertAndRedirect(
-            "¡Bienvenido!",
-            `Has iniciado sesión correctamente`,
-            { ok: true, token },
-          );
-        } else {
-          setError("Error al iniciar sesión");
-        }
-      }, 500);
+      if (data.ok) {
+        localStorage.setItem("token", data.token);
+        await showSuccessAlertAndRedirect(
+          "¡Bienvenido!",
+          `Has iniciado sesión correctamente`,
+          data,
+        );
+      } else {
+        const errorMsg = data.msg || "Error al iniciar sesión";
+        setError(errorMsg);
+        showErrorAlert(errorMsg, "Error de autenticación");
+      }
     } catch (err) {
       const errorMsg = "Error de conexión con el servidor";
       setError(errorMsg);
@@ -227,9 +235,6 @@ const AuthPage = ({ onLoginSuccess }) => {
 
       if (data.ok) {
         localStorage.setItem("token", data.token);
-        await dispatch(
-          StartLogin(registerForm.username, registerForm.password),
-        );
         await showSuccessAlertAndRedirect(
           "¡Registro exitoso! 🎊",
           `¡Bienvenido/a ${registerForm.username}!`,
@@ -517,6 +522,7 @@ const AuthPage = ({ onLoginSuccess }) => {
             className="auth-form auth-form--register"
             onSubmit={handleRegister}
           >
+            {/* Fila 1: Usuario y Contraseña */}
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">
@@ -558,6 +564,7 @@ const AuthPage = ({ onLoginSuccess }) => {
               </div>
             </div>
 
+            {/* Fila 2: Teléfono y Dirección (solo campo) */}
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">
@@ -582,6 +589,7 @@ const AuthPage = ({ onLoginSuccess }) => {
               </div>
             </div>
 
+            {/* Sección de dirección completa (ocupa ancho completo) */}
             <div className="form-full-width">
               <div className="location-section">
                 <button
