@@ -1,0 +1,246 @@
+/* ============================================
+   SIDE MENU - Tienda Premium Mobile
+   Drawer con Degradados y Acentos Dorados
+   ============================================ */
+
+.client-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 290px;
+  max-width: 85vw;
+  z-index: 51;
+  background: white;
+  box-shadow: 8px 0 40px rgba(11, 79, 55, 0.12);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  border-right: 2px solid rgba(200, 150, 62, 0.2);
+}
+
+.client-sidebar--open {
+  transform: translateX(0);
+}
+
+.client-sidebar--closed {
+  transform: translateX(-100%);
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.client-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #0b4f37, #1a6b4a);
+}
+
+.client-sidebar__header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.client-sidebar__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.client-sidebar__close {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  cursor: pointer;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.client-sidebar__close:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: rotate(90deg);
+}
+
+/* ============================================
+   TARJETA DE USUARIO
+   ============================================ */
+.client-sidebar__user-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  margin: 14px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #e8f5f0, #fdf8f0);
+  border: 1px solid rgba(200, 150, 62, 0.2);
+}
+
+.client-sidebar__avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0b4f37, #1a6b4a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(11, 79, 55, 0.25);
+}
+
+.client-sidebar__avatar-icon {
+  font-size: 26px;
+  color: white;
+}
+
+.client-sidebar__user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.client-sidebar__user-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.client-sidebar__user-role {
+  font-size: 12px;
+  color: #5c6b63;
+}
+
+/* ============================================
+   ESTADÍSTICAS
+   ============================================ */
+.client-sidebar__stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 14px;
+}
+
+.client-sidebar__stat {
+  padding: 14px;
+  border-radius: 14px;
+  background: #fafbf9;
+  text-align: center;
+  border: 1px solid #e8edea;
+}
+
+.client-sidebar__stat-number {
+  font-size: 20px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #0b4f37, #c8963e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.client-sidebar__stat-label {
+  font-size: 11px;
+  color: #5c6b63;
+  margin-top: 2px;
+}
+
+/* ============================================
+   NAVEGACIÓN
+   ============================================ */
+.client-sidebar__nav {
+  flex: 1;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.client-sidebar__nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1a1a;
+  transition: all 0.25s ease;
+}
+
+.client-sidebar__nav-item:hover {
+  background: #e8f5f0;
+  color: #0b4f37;
+  transform: translateX(4px);
+}
+
+.client-sidebar__nav-icon {
+  font-size: 22px;
+  color: #5c6b63;
+  flex-shrink: 0;
+}
+
+.client-sidebar__nav-item:hover .client-sidebar__nav-icon {
+  color: #0b4f37;
+}
+
+.client-sidebar__nav-item--primary {
+  background: linear-gradient(135deg, #0b4f37, #1a6b4a);
+  color: white;
+  box-shadow: 0 4px 16px rgba(11, 79, 55, 0.25);
+}
+
+.client-sidebar__nav-item--primary:hover {
+  opacity: 0.9;
+  transform: translateX(4px);
+  color: white;
+}
+
+.client-sidebar__nav-item--primary .client-sidebar__nav-icon {
+  color: white;
+}
+
+.client-sidebar__nav-item--danger {
+  color: #dc2626;
+}
+
+.client-sidebar__nav-item--danger:hover {
+  background: rgba(220, 38, 38, 0.06);
+}
+
+.client-sidebar__nav-item--danger .client-sidebar__nav-icon {
+  color: #dc2626;
+}
+
+.client-sidebar__divider {
+  height: 2px;
+  background: linear-gradient(90deg, #0b4f37, #c8963e, transparent);
+  margin: 10px 0;
+  border-radius: 1px;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.client-sidebar__footer {
+  padding: 18px;
+  border-top: 1px solid #e8edea;
+  text-align: center;
+  background: #fafbf9;
+}
+
+.client-sidebar__footer-text {
+  font-size: 12px;
+  color: #a0aec0;
+}
