@@ -22,8 +22,7 @@ import RightSidebar from "../DesktopSidebar/DesktopSidebar";
 import ChatModal from "../ChatModal/ChatModal";
 import UserProfile from "../UserProfile/UserProfile";
 
-// SOLO importamos Tailwind (ya está en index.css)
-// No importamos ningún CSS personalizado
+// No importamos CSS personalizado, solo Tailwind
 
 const SECTIONS = {
   TODOS: "todos",
@@ -47,7 +46,7 @@ const ClientInterface = ({
   });
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Electrodomésticos");
+  const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [activeSection, setActiveSection] = useState(SECTIONS.TODOS);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -77,7 +76,10 @@ const ClientInterface = ({
 
   useEffect(() => {
     if (stores.length > 0 && !selectedStoreId) {
-      setSelectedStoreId(stores[0].id.toString());
+      const electroStore = stores.find((s) => s.name === "Electrodomésticos");
+      setSelectedStoreId(
+        electroStore ? electroStore.id.toString() : stores[0].id.toString(),
+      );
     }
   }, [stores, selectedStoreId]);
 
@@ -108,8 +110,7 @@ const ClientInterface = ({
           );
           setFilteredCategories(filtered.length > 0 ? filtered : []);
         }
-        const hasElectro = data.categories?.some(cat => cat.name === "Electrodomésticos");
-        setSelectedCategory(hasElectro ? "Electrodomésticos" : "Todos");
+        setSelectedCategory("Todos");
       } catch {
         const filtered = categories.filter(
           (cat) =>
@@ -117,8 +118,7 @@ const ClientInterface = ({
             cat.name !== "Todos",
         );
         setFilteredCategories(filtered);
-        const hasElectro = filtered.some(cat => cat.name === "Electrodomésticos");
-        setSelectedCategory(hasElectro ? "Electrodomésticos" : "Todos");
+        setSelectedCategory("Todos");
       } finally {
         setIsLoadingCategories(false);
       }
@@ -509,8 +509,8 @@ const ClientInterface = ({
         />
       </div>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white border-t border-[#e8edea] shadow-[0_-2px_12px_rgba(11,79,55,0.06)] flex justify-around items-center px-2 pb-[max(6px,env(safe-area-inset-bottom))] h-[60px]">
+      {/* Bottom Navigation - SOLO MÓVIL (lg:hidden) */}
+      <nav className="fixed bottom-0 left-0 right-0 w-full z-50 bg-white border-t border-[#e8edea] shadow-[0_-2px_12px_rgba(11,79,55,0.06)] flex justify-around items-center px-2 pb-[max(6px,env(safe-area-inset-bottom))] h-[60px] lg:hidden">
         {[
           { id: SECTIONS.TODOS, icon: "storefront", label: "Inicio" },
           { id: SECTIONS.POPULARES, icon: "trending_up", label: "Popular" },
@@ -551,8 +551,8 @@ const ClientInterface = ({
         ))}
       </nav>
 
-      {/* Footer */}
-      <footer className="hidden flex-col items-center gap-1.5 px-4 py-6 border-t border-[#e8edea] bg-[#e8f5f0] text-center flex-shrink-0 lg:flex">
+      {/* Footer - SOLO DESKTOP */}
+      <footer className="hidden lg:flex flex-col items-center gap-1.5 px-4 py-6 border-t border-[#e8edea] bg-[#e8f5f0] text-center flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-lg text-[#0b4f37] material-symbols-outlined">
             storefront
@@ -566,9 +566,9 @@ const ClientInterface = ({
         </p>
       </footer>
 
-      {/* FAB Chat */}
+      {/* FAB Chat - SOLO MÓVIL */}
       <button
-        className="fixed bottom-[72px] right-3.5 z-40 w-[50px] h-[50px] rounded-full border-none bg-[#0b4f37] text-white flex items-center justify-center cursor-pointer shadow-lg hover:bg-[#c8963e] hover:scale-105 transition-all active:scale-95"
+        className="fixed bottom-[72px] right-3.5 z-40 w-[50px] h-[50px] rounded-full border-none bg-[#0b4f37] text-white flex items-center justify-center cursor-pointer shadow-lg hover:bg-[#c8963e] hover:scale-105 transition-all active:scale-95 lg:hidden"
         onClick={() => setIsChatOpen(true)}
         aria-label="Abrir chat"
       >
@@ -580,6 +580,7 @@ const ClientInterface = ({
         )}
       </button>
 
+      {/* Modales */}
       <CartModal
         isLoggedIn={isLoggedIn}
         onShowLogin={onShowLoginForm}
