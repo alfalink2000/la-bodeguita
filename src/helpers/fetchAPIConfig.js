@@ -1,8 +1,8 @@
-// helpers/fetchAPIConfig.js - VERSIÓN LIMPIA
-const baseUrl =
-  (import.meta.env.VITE_API_URL || "http://localhost:4000") + "/api";
-const isDevelopment = import.meta.env.VITE_NODE_ENV === "development";
-const TIMEOUT = 60000; // 60 segundos para imágenes grandes
+// src/helpers/fetchAPIConfig.js
+import { API_BASE_URL, IS_DEVELOPMENT } from "../config/env";
+
+const baseUrl = `${API_BASE_URL}/api`;
+const TIMEOUT = 60000;
 
 const fetchWithTimeout = async (url, options, timeout = TIMEOUT) => {
   const controller = new AbortController();
@@ -33,8 +33,8 @@ export const fetchAPIConfig = async (
   const url = `${baseUrl}/${endpoint}`;
   const token = localStorage.getItem("token") || "";
 
-  if (isDevelopment) {
-    console.log("🌐 Petición a:", url);
+  if (IS_DEVELOPMENT) {
+    console.log("🌐 [fetchAPIConfig]", method, url);
   }
 
   const config = {
@@ -61,7 +61,7 @@ export const fetchAPIConfig = async (
 
     return body;
   } catch (error) {
-    if (isDevelopment) {
+    if (IS_DEVELOPMENT) {
       console.error("❌ Error en fetchAPIConfig:", error);
     }
     throw error;

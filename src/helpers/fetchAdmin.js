@@ -1,10 +1,8 @@
-// helpers/fetchAdmin.js - VERSIÓN LIMPIA Y OPTIMIZADA
-const baseUrl =
-  (import.meta.env.VITE_API_URL || "http://localhost:4000") + "/api";
-const isDevelopment = import.meta.env.VITE_NODE_ENV === "development";
+// src/helpers/fetchAdmin.js
+import { API_BASE_URL, IS_DEVELOPMENT } from "../config/env";
 
-// 🔥 TIMEOUT GLOBAL
-const DEFAULT_TIMEOUT = 30000; // 30 segundos
+const baseUrl = `${API_BASE_URL}/api`;
+const DEFAULT_TIMEOUT = 30000;
 
 const fetchWithTimeout = async (url, options, timeout = DEFAULT_TIMEOUT) => {
   const controller = new AbortController();
@@ -28,6 +26,10 @@ const fetchWithTimeout = async (url, options, timeout = DEFAULT_TIMEOUT) => {
 
 export const fetchSinToken = async (endpoint, data, method = "GET") => {
   const url = `${baseUrl}/${endpoint}`;
+
+  if (IS_DEVELOPMENT) {
+    console.log("🌐 [fetchSinToken]", method, url);
+  }
 
   try {
     const response = await fetchWithTimeout(url, {
@@ -58,6 +60,10 @@ export const fetchSinToken = async (endpoint, data, method = "GET") => {
 export const fetchConToken = async (endpoint, data, method = "GET") => {
   const url = `${baseUrl}/${endpoint}`;
   const token = localStorage.getItem("token") || "";
+
+  if (IS_DEVELOPMENT) {
+    console.log("🔐 [fetchConToken]", method, url);
+  }
 
   try {
     const response = await fetchWithTimeout(url, {

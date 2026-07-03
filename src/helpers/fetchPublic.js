@@ -1,8 +1,8 @@
-// helpers/fetchPublic.js - VERSIÓN LIMPIA
-const baseUrl =
-  (import.meta.env.VITE_API_URL || "http://localhost:4000") + "/api";
-const isDevelopment = import.meta.env.VITE_NODE_ENV === "development";
-const TIMEOUT = 10000; // 10 segundos
+// src/helpers/fetchPublic.js
+import { API_BASE_URL, IS_DEVELOPMENT } from "../config/env";
+
+const baseUrl = `${API_BASE_URL}/api`;
+const TIMEOUT = 10000;
 
 const fetchWithTimeout = async (url, options, timeout = TIMEOUT) => {
   const controller = new AbortController();
@@ -27,8 +27,8 @@ const fetchWithTimeout = async (url, options, timeout = TIMEOUT) => {
 export const fetchPublic = async (endpoint, data, method = "GET") => {
   const url = `${baseUrl}/${endpoint}`;
 
-  if (isDevelopment) {
-    console.log("🌐 [fetchPublic] Conectando a:", url);
+  if (IS_DEVELOPMENT) {
+    console.log("🌐 [fetchPublic]", method, url);
   }
 
   const config = {
@@ -52,7 +52,7 @@ export const fetchPublic = async (endpoint, data, method = "GET") => {
     const result = await response.json();
     return result;
   } catch (error) {
-    if (isDevelopment) {
+    if (IS_DEVELOPMENT) {
       console.error("❌ [fetchPublic] Error:", error);
     }
     throw error;
