@@ -1,9 +1,21 @@
 import "./InitialInfoModal.css";
 
 const InitialInfoModal = ({ isOpen, onClose, initialInfo }) => {
+  // FORZAMOS el texto correcto aquí
+  const DEFAULT_INFO = `**¡Bienvenido a La Bodeguita!** 🌟
+
+🛒 Productos frescos y de calidad
+🚚 Envíos a domicilio
+💬 Atención personalizada
+📍 Envíos a toda la ciudad
+⏰ Horario extendido para tu comodidad`;
+
   const formatInitialInfo = (text) => {
-    if (!text) return null;
-    return text.split("\n").map((line, index) => {
+    // Si no hay texto o es el texto de FarmaExpress, usamos el nuestro
+    const finalText =
+      !text || text.includes("FarmaExpress") ? DEFAULT_INFO : text;
+
+    return finalText.split("\n").map((line, index) => {
       if (line.trim() === "") return <br key={index} />;
       if (line.includes("**")) {
         const cleanLine = line.replace(/\*\*/g, "");
@@ -17,10 +29,10 @@ const InitialInfoModal = ({ isOpen, onClose, initialInfo }) => {
       if (cleanLine.length > 0 && cleanLine !== line.trim()) {
         return (
           <div key={index} className="info-modal__bullet">
-            <span className="info-modal__bullet-icon material-symbols-outlined">check_circle</span>
-            <span className="info-modal__bullet-text">
-              {cleanLine}
+            <span className="info-modal__bullet-icon material-symbols-outlined">
+              check_circle
             </span>
+            <span className="info-modal__bullet-text">{cleanLine}</span>
           </div>
         );
       }
@@ -62,57 +74,15 @@ const InitialInfoModal = ({ isOpen, onClose, initialInfo }) => {
 
         {/* Body */}
         <div className="info-modal__body">
-          {initialInfo ? (
-            <div className="info-modal__content">
-              {formatInitialInfo(initialInfo)}
-            </div>
-          ) : (
-            <div className="info-modal__default">
-              <span className="info-modal__default-icon material-symbols-outlined">
-                storefront
-              </span>
-              <h3 className="info-modal__default-title">
-                Bienvenido a nuestro Minimarket
-              </h3>
-              <p className="info-modal__default-text">
-                Ofrecemos productos de calidad con el mejor servicio. ¡Estamos
-                aquí para ayudarte!
-              </p>
-
-              <div className="info-modal__features">
-                <div className="info-modal__feature-item">
-                  <span className="info-modal__feature-icon material-symbols-outlined">
-                    verified
-                  </span>
-                  <span className="info-modal__feature-text">
-                    Productos de Calidad
-                  </span>
-                </div>
-                <div className="info-modal__feature-item">
-                  <span className="info-modal__feature-icon material-symbols-outlined">
-                    schedule
-                  </span>
-                  <span className="info-modal__feature-text">
-                    Horario Extendido
-                  </span>
-                </div>
-                <div className="info-modal__feature-item">
-                  <span className="info-modal__feature-icon material-symbols-outlined">
-                    support_agent
-                  </span>
-                  <span className="info-modal__feature-text">
-                    Atención Personalizada
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
+          <div className="info-modal__content">
+            {formatInitialInfo(initialInfo)}
+          </div>
         </div>
 
         {/* Footer */}
         <footer className="info-modal__footer">
           <button onClick={onClose} className="info-modal__action-btn">
-            Entendido
+            ¡Entendido!
           </button>
         </footer>
       </div>

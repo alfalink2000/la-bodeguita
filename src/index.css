@@ -268,3 +268,106 @@ button:focus:not(:focus-visible),
 a:focus:not(:focus-visible) {
   outline: none;
 }
+/* ==========================================================
+   SWEETALERT - Estilos personalizados
+   ========================================================== */
+
+.swal-custom-container {
+  z-index: 9999 !important;
+}
+
+.swal-custom-popup {
+  border-radius: 20px !important;
+  padding: 32px 24px !important;
+  background: #ffffff !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid #e8edea !important;
+  max-width: 420px !important;
+}
+
+.swal-custom-title {
+  color: #1a1a1a !important;
+  font-weight: 700 !important;
+  font-size: 20px !important;
+  font-family: "Inter", sans-serif !important;
+}
+
+.swal-custom-text {
+  color: #5c6b63 !important;
+  font-size: 14px !important;
+  font-family: "Inter", sans-serif !important;
+}
+
+.swal-custom-icon {
+  margin-bottom: 16px !important;
+}
+
+.swal-custom-icon .swal2-icon-content {
+  color: #c8963e !important;
+}
+
+.swal-custom-confirm {
+  background-color: #0b4f37 !important;
+  color: #ffffff !important;
+  padding: 12px 32px !important;
+  border-radius: 50px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(11, 79, 55, 0.3) !important;
+  transition: all 0.3s ease !important;
+  font-family: "Inter", sans-serif !important;
+  min-width: 120px !important;
+}
+
+.swal-custom-confirm:hover {
+  background-color: #1a6b4a !important;
+  transform: scale(1.02) !important;
+}
+
+.swal-custom-confirm:focus {
+  box-shadow: 0 0 0 3px rgba(11, 79, 55, 0.3) !important;
+}
+
+.swal-custom-cancel {
+  background-color: #f0f4f2 !important;
+  color: #1a1a1a !important;
+  padding: 12px 32px !important;
+  border-radius: 50px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  border: none !important;
+  transition: all 0.3s ease !important;
+  font-family: "Inter", sans-serif !important;
+  min-width: 120px !important;
+}
+
+.swal-custom-cancel:hover {
+  background-color: #e8edea !important;
+}
+
+.swal-custom-cancel:focus {
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Ajustes para el icono de pregunta */
+.swal2-icon.swal2-question {
+  border-color: #c8963e !important;
+  color: #c8963e !important;
+}
+
+.swal2-icon.swal2-question .swal2-icon-content {
+  color: #c8963e !important;
+}
+
+/* Botones en fila */
+.swal2-actions {
+  gap: 10px !important;
+  margin-top: 8px !important;
+}
+
+/* Fondo oscuro */
+.swal2-backdrop-show {
+  background: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(4px) !important;
+}

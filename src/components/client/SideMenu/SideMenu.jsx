@@ -48,11 +48,23 @@ const SideMenu = ({
       text: "Se cerrará tu sesión actual",
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "var(--color-primary)",
-      cancelButtonColor: "var(--color-on-surface-variant)",
+      confirmButtonColor: "#0b4f37",
+      cancelButtonColor: "#e8edea",
       confirmButtonText: "Sí, cerrar sesión",
       cancelButtonText: "Cancelar",
-      background: "var(--color-surface-bright)",
+      background: "#ffffff",
+      color: "#1a1a1a",
+      iconColor: "#c8963e",
+      buttonsStyling: true,
+      customClass: {
+        container: "swal-custom-container",
+        popup: "swal-custom-popup",
+        confirmButton: "swal-custom-confirm",
+        cancelButton: "swal-custom-cancel",
+        title: "swal-custom-title",
+        htmlContainer: "swal-custom-text",
+        icon: "swal-custom-icon",
+      },
     }).then(async (result) => {
       if (result.isConfirmed) {
         await new Promise((resolve) => setTimeout(resolve, 100));
