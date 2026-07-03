@@ -1,14 +1,5 @@
-// components/common/CartModal/AddressSelector.jsx - VERSIÓN OPTIMIZADA
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  HiOutlineLocationMarker,
-  HiOutlinePlus,
-  HiOutlineTrash,
-  HiOutlineCheck,
-  HiOutlineX,
-} from "react-icons/hi";
-import { FaLocationArrow } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
   startLoadUserAddresses,
@@ -42,12 +33,6 @@ const AddressSelector = ({
     }
   }, [dispatch, addresses.length]);
 
-  const loadUserAddresses = async () => {
-    setLoading(true);
-    await dispatch(startLoadUserAddresses());
-    setLoading(false);
-  };
-
   const getGPSLocation = () => {
     setGpsLoading(true);
     setPermissionDenied(false);
@@ -58,32 +43,15 @@ const AddressSelector = ({
         icon: "error",
         title: "GPS no soportado",
         text: "Tu navegador no soporta geolocalización.",
-        confirmButtonColor: "#059669",
+        confirmButtonColor: "var(--color-primary)",
       });
       setGpsLoading(false);
       return;
     }
 
-    if (navigator.permissions && navigator.permissions.query) {
-      navigator.permissions
-        .query({ name: "geolocation" })
-        .then((permissionStatus) => {
-          if (permissionStatus.state === "denied") {
-            setPermissionDenied(true);
-            setGpsLoading(false);
-            return;
-          }
-        })
-        .catch(() => {});
-    }
-
     const loadingSwal = Swal.fire({
-      title: "📍 Obteniendo tu ubicación",
-      html: `<div style="text-align: center;">
-          <div class="gps-loading-spinner"></div>
-          <p style="margin-top: 15px;">Por favor espera...</p>
-          <p style="font-size: 12px; color: #6b7280; margin-top: 10px;">⏱️ Esto puede tomar unos segundos</p>
-        </div>`,
+      title: "Obteniendo tu ubicación",
+      html: `<p>Por favor espera...</p>`,
       allowOutsideClick: false,
       showConfirmButton: false,
       didOpen: () => Swal.showLoading(),
@@ -96,21 +64,12 @@ const AddressSelector = ({
         setTimeoutError(true);
         Swal.fire({
           icon: "info",
-          title: "⏱️ Tiempo de espera agotado",
-          html: `<div style="text-align: center;"><p>La búsqueda de ubicación tomó demasiado tiempo.</p>
-            <div style="background: #f0f9ff; padding: 12px; border-radius: 8px; margin-top: 15px;">
-              <p style="margin: 0; font-size: 13px;">💡 <strong>¿Qué puedes hacer?</strong></p>
-              <p style="margin: 8px 0 0 0; font-size: 12px;">
-                • Asegúrate de tener una conexión a internet estable<br>
-                • Activa el GPS de tu dispositivo<br>
-                • Intenta nuevamente
-              </p>
-            </div></div>`,
-          confirmButtonColor: "#059669",
+          title: "Tiempo de espera agotado",
+          text: "La búsqueda de ubicación tomó demasiado tiempo.",
+          confirmButtonColor: "var(--color-primary)",
           confirmButtonText: "Intentar de nuevo",
           showCancelButton: true,
           cancelButtonText: "Cancelar",
-          cancelButtonColor: "#6b7280",
         }).then((result) => {
           if (result.isConfirmed) getGPSLocation();
         });
@@ -151,7 +110,7 @@ const AddressSelector = ({
             icon: "error",
             title: "Error",
             text: "Ocurrió un error inesperado. Intenta de nuevo.",
-            confirmButtonColor: "#059669",
+            confirmButtonColor: "var(--color-primary)",
           });
         }
       },
@@ -161,18 +120,13 @@ const AddressSelector = ({
 
   const showAddressConfirmation = (address, lat, lng) => {
     Swal.fire({
-      title: "📍 ¿Guardar esta dirección?",
-      html: `<div style="text-align: left;">
-          <p style="margin-bottom: 8px; color: #4b5563;">Dirección detectada:</p>
-          <div style="background: #f0fdf4; padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid #10b981;">
-            <strong>${address.length > 80 ? address.substring(0, 80) + "..." : address}</strong>
-          </div>
-        </div>`,
+      title: "Guardar esta dirección?",
+      html: `<div><p>Dirección detectada:</p><strong>${address.length > 80 ? address.substring(0, 80) + "..." : address}</strong></div>`,
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#059669",
-      cancelButtonColor: "#6b7280",
-      confirmButtonText: "✅ Guardar dirección",
+      confirmButtonColor: "var(--color-primary)",
+      cancelButtonColor: "var(--color-on-surface-variant)",
+      confirmButtonText: "Guardar dirección",
       cancelButtonText: "Cancelar",
       preConfirm: () => saveAddress(address, lat, lng),
     });
@@ -183,17 +137,17 @@ const AddressSelector = ({
       const result = await dispatch(
         addUserAddress({
           address: address.trim(),
-          lat: lat,
-          lng: lng,
+          lat,
+          lng,
           is_default: addresses.length === 0,
         }),
       );
       if (result) {
         Swal.fire({
           icon: "success",
-          title: "¡Dirección agregada!",
+          title: "Dirección agregada!",
           text: "Tu dirección ha sido guardada correctamente.",
-          confirmButtonColor: "#059669",
+          confirmButtonColor: "var(--color-primary)",
           timer: 1500,
           showConfirmButton: false,
         });
@@ -208,7 +162,7 @@ const AddressSelector = ({
         icon: "error",
         title: "Error",
         text: "No se pudo guardar la dirección",
-        confirmButtonColor: "#059669",
+        confirmButtonColor: "var(--color-primary)",
       });
       return false;
     }
@@ -216,12 +170,12 @@ const AddressSelector = ({
 
   const handleDeleteAddress = async (addressId) => {
     const result = await Swal.fire({
-      title: "¿Eliminar dirección?",
+      title: "Eliminar dirección?",
       text: "Esta acción no se puede deshacer",
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#6b7280",
+      confirmButtonColor: "var(--color-error)",
+      cancelButtonColor: "var(--color-on-surface-variant)",
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
     });
@@ -237,141 +191,188 @@ const AddressSelector = ({
 
   return (
     <div className="address-selector">
-      <div className="address-selector-header">
-        <HiOutlineLocationMarker className="address-icon" />
-        <span>Mis direcciones</span>
+      <div className="address-selector__header">
+        <span className="address-selector__header-icon material-symbols-outlined">
+          location_on
+        </span>
+        <span className="address-selector__header-text">Mis direcciones</span>
       </div>
 
       {loading && !addresses.length ? (
-        <div className="address-loading">
-          <div className="spinner-small"></div>
+        <div className="address-selector__loading">
+          <span className="address-selector__loading-icon material-symbols-outlined">
+            sync
+          </span>
           <span>Cargando tus direcciones...</span>
         </div>
       ) : addresses.length > 0 ? (
-        <div className="address-list">
+        <div className="address-selector__list">
           {addresses.map((addr) => (
             <div
               key={addr.id}
-              className={`address-item ${selectedAddress?.id === addr.id ? "selected" : ""}`}
+              className={`address-selector__item ${selectedAddress?.id === addr.id ? "address-selector__item--selected" : ""}`}
               onClick={() => onAddressSelect(addr)}
             >
-              <div className="address-radio">
-                {selectedAddress?.id === addr.id ? (
-                  <div className="radio-checked" />
-                ) : (
-                  <div className="radio-unchecked" />
+              <div
+                className={`address-selector__radio ${selectedAddress?.id === addr.id ? "address-selector__radio--checked" : ""}`}
+              >
+                {selectedAddress?.id === addr.id && (
+                  <div className="address-selector__radio-dot" />
                 )}
               </div>
-              <div className="address-details">
-                <div className="address-text">
-                  <span className="address-full">{addr.address}</span>
-                  {addr.is_default && (
-                    <span className="default-badge">Predeterminada</span>
-                  )}
-                </div>
+              <div className="address-selector__details">
+                <p className="address-selector__address-text">{addr.address}</p>
+                {addr.is_default && (
+                  <span className="address-selector__default-badge">
+                    Predeterminada
+                  </span>
+                )}
               </div>
-              <div className="address-actions">
+              <div className="address-selector__actions">
                 {!addr.is_default && (
                   <button
-                    className="address-action-btn"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleSetDefault(addr.id);
                     }}
+                    className="address-selector__action-btn address-selector__action-btn--default"
                     title="Establecer como predeterminada"
                   >
-                    <HiOutlineCheck size={14} />
+                    <span className="address-selector__action-icon material-symbols-outlined">
+                      check
+                    </span>
                   </button>
                 )}
                 <button
-                  className="address-action-btn delete"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDeleteAddress(addr.id);
                   }}
+                  className="address-selector__action-btn address-selector__action-btn--delete"
                   title="Eliminar"
                 >
-                  <HiOutlineTrash size={14} />
+                  <span className="address-selector__action-icon material-symbols-outlined">
+                    delete
+                  </span>
                 </button>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="no-addresses">
-          <p>📭 No tienes direcciones guardadas</p>
-          <p className="no-addresses-hint">
+        <div className="address-selector__empty">
+          <span className="address-selector__empty-icon material-symbols-outlined">
+            location_off
+          </span>
+          <p className="address-selector__empty-text">
+            No tienes direcciones guardadas
+          </p>
+          <p className="address-selector__empty-text">
             Agrega tu primera dirección usando GPS
           </p>
         </div>
       )}
 
       {showAddForm ? (
-        <div className="add-address-form">
-          <div className="form-header">
-            <span>➕ Agregar nueva dirección</span>
+        <div className="address-selector__add-form">
+          <div className="address-selector__add-header">
+            <span className="address-selector__add-title">
+              Agregar nueva dirección
+            </span>
             <button
-              className="close-form"
               onClick={() => setShowAddForm(false)}
+              className="address-selector__add-close"
             >
-              <HiOutlineX size={18} />
+              <span className="material-symbols-outlined">close</span>
             </button>
           </div>
           <button
             type="button"
-            className="gps-address-btn-large"
             onClick={getGPSLocation}
             disabled={gpsLoading}
+            className="address-selector__gps-btn"
           >
             {gpsLoading ? (
               <>
-                <div className="gps-spinner"></div>
+                <span className="address-selector__gps-icon material-symbols-outlined address-selector__loading-icon">
+                  sync
+                </span>
                 <span>Obteniendo ubicación...</span>
               </>
             ) : (
               <>
-                <FaLocationArrow size={24} />
+                <span className="address-selector__gps-icon material-symbols-outlined">
+                  my_location
+                </span>
                 <span>Usar mi ubicación actual</span>
               </>
             )}
           </button>
+
           {permissionDenied && (
-            <div className="gps-permission-denied">
-              <div className="permission-icon">🔒</div>
-              <div className="permission-text">
-                <strong>Permiso de ubicación bloqueado</strong>
-                <p>Debes permitir la ubicación para este sitio.</p>
+            <div className="address-selector__alert address-selector__alert--permission">
+              <span className="address-selector__alert-icon material-symbols-outlined">
+                lock
+              </span>
+              <div>
+                <p className="address-selector__alert-title">
+                  Permiso de ubicación bloqueado
+                </p>
+                <p className="address-selector__alert-text">
+                  Debes permitir la ubicación para este sitio.
+                </p>
               </div>
             </div>
           )}
+
           {timeoutError && (
-            <div className="gps-timeout-error">
-              <div className="timeout-icon">⏱️</div>
-              <div className="timeout-text">
-                <strong>Tiempo de espera agotado</strong>
-                <p>La búsqueda de ubicación tomó demasiado tiempo.</p>
-                <button className="timeout-retry-btn" onClick={getGPSLocation}>
+            <div className="address-selector__alert address-selector__alert--timeout">
+              <span className="address-selector__alert-icon material-symbols-outlined">
+                timer
+              </span>
+              <div>
+                <p className="address-selector__alert-title">
+                  Tiempo de espera agotado
+                </p>
+                <p className="address-selector__alert-text">
+                  La búsqueda de ubicación tomó demasiado tiempo.
+                </p>
+                <button
+                  onClick={getGPSLocation}
+                  className="address-selector__retry-btn"
+                >
                   Intentar de nuevo
                 </button>
               </div>
             </div>
           )}
-          <div className="gps-info-card-selector">
-            <div className="gps-info-icon">📍</div>
-            <div className="gps-info-text">
-              <strong>¿Por qué usar GPS?</strong>
-              <p>✓ Entrega más rápida y precisa</p>
-              <p>✓ Calculamos el costo de envío exacto</p>
-              <p>✓ Tus pedidos llegan sin errores</p>
+
+          <div className="address-selector__info">
+            <span className="address-selector__info-icon material-symbols-outlined">
+              info
+            </span>
+            <div>
+              <p className="address-selector__info-title">Por qué usar GPS?</p>
+              <p className="address-selector__info-text">
+                Entrega más rápida y precisa
+              </p>
+              <p className="address-selector__info-text">
+                Calculamos el costo de envío exacto
+              </p>
+              <p className="address-selector__info-text">
+                Tus pedidos llegan sin errores
+              </p>
             </div>
           </div>
         </div>
       ) : (
         <button
-          className="add-address-btn"
           onClick={() => setShowAddForm(true)}
+          className="address-selector__add-btn"
         >
-          <HiOutlinePlus size={16} />
+          <span className="address-selector__add-btn-icon material-symbols-outlined">
+            add
+          </span>
           Agregar nueva dirección
         </button>
       )}

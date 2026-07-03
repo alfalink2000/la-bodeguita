@@ -1,6 +1,3 @@
-// components/common/SearchBar/SearchBar.jsx - VERSIÓN OPTIMIZADA
-import { Search } from "lucide-react";
-import { HiOutlineLocationMarker } from "react-icons/hi";
 import { useEffect, useRef, useState } from "react";
 import "./SearchBar.css";
 
@@ -16,14 +13,13 @@ const SearchBar = ({
 
   const marqueeText =
     appConfig?.marquee_text ||
-    "🚚 Envíos a domicilio — Calculamos el costo según tu ubicación — ¡Recibe tus productos sin salir de casa! 🚚";
+    "Envíos a domicilio — Calculamos el costo según tu ubicación — ¡Recibe tus productos sin salir de casa!";
 
   useEffect(() => {
     const calculateSpeed = () => {
       if (textRef.current && wrapperRef.current) {
         const textWidth = textRef.current.scrollWidth / 2;
-        const distance = textWidth;
-        const speed = Math.max(8, Math.min(20, distance / 50));
+        const speed = Math.max(8, Math.min(20, textWidth / 50));
         setMarqueeSpeed(speed);
       }
     };
@@ -33,31 +29,39 @@ const SearchBar = ({
     return () => window.removeEventListener("resize", calculateSpeed);
   }, [marqueeText]);
 
+  const MarqueeContent = () => (
+    <div className="search-bar__marquee">
+      <span className="search-bar__marquee-icon material-symbols-outlined">
+        location_on
+      </span>
+      <div className="search-bar__marquee-wrapper" ref={wrapperRef}>
+        <div
+          className="search-bar__marquee-scroll"
+          style={{ animationDuration: `${marqueeSpeed}s` }}
+        >
+          <span ref={textRef} className="search-bar__marquee-text">
+            {marqueeText}
+            <span className="search-bar__marquee-separator">•</span>
+            {marqueeText}
+            <span className="search-bar__marquee-separator">•</span>
+            {marqueeText}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className={`search-bar ${isDesktop ? "search-bar--desktop" : ""}`}>
-      {!isDesktop && (
-        <div className="search-bar__location-info search-bar__location-info--mobile">
-          <HiOutlineLocationMarker className="location-info__icon" />
-          <div className="location-info__text-wrapper" ref={wrapperRef}>
-            <div
-              className="location-info__container animate"
-              style={{ animationDuration: `${marqueeSpeed}s` }}
-            >
-              <span ref={textRef} className="location-info__text">
-                {marqueeText}
-                <span className="marquee-spacer"></span>
-                {marqueeText}
-                <span className="marquee-spacer"></span>
-                {marqueeText}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Marquee en móvil (arriba del input) */}
+      {!isDesktop && <MarqueeContent />}
 
-      <div className="search-bar__content">
-        <div className="search-bar__input-container">
-          <Search className="search-bar__icon" />
+      {/* Input de búsqueda + Marquee en desktop (al lado) */}
+      <div className="search-bar__input-row">
+        <div className="search-bar__input-wrapper">
+          <span className="search-bar__input-icon material-symbols-outlined">
+            search
+          </span>
           <input
             type="text"
             placeholder="Buscar productos..."
@@ -67,21 +71,10 @@ const SearchBar = ({
           />
         </div>
 
+        {/* Marquee en desktop (al lado del input) */}
         {isDesktop && (
-          <div className="search-bar__location-info search-bar__location-info--desktop">
-            <HiOutlineLocationMarker className="location-info__icon" />
-            <div className="location-info__text-wrapper" ref={wrapperRef}>
-              <div
-                className="location-info__container animate"
-                style={{ animationDuration: `${marqueeSpeed}s` }}
-              >
-                <span ref={textRef} className="location-info__text">
-                  {marqueeText}
-                  <span className="marquee-spacer"></span>
-                  {marqueeText}
-                </span>
-              </div>
-            </div>
+          <div className="search-bar__marquee-desktop">
+            <MarqueeContent />
           </div>
         )}
       </div>

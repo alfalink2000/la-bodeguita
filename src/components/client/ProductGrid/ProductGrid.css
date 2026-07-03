@@ -1,50 +1,94 @@
+/* ============================================
+   PRODUCT GRID - Mobile-First
+   ============================================ */
+
 .product-grid {
-  max-width: 28rem;
-  margin: 0 auto;
-  padding: 0 1rem 5rem;
+  padding: 0 20px;
+  padding: 0 max(20px, env(safe-area-inset-right)) 0
+    max(20px, env(safe-area-inset-left));
+  padding-bottom: 120px;
 }
 
 .product-grid__container {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  gap: 12px;
 }
 
+/* ============================================
+   EMPTY STATE
+   ============================================ */
 .product-grid__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 20px;
   text-align: center;
-  padding: 3rem 1rem;
-  color: var(--gray-500);
+}
+
+.product-grid__empty-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .product-grid__empty-icon {
-  width: 3rem;
-  height: 3rem;
-  margin: 0 auto 1rem;
-  color: var(--gray-300);
+  font-size: 32px;
+  color: var(--color-on-surface-variant);
 }
 
 .product-grid__empty-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--gray-600);
-  margin-bottom: 0.5rem;
+  font-family: var(--font-label-md);
+  font-size: var(--text-label-md);
+  color: var(--color-on-surface);
+  margin: 0 0 8px 0;
 }
 
-.product-grid__empty-description {
-  font-size: 0.875rem;
-  color: var(--gray-500);
+.product-grid__empty-text {
+  font-family: var(--font-body-md);
+  font-size: var(--text-body-md);
+  color: var(--color-on-surface-variant);
+  margin: 0;
+  max-width: 280px;
 }
 
-/* Responsive */
-@media (max-width: 360px) {
+/* ============================================
+   TABLET (≥ 481px)
+   ============================================ */
+@media (min-width: 481px) {
   .product-grid__container {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
   }
 }
 
-@media (min-width: 640px) {
+/* ============================================
+   DESKTOP (≥ 769px)
+   ============================================ */
+@media (min-width: 769px) {
+  .product-grid {
+    padding: 0;
+    padding-bottom: 0;
+  }
+
   .product-grid__container {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+}
+
+/* ============================================
+   DESKTOP LARGE (≥ 1200px)
+   ============================================ */
+@media (min-width: 1200px) {
+  .product-grid__container {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
   }
 }

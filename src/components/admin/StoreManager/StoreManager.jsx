@@ -1,21 +1,11 @@
-// components/admin/StoreManager/StoreManager.jsx
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  HiOutlineCollection,
-  HiOutlinePlus,
-  HiOutlinePencil,
-  HiOutlineTrash,
-  HiOutlineX,
-  HiOutlineCheck,
-} from "react-icons/hi";
 import {
   getStores,
   insertStore,
   updateStore,
   deleteStore,
 } from "../../../actions/storesActions";
-import "./StoreManager.css";
 
 const StoreManager = () => {
   const dispatch = useDispatch();
@@ -26,7 +16,6 @@ const StoreManager = () => {
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({ name: "", description: "" });
 
-  // Cargar tiendas al montar
   useEffect(() => {
     dispatch(getStores());
   }, [dispatch]);
@@ -47,80 +36,89 @@ const StoreManager = () => {
   };
 
   return (
-    <div className="store-manager">
-      <h3 className="store-manager__title">
-        <HiOutlineCollection /> Gestión de Tiendas
-      </h3>
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+      <div className="admin-page-header">
+        <h2 className="admin-page-header__title">
+          <span className="material-symbols-outlined" style={{ fontSize: "24px" }}>store</span>
+          Gestión de Tiendas
+        </h2>
+      </div>
 
-      {/* Formulario nueva tienda */}
-      <div className="store-manager__add">
-        <input
-          type="text"
-          placeholder="Nombre de la tienda"
-          value={newStore.name}
-          onChange={(e) => setNewStore({ ...newStore, name: e.target.value })}
-          className="store-manager__input"
-        />
-        <input
-          type="text"
-          placeholder="Descripción (opcional)"
-          value={newStore.description}
-          onChange={(e) =>
-            setNewStore({ ...newStore, description: e.target.value })
-          }
-          className="store-manager__input"
-        />
+      {/* Form */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "16px", backgroundColor: "var(--color-surface-bright)", borderRadius: "12px", border: "1px solid var(--color-outline-variant)" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <input
+            type="text"
+            placeholder="Nombre de la tienda"
+            value={newStore.name}
+            onChange={(e) => setNewStore({ ...newStore, name: e.target.value })}
+            className="admin-input"
+          />
+          <input
+            type="text"
+            placeholder="Descripción (opcional)"
+            value={newStore.description}
+            onChange={(e) =>
+              setNewStore({ ...newStore, description: e.target.value })
+            }
+            className="admin-input"
+          />
+        </div>
         <button
           onClick={handleCreate}
           disabled={loading || !newStore.name.trim()}
-          className="store-manager__btn store-manager__btn--add"
+          className="admin-btn admin-btn--primary"
+          style={{ alignSelf: "flex-start" }}
         >
-          <HiOutlinePlus /> Crear
+          <span className="admin-btn__icon material-symbols-outlined">add</span>
+          Crear
         </button>
       </div>
 
-      {/* Lista de tiendas */}
-      <div className="store-manager__list">
+      {/* List */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         {stores.map((store) => (
-          <div key={store.id} className="store-manager__item">
+          <div key={store.id} className="admin-card">
             {editingId === store.id ? (
-              <div className="store-manager__edit-row">
+              <div className="admin-card__body" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <input
                   value={editData.name}
                   onChange={(e) =>
                     setEditData({ ...editData, name: e.target.value })
                   }
-                  className="store-manager__input"
+                  className="admin-input"
                 />
                 <input
                   value={editData.description}
                   onChange={(e) =>
                     setEditData({ ...editData, description: e.target.value })
                   }
-                  className="store-manager__input"
+                  className="admin-input"
                 />
-                <button
-                  onClick={() => handleUpdate(store.id)}
-                  className="store-manager__btn--icon store-manager__btn--save"
-                >
-                  <HiOutlineCheck />
-                </button>
-                <button
-                  onClick={() => setEditingId(null)}
-                  className="store-manager__btn--icon store-manager__btn--cancel"
-                >
-                  <HiOutlineX />
-                </button>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    onClick={() => handleUpdate(store.id)}
+                    className="admin-btn admin-btn--primary admin-btn--icon"
+                  >
+                    <span className="admin-btn__icon material-symbols-outlined">check</span>
+                  </button>
+                  <button
+                    onClick={() => setEditingId(null)}
+                    className="admin-btn admin-btn--secondary admin-btn--icon"
+                  >
+                    <span className="admin-btn__icon material-symbols-outlined">close</span>
+                  </button>
+                </div>
               </div>
             ) : (
-              <div className="store-manager__row">
-                <div className="store-manager__info">
-                  <span className="store-manager__name">{store.name}</span>
-                  <span className="store-manager__desc">
+              <div className="admin-card__body" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ fontFamily: "var(--font-label-md)", fontSize: "var(--text-label-md)", fontWeight: "var(--text-label-md--font-weight)", color: "var(--color-on-surface)" }}>{store.name}</span>
+                  <span style={{ fontFamily: "var(--font-label-sm)", fontSize: "var(--text-label-sm)", color: "var(--color-on-surface-variant)" }}>
                     {store.description || "Sin descripción"}
                   </span>
                 </div>
-                <div className="store-manager__actions">
+                <div style={{ display: "flex", gap: "8px" }}>
                   <button
                     onClick={() => {
                       setEditingId(store.id);
@@ -129,15 +127,16 @@ const StoreManager = () => {
                         description: store.description || "",
                       });
                     }}
-                    className="store-manager__btn--icon store-manager__btn--edit"
+                    className="admin-btn admin-btn--ghost admin-btn--icon"
                   >
-                    <HiOutlinePencil />
+                    <span className="admin-btn__icon material-symbols-outlined">edit</span>
                   </button>
                   <button
                     onClick={() => handleDelete(store.id)}
-                    className="store-manager__btn--icon store-manager__btn--delete"
+                    className="admin-btn admin-btn--ghost admin-btn--icon"
+                    style={{ color: "var(--color-error)" }}
                   >
-                    <HiOutlineTrash />
+                    <span className="admin-btn__icon material-symbols-outlined">delete</span>
                   </button>
                 </div>
               </div>

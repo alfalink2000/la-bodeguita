@@ -1,11 +1,11 @@
 {
-  "name": "Mi Minimarket",
-  "short_name": "Minimarket",
-  "description": "Tu tienda online favorita",
+  "name": "La Bodeguita — Tradición Culinaria Cubana",
+  "short_name": "La Bodeguita",
+  "description": "La Bodeguita en Pinar del Río - Tradición culinaria cubana con sabor auténtico. 🚚 Envíos gratis en la ciudad. 🌿 Opciones vegetarianas. 🐕 Pet friendly.",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#4CAF50",
-  "background_color": "#ffffff",
+  "theme_color": "#1a3c6e",
+  "background_color": "#FAF7F2",
   "orientation": "portrait",
   "icons": [
     {

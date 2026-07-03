@@ -1,20 +1,5 @@
-// components/common/BottomNavigation/BottomNavigation.jsx - VERSIÓN OPTIMIZADA
 import { useState, useRef, useEffect } from "react";
-import {
-  HiOutlineEye,
-  HiOutlineUser,
-  HiOutlineSearch,
-  HiOutlineHome,
-  HiOutlineTag,
-  HiOutlineStar,
-  HiOutlinePhone,
-  HiOutlineX,
-  HiOutlineSparkles,
-  HiOutlineHeart,
-  HiOutlineShoppingBag,
-} from "react-icons/hi";
 import "./BottomNavigation.css";
-import "./BottomNavigation.desktop.css";
 
 const BottomNavigation = ({
   currentView,
@@ -38,12 +23,10 @@ const BottomNavigation = ({
   const menuRef = useRef(null);
   const previousOrdersCount = useRef(unreadOrdersCount);
 
-  // Sincronizar con el prop
   useEffect(() => {
     setLocalUnreadCount(unreadOrdersCount);
   }, [unreadOrdersCount]);
 
-  // Detectar nuevos pedidos para animar el badge
   useEffect(() => {
     if (unreadOrdersCount > previousOrdersCount.current) {
       setShowBadgeAnimation(true);
@@ -52,14 +35,12 @@ const BottomNavigation = ({
     previousOrdersCount.current = unreadOrdersCount;
   }, [unreadOrdersCount]);
 
-  // Cerrar menú al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowCategoryMenu(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -90,21 +71,21 @@ const BottomNavigation = ({
   const navItems = [
     {
       id: "catalog",
-      icon: HiOutlineHome,
+      icon: "home",
       label: "Inicio",
       action: () => onViewChange("client"),
       isActive: currentView === "client",
     },
     {
       id: "search",
-      icon: HiOutlineSearch,
+      icon: "search",
       label: "Buscar",
       action: handleSearchPress,
       isActive: false,
     },
     {
       id: "categories",
-      icon: HiOutlineTag,
+      icon: "sell",
       label: selectedCategory !== "Todos" ? selectedCategory : "Categorías",
       action: () => setShowCategoryMenu(!showCategoryMenu),
       isActive: selectedCategory !== "Todos",
@@ -118,149 +99,155 @@ const BottomNavigation = ({
     <>
       {showCategoryMenu && (
         <div
-          className="bottom-nav-overlay"
+          className="bottom-nav__overlay"
           onClick={() => setShowCategoryMenu(false)}
         />
       )}
 
       <nav className="bottom-nav" ref={menuRef}>
         <div className="bottom-nav__container">
-          {navItems.map((item) => {
-            const IconComponent = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={item.action}
-                className={`bottom-nav__button ${
-                  item.isActive
-                    ? "bottom-nav__button--active"
-                    : "bottom-nav__button--inactive"
-                }`}
-              >
-                <IconComponent className="bottom-nav__icon" />
-                <span className="bottom-nav__label">{item.label}</span>
-                {item.hasMenu && (
-                  <span className="bottom-nav__indicator"></span>
-                )}
-              </button>
-            );
-          })}
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={item.action}
+              className={`bottom-nav__button ${item.isActive ? "bottom-nav__button--active" : ""}`}
+            >
+              <span className="bottom-nav__icon material-symbols-outlined">
+                {item.icon}
+              </span>
+              <span className="bottom-nav__label">{item.label}</span>
+              {item.hasMenu && (
+                <span
+                  className={`bottom-nav__indicator ${item.isActive ? "bottom-nav__indicator--active" : ""}`}
+                />
+              )}
+            </button>
+          ))}
 
-          {/* Perfil con badge de pedidos */}
           {isLoggedIn ? (
             <button
               onClick={handleProfileClick}
-              className="bottom-nav__button bottom-nav__button--profile"
+              className="bottom-nav__button"
               title="Mi perfil"
             >
-              <HiOutlineUser className="bottom-nav__icon" />
+              <span className="bottom-nav__icon material-symbols-outlined">
+                person
+              </span>
               <span className="bottom-nav__label">Perfil</span>
               {localUnreadCount > 0 && (
                 <div
-                  className={`profile-badge ${showBadgeAnimation ? "profile-badge--pulse" : ""}`}
+                  className={`bottom-nav__badge ${showBadgeAnimation ? "bottom-nav__badge--pulse" : ""}`}
                 >
-                  <span className="profile-badge__number">
-                    {localUnreadCount > 99 ? "99+" : localUnreadCount}
-                  </span>
-                  <div className="profile-badge__ripple"></div>
+                  <div className="bottom-nav__badge-content">
+                    <span className="bottom-nav__badge-number">
+                      {localUnreadCount > 99 ? "99+" : localUnreadCount}
+                    </span>
+                    <div className="bottom-nav__badge-ripple" />
+                  </div>
                 </div>
               )}
             </button>
           ) : (
             <button
               onClick={onShowLogin}
-              className="bottom-nav__button bottom-nav__button--inactive"
+              className="bottom-nav__button"
               title="Iniciar sesión"
             >
-              <HiOutlineUser className="bottom-nav__icon" />
+              <span className="bottom-nav__icon material-symbols-outlined">
+                person
+              </span>
               <span className="bottom-nav__label">Entrar</span>
             </button>
           )}
         </div>
 
-        {/* Menú de Categorías */}
         {showCategoryMenu && (
-          <div className="bottom-nav-menu category-menu">
-            <div className="menu-header">
-              <div className="menu-header__left">
-                <HiOutlineTag className="menu-header__icon" />
-                <h3 className="menu-title">
-                  Filtrar por categoría
-                  {currentStoreName && currentStoreName !== "Tiendas" && (
-                    <span className="menu-subtitle">
-                      {" "}
-                      en {currentStoreName}
+          <div className="bottom-nav__category-menu">
+            <div className="bottom-nav__category-container">
+              <div className="bottom-nav__category-header">
+                <div className="bottom-nav__category-header-left">
+                  <span className="bottom-nav__category-header-icon material-symbols-outlined">
+                    sell
+                  </span>
+                  <h3 className="bottom-nav__category-title">
+                    Filtrar por categoría
+                    {currentStoreName && currentStoreName !== "Tiendas" && (
+                      <span className="bottom-nav__category-subtitle">
+                        {" "}
+                        en {currentStoreName}
+                      </span>
+                    )}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowCategoryMenu(false)}
+                  className="bottom-nav__category-close"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              <div className="bottom-nav__category-list">
+                <button
+                  onClick={() => handleCategorySelect("Todos")}
+                  className={`bottom-nav__category-item ${selectedCategory === "Todos" ? "bottom-nav__category-item--active" : ""}`}
+                >
+                  <span className="bottom-nav__category-item-icon material-symbols-outlined">
+                    auto_awesome
+                  </span>
+                  <span className="bottom-nav__category-item-name">
+                    Todos los productos
+                  </span>
+                  {selectedCategory === "Todos" && (
+                    <span className="bottom-nav__category-item-check material-symbols-outlined">
+                      check
                     </span>
                   )}
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowCategoryMenu(false)}
-                className="menu-close"
-              >
-                <HiOutlineX size={18} />
-              </button>
-            </div>
+                </button>
 
-            <div className="category-list">
-              <button
-                onClick={() => handleCategorySelect("Todos")}
-                className={`category-item category-item--all ${
-                  selectedCategory === "Todos" ? "category-item--active" : ""
-                }`}
-              >
-                <div className="category-item__icon">
-                  <HiOutlineSparkles size={16} />
-                </div>
-                <span className="category-name">Todos los productos</span>
-                <div className="category-item__check">
-                  {selectedCategory === "Todos" && <span>✓</span>}
-                </div>
-              </button>
-
-              {displayCategories.length === 0 ? (
-                <div className="category-empty">
-                  <HiOutlineTag size={32} />
-                  <p>No hay categorías disponibles</p>
-                  <span>Selecciona una tienda para ver sus categorías</span>
-                </div>
-              ) : (
-                <>
-                  <div className="category-divider"></div>
-                  <div className="category-items">
-                    {displayCategories.map((category, index) => (
+                {displayCategories.length === 0 ? (
+                  <div className="bottom-nav__category-empty">
+                    <span className="bottom-nav__category-empty-icon material-symbols-outlined">
+                      sell
+                    </span>
+                    <p className="bottom-nav__category-empty-text">
+                      No hay categorías disponibles
+                    </p>
+                    <p className="bottom-nav__category-empty-sub">
+                      Selecciona una tienda para ver sus categorías
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="bottom-nav__category-divider" />
+                    {displayCategories.map((category) => (
                       <button
                         key={category}
                         onClick={() => handleCategorySelect(category)}
-                        className={`category-item ${
-                          selectedCategory === category
-                            ? "category-item--active"
-                            : ""
-                        }`}
-                        style={{ animationDelay: `${index * 0.03}s` }}
+                        className={`bottom-nav__category-item ${selectedCategory === category ? "bottom-nav__category-item--active" : ""}`}
                       >
-                        <div className="category-item__icon">
-                          <HiOutlineTag size={14} />
-                        </div>
-                        <span className="category-name">{category}</span>
-                        <div className="category-item__check">
-                          {selectedCategory === category && <span>✓</span>}
-                        </div>
+                        <span className="bottom-nav__category-item-icon material-symbols-outlined">
+                          sell
+                        </span>
+                        <span className="bottom-nav__category-item-name">
+                          {category}
+                        </span>
+                        {selectedCategory === category && (
+                          <span className="bottom-nav__category-item-check material-symbols-outlined">
+                            check
+                          </span>
+                        )}
                       </button>
                     ))}
-                  </div>
-                </>
-              )}
+                  </>
+                )}
 
-              <div className="menu-footer">
-                <div className="menu-footer__dots">
-                  <span className="dot"></span>
-                  <span className="dot"></span>
-                  <span className="dot"></span>
+                <div className="bottom-nav__category-footer">
+                  <span className="bottom-nav__category-footer-dot" />
+                  <span className="bottom-nav__category-footer-dot" />
+                  <span className="bottom-nav__category-footer-dot" />
+                  <span>{displayCategories.length} categorías disponibles</span>
                 </div>
-                <span className="menu-footer__text">
-                  {displayCategories.length} categorías disponibles
-                </span>
               </div>
             </div>
           </div>

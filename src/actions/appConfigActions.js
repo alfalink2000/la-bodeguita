@@ -7,19 +7,19 @@ import Swal from "sweetalert2";
 
 // 🔥 OPTIMIZACIÓN: Constante para configuración por defecto
 const DEFAULT_CONFIG = {
-  app_name: "Minimarket Digital",
-  app_description: "Tu tienda de confianza",
-  theme: "blue",
-  whatsapp_number: "+5491112345678",
-  business_hours: "Lun-Vie: 8:00 - 20:00",
-  business_address: "Av. Principal 123",
+  app_name: "La Bodeguita",
+  app_description: "🍽️ Tradición culinaria cubana — Pinar del Río",
+  theme: "bodeguita",
+  whatsapp_number: "+5354123456",
+  business_hours: "Lun-Dom: 9:00 - 1:00",
+  business_address: "Pinar del Río, Cuba",
   initialinfo:
-    "🌟 **Bienvenido a nuestro Minimarket Digital** 🌟\n\n¡Estamos encantados de tenerte aquí!",
+    "🇨🇺 **Bienvenido a La Bodeguita** 🇨🇺\n\nUn proyecto de realce de la tradición culinaria cubana en Pinar del Río.",
   show_initialinfo: true,
-  currency: "USD",
+  currency: "CUP",
   language: "es",
   marquee_text:
-    "🚚 Envíos a domicilio — Calculamos el costo según tu ubicación — ¡Recibe tus productos sin salir de casa! 🚚",
+    "🇨🇺 La Bodeguita — Tradición culinaria cubana — 🚚 Envíos gratis en Pinar del Río — 🌿 Opciones vegetarianas disponibles — 🐕 Pet friendly — ¡Te esperamos!",
 };
 
 export const loadAppConfig = () => {

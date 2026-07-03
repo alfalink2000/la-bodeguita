@@ -1,12 +1,9 @@
-// components/admin/StoreSelector/StoreSelector.jsx
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { HiOutlineCollection } from "react-icons/hi";
 import {
   getStores,
   getCategoriesByStore,
 } from "../../../actions/storesActions";
-import "./StoreSelector.css";
 
 const StoreSelector = ({
   selectedStoreId,
@@ -19,14 +16,12 @@ const StoreSelector = ({
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Cargar tiendas si no hay
   useEffect(() => {
     if (stores.length === 0) {
       dispatch(getStores());
     }
   }, [dispatch, stores.length]);
 
-  // Cargar categorías cuando cambia la tienda
   useEffect(() => {
     if (!selectedStoreId) {
       setCategories([]);
@@ -43,19 +38,19 @@ const StoreSelector = ({
   }, [selectedStoreId]);
 
   return (
-    <div className="store-selector">
-      {/* Selector de Tienda */}
-      <div className="store-selector__field">
-        <label className="store-selector__label">
-          <HiOutlineCollection /> Tienda *
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div className="admin-form-group" style={{ flex: 1 }}>
+        <label className="admin-form-group__label">
+          <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--color-on-surface-variant)" }}>store</span>
+          Tienda *
         </label>
         <select
           value={selectedStoreId || ""}
           onChange={(e) => {
             onStoreChange(e.target.value);
-            onCategoryChange(""); // Resetear categoría al cambiar tienda
+            onCategoryChange("");
           }}
-          className="store-selector__select"
+          className="admin-select"
           required
         >
           <option value="">Seleccionar tienda</option>
@@ -67,13 +62,15 @@ const StoreSelector = ({
         </select>
       </div>
 
-      {/* Selector de Categoría (filtrado por tienda) */}
-      <div className="store-selector__field">
-        <label className="store-selector__label">📂 Categoría *</label>
+      <div className="admin-form-group" style={{ flex: 1 }}>
+        <label className="admin-form-group__label">
+          <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--color-on-surface-variant)" }}>category</span>
+          Categoría *
+        </label>
         <select
           value={selectedCategoryId || ""}
           onChange={(e) => onCategoryChange(e.target.value)}
-          className="store-selector__select"
+          className="admin-select"
           required
           disabled={!selectedStoreId || loading}
         >

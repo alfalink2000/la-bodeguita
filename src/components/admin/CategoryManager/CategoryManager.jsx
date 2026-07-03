@@ -1,8 +1,5 @@
-// components/admin/CategoryManager/CategoryManager.jsx
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { Plus, Trash2, Edit, Save, X } from "lucide-react";
 import SearchFilter from "../SearchFilter/SearchFilter";
-import "./CategoryManager.css";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
@@ -18,13 +15,10 @@ const CategoryManager = ({
   const [editingCategory, setEditingCategory] = useState(null);
   const [editValue, setEditValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-
-  // ✅ NUEVO: Estados para tiendas
   const [stores, setStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const [filterStoreId, setFilterStoreId] = useState("all");
 
-  // Cargar tiendas
   useEffect(() => {
     const loadStores = async () => {
       try {
@@ -38,13 +32,11 @@ const CategoryManager = ({
     loadStores();
   }, []);
 
-  // Memoizar categorías como strings (para validación)
   const categoryNames = useMemo(
     () => categories.map((cat) => cat.name),
     [categories],
   );
 
-  // Memoizar categorías filtradas por tienda y búsqueda
   const filteredCategories = useMemo(() => {
     return categories.filter((category) => {
       const matchesSearch = category.name
@@ -57,28 +49,21 @@ const CategoryManager = ({
     });
   }, [categories, searchTerm, filterStoreId]);
 
-  // ✅ NUEVO: handleAddCategory con store_id
   const handleAddCategory = useCallback(() => {
     const trimmedName = newCategory.trim();
-
     if (!trimmedName) return;
-
     if (!selectedStoreId) {
       alert("Selecciona una tienda primero");
       return;
     }
-
     if (categoryNames.includes(trimmedName)) {
       alert("Ya existe una categoría con ese nombre");
       return;
     }
-
     if (trimmedName.length > 100) {
       alert("El nombre de la categoría no puede tener más de 100 caracteres");
       return;
     }
-
-    // ✅ Pasar store_id junto con el nombre
     onAddCategory(trimmedName, selectedStoreId);
     setNewCategory("");
   }, [newCategory, selectedStoreId, categoryNames, onAddCategory]);
@@ -90,18 +75,15 @@ const CategoryManager = ({
 
   const handleSaveEdit = useCallback(() => {
     const trimmedValue = editValue.trim();
-
     if (!trimmedValue) {
       alert("El nombre de la categoría no puede estar vacío");
       return;
     }
-
     if (trimmedValue === editingCategory.name) {
       setEditingCategory(null);
       setEditValue("");
       return;
     }
-
     if (
       categoryNames.includes(trimmedValue) &&
       trimmedValue !== editingCategory.name
@@ -109,7 +91,6 @@ const CategoryManager = ({
       alert("Ya existe una categoría con ese nombre");
       return;
     }
-
     onUpdateCategory(editingCategory.name, trimmedValue);
     setEditingCategory(null);
     setEditValue("");
@@ -140,26 +121,24 @@ const CategoryManager = ({
   );
 
   return (
-    <div className="category-manager">
-      <h3 className="category-manager__title">Gestión de Categorías</h3>
-
-      {/* ✅ NUEVO: Selector de tienda para filtrar */}
-      <div className="category-manager__store-filter">
-        <label className="category-manager__filter-label">
-          Filtrar por tienda:
-        </label>
-        <select
-          value={filterStoreId}
-          onChange={(e) => setFilterStoreId(e.target.value)}
-          className="category-manager__store-select"
-        >
-          <option value="all">Todas las tiendas</option>
-          {stores.map((store) => (
-            <option key={store.id} value={store.id.toString()}>
-              {store.name}
-            </option>
-          ))}
-        </select>
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+      {/* Store filter */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
+          <span className="admin-filter-group__label">Filtrar por tienda:</span>
+          <select
+            value={filterStoreId}
+            onChange={(e) => setFilterStoreId(e.target.value)}
+            className="admin-select"
+          >
+            <option value="all">Todas las tiendas</option>
+            {stores.map((store) => (
+              <option key={store.id} value={store.id.toString()}>
+                {store.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <SearchFilter
@@ -168,12 +147,13 @@ const CategoryManager = ({
         placeholder="Buscar categorías..."
       />
 
-      {/* ✅ NUEVO: Selector de tienda + input para nueva categoría */}
-      <div className="category-manager__add">
+      {/* Add category */}
+      <div className="admin-card" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
         <select
           value={selectedStoreId}
           onChange={(e) => setSelectedStoreId(e.target.value)}
-          className="category-manager__store-select"
+          className="admin-select"
+          style={{ maxWidth: "200px" }}
         >
           <option value="">Seleccionar tienda *</option>
           {stores.map((store) => (
@@ -187,108 +167,100 @@ const CategoryManager = ({
           value={newCategory}
           onChange={(e) => setNewCategory(e.target.value)}
           placeholder="Nueva categoría (máx. 100 caracteres)"
-          className="category-manager__input"
+          className="admin-input"
           onKeyPress={(e) => handleKeyPress(e, "add")}
           maxLength={100}
         />
         <button
           onClick={handleAddCategory}
-          className="category-manager__add-button"
+          className="admin-btn admin-btn--primary"
           disabled={!newCategory.trim() || !selectedStoreId}
         >
-          <Plus className="w-4 h-4" />
+          <span className="admin-btn__icon material-symbols-outlined">add</span>
           Agregar
         </button>
       </div>
 
-      <div className="category-manager__info">
-        <span className="category-manager__count">
-          {filteredCategories.length} de {categories.length} categorías
-        </span>
-        {searchTerm && (
-          <span className="category-manager__search-term">
-            Buscando: "{searchTerm}"
-          </span>
-        )}
+      {/* Info */}
+      <div className="admin-results-info">
+        <span>{filteredCategories.length} de {categories.length} categorías</span>
+        {searchTerm && <span>Buscando: "{searchTerm}"</span>}
       </div>
 
-      <div className="category-manager__list">
+      {/* List */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {filteredCategories
           .filter((cat) => cat.name !== "Todos")
           .map((category) => (
-            <div key={category.id} className="category-manager__item">
+            <div key={category.id} className="admin-card" style={{ padding: "16px" }}>
               {editingCategory?.id === category.id ? (
-                <>
+                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                   <input
                     type="text"
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
                     onKeyDown={(e) => handleKeyPress(e, "edit")}
-                    className="category-manager__edit-input"
+                    className="admin-input"
+                    style={{ flex: 1 }}
                     autoFocus
                     maxLength={100}
                   />
-                  <div className="category-manager__edit-actions">
+                  <div style={{ display: "flex", gap: "8px" }}>
                     <button
                       onClick={handleSaveEdit}
-                      className="category-manager__save-button"
+                      className="admin-btn admin-btn--primary admin-btn--icon"
                       disabled={!editValue.trim()}
                     >
-                      <Save className="w-4 h-4" />
+                      <span className="admin-btn__icon material-symbols-outlined">check</span>
                     </button>
                     <button
                       onClick={handleCancelEdit}
-                      className="category-manager__cancel-button"
+                      className="admin-btn admin-btn--secondary admin-btn--icon"
                     >
-                      <X className="w-4 h-4" />
+                      <span className="admin-btn__icon material-symbols-outlined">close</span>
                     </button>
                   </div>
-                </>
+                </div>
               ) : (
-                <>
-                  <div className="category-manager__info-row">
-                    <span className="category-manager__name">
-                      {category.name}
-                    </span>
-                    {/* ✅ Mostrar tienda a la que pertenece */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                    <span style={{ fontFamily: "var(--font-label-md)", fontSize: "var(--text-label-md)", color: "var(--color-on-surface)" }}>{category.name}</span>
                     {category.store_id && (
-                      <span className="category-manager__store-badge">
+                      <span className="admin-badge admin-badge--neutral">
                         {stores.find((s) => s.id === category.store_id)?.name ||
                           `Tienda #${category.store_id}`}
                       </span>
                     )}
                   </div>
-                  <div className="category-manager__actions">
+                  <div style={{ display: "flex", gap: "8px" }}>
                     <button
                       onClick={() => handleStartEdit(category)}
-                      className="category-manager__edit-button"
-                      title="Editar categoría"
+                      className="admin-btn admin-btn--ghost admin-btn--icon"
                     >
-                      <Edit className="w-4 h-4" />
+                      <span className="admin-btn__icon material-symbols-outlined">edit</span>
                     </button>
                     <button
                       onClick={() => handleDeleteCategory(category)}
-                      className="category-manager__delete-button"
-                      title="Eliminar categoría"
+                      className="admin-btn admin-btn--danger admin-btn--icon"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <span className="admin-btn__icon material-symbols-outlined">delete</span>
                     </button>
                   </div>
-                </>
+                </div>
               )}
             </div>
           ))}
       </div>
 
       {filteredCategories.length === 0 && categories.length > 0 && (
-        <div className="category-manager__empty">
-          <p>No se encontraron categorías con el término de búsqueda</p>
+        <div className="admin-empty">
+          <p className="admin-empty__text">No se encontraron categorías con el término de búsqueda</p>
         </div>
       )}
 
       {categories.length === 0 && (
-        <div className="category-manager__empty">
-          <p>No hay categorías disponibles. Agrega una nueva categoría.</p>
+        <div className="admin-empty">
+          <p className="admin-empty__text">No hay categorías disponibles. Agrega una nueva categoría.</p>
         </div>
       )}
     </div>

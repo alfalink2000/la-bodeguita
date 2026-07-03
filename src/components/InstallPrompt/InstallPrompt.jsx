@@ -1,4 +1,3 @@
-// components/InstallPrompt/InstallPrompt.jsx - VERSIÓN OPTIMIZADA
 import { useState, useEffect } from "react";
 import "./InstallPrompt.css";
 
@@ -108,15 +107,23 @@ const InstallPrompt = () => {
   if (!showPrompt) return null;
 
   return (
-    <div className={`install-prompt ${isIOS ? "ios" : ""}`}>
-      <div className="install-prompt__content">
-        <button className="install-prompt__close" onClick={handleClose}>
-          ×
+    <div className="install-prompt">
+      <div className="install-prompt__container">
+        <button
+          className="install-prompt__close"
+          onClick={handleClose}
+        >
+          <span className="material-symbols-outlined">close</span>
         </button>
-        <div className="install-prompt__icon">{isIOS ? "📱" : "🚀"}</div>
+
+        <div className="install-prompt__icon-wrap">
+          <span className="material-symbols-outlined install-prompt__icon">{isIOS ? "phone_iphone" : "rocket_launch"}</span>
+        </div>
+
         <h3 className="install-prompt__title">
           {isIOS ? "Instalar App" : "¡Instala nuestra App!"}
         </h3>
+
         <p className="install-prompt__text">
           {installSupported
             ? "Haz clic en 'Instalar ahora' para agregar el icono a tu pantalla de inicio."
@@ -125,43 +132,39 @@ const InstallPrompt = () => {
 
         {!installSupported && !isIOS && (
           <div className="install-prompt__manual">
-            <p>
-              🔧 <strong>Instalación manual:</strong>
+            <p className="install-prompt__manual-title">
+              <span className="material-symbols-outlined" style={{ fontSize: "18px", verticalAlign: "middle" }}>build</span> <strong>Instalación manual:</strong>
             </p>
-            <ol>
+            <ol className="install-prompt__list">
               <li>Abre el menú del navegador (⋮)</li>
-              <li>
-                Selecciona "Instalar aplicación" o "Agregar a pantalla de
-                inicio"
-              </li>
+              <li>Selecciona "Instalar aplicación" o "Agregar a pantalla de inicio"</li>
             </ol>
           </div>
         )}
 
         {isIOS && (
-          <ol className="install-prompt__steps">
-            <li>
-              Toca <strong>Compartir</strong>{" "}
-              <span className="ios-icon">⎙</span>
-            </li>
-            <li>
-              Desplázate y toca <strong>Agregar a pantalla de inicio</strong>
-            </li>
-            <li>
-              Toca <strong>Agregar</strong>
-            </li>
+          <ol className="install-prompt__manual">
+            {[
+              ['Toca', 'Compartir', '⎙'],
+              ['Desplázate y toca', 'Agregar a pantalla de inicio', ''],
+              ['Toca', 'Agregar', ''],
+            ].map(([before, bold, icon], i) => (
+              <li key={i}>
+                {i + 1}. {before} <strong>{bold}</strong> {icon && <span>{icon}</span>}
+              </li>
+            ))}
           </ol>
         )}
 
-        <div className="install-prompt__buttons">
+        <div className="install-prompt__actions">
           <button
-            className="install-prompt__button--primary"
+            className="install-prompt__btn install-prompt__btn--primary"
             onClick={handleInstallClick}
           >
             Instalar ahora
           </button>
           <button
-            className="install-prompt__button--secondary"
+            className="install-prompt__btn install-prompt__btn--secondary"
             onClick={handleClose}
           >
             Ahora no

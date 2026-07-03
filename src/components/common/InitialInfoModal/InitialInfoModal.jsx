@@ -1,41 +1,29 @@
-// components/common/InitialInfoModal/InitialInfoModal.jsx - VERSIÓN OPTIMIZADA
-import {
-  HiX,
-  HiInformationCircle,
-  HiStar,
-  HiShoppingCart,
-  HiClock,
-  HiPhone,
-} from "react-icons/hi";
 import "./InitialInfoModal.css";
 
 const InitialInfoModal = ({ isOpen, onClose, initialInfo }) => {
   const formatInitialInfo = (text) => {
     if (!text) return null;
-
     return text.split("\n").map((line, index) => {
       if (line.trim() === "") return <br key={index} />;
-
       if (line.includes("**")) {
         const cleanLine = line.replace(/\*\*/g, "");
         return (
-          <h3 key={index} className="info-modal__title">
+          <h3 key={index} className="info-modal__section-title">
             {cleanLine}
           </h3>
         );
       }
-
-      if (line.match(/^[🛒⏰🚚💬📍🕒🎯🌟⭐✨]/)) {
+      const cleanLine = line.replace(/^[🛒⏰🚚💬📍🕒🎯🌟⭐✨]\s*/g, "").trim();
+      if (cleanLine.length > 0 && cleanLine !== line.trim()) {
         return (
           <div key={index} className="info-modal__bullet">
-            <span className="info-modal__emoji">{line.charAt(0)}</span>
+            <span className="info-modal__bullet-icon material-symbols-outlined">check_circle</span>
             <span className="info-modal__bullet-text">
-              {line.slice(1).trim()}
+              {cleanLine}
             </span>
           </div>
         );
       }
-
       return (
         <p key={index} className="info-modal__paragraph">
           {line}
@@ -45,57 +33,88 @@ const InitialInfoModal = ({ isOpen, onClose, initialInfo }) => {
   };
 
   return (
-    <div className={`info-modal ${isOpen ? "info-modal--open" : ""}`}>
+    <div
+      className={`info-modal ${isOpen ? "info-modal--visible" : "info-modal--hidden"}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Información de la Tienda"
+    >
       <div className="info-modal__overlay" onClick={onClose} />
-
-      <div className="info-modal__content">
-        <div className="info-modal__header">
-          <div className="info-modal__icon">
-            <HiInformationCircle />
+      <div className="info-modal__container">
+        {/* Header */}
+        <header className="info-modal__header">
+          <div className="info-modal__header-left">
+            <div className="info-modal__header-icon-wrapper">
+              <span className="info-modal__header-icon material-symbols-outlined">
+                info
+              </span>
+            </div>
+            <h2 className="info-modal__title">Información de la Tienda</h2>
           </div>
-          <h2 className="info-modal__heading">Información de la Tienda</h2>
-          <button className="info-modal__close" onClick={onClose}>
-            <HiX />
+          <button
+            onClick={onClose}
+            className="info-modal__close-btn"
+            aria-label="Cerrar"
+          >
+            <span className="material-symbols-outlined">close</span>
           </button>
-        </div>
+        </header>
 
+        {/* Body */}
         <div className="info-modal__body">
           {initialInfo ? (
-            <div className="info-modal__text">
+            <div className="info-modal__content">
               {formatInitialInfo(initialInfo)}
             </div>
           ) : (
             <div className="info-modal__default">
-              <HiStar className="info-modal__default-icon" />
-              <h3>Bienvenido a nuestro Minimarket</h3>
-              <p>
+              <span className="info-modal__default-icon material-symbols-outlined">
+                storefront
+              </span>
+              <h3 className="info-modal__default-title">
+                Bienvenido a nuestro Minimarket
+              </h3>
+              <p className="info-modal__default-text">
                 Ofrecemos productos de calidad con el mejor servicio. ¡Estamos
                 aquí para ayudarte!
               </p>
 
               <div className="info-modal__features">
-                <div className="feature-item">
-                  <HiShoppingCart className="feature-icon" />
-                  <span>Productos de Calidad</span>
+                <div className="info-modal__feature-item">
+                  <span className="info-modal__feature-icon material-symbols-outlined">
+                    verified
+                  </span>
+                  <span className="info-modal__feature-text">
+                    Productos de Calidad
+                  </span>
                 </div>
-                <div className="feature-item">
-                  <HiClock className="feature-icon" />
-                  <span>Horario Extendido</span>
+                <div className="info-modal__feature-item">
+                  <span className="info-modal__feature-icon material-symbols-outlined">
+                    schedule
+                  </span>
+                  <span className="info-modal__feature-text">
+                    Horario Extendido
+                  </span>
                 </div>
-                <div className="feature-item">
-                  <HiPhone className="feature-icon" />
-                  <span>Atención Personalizada</span>
+                <div className="info-modal__feature-item">
+                  <span className="info-modal__feature-icon material-symbols-outlined">
+                    support_agent
+                  </span>
+                  <span className="info-modal__feature-text">
+                    Atención Personalizada
+                  </span>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="info-modal__footer">
-          <button className="info-modal__action-btn" onClick={onClose}>
+        {/* Footer */}
+        <footer className="info-modal__footer">
+          <button onClick={onClose} className="info-modal__action-btn">
             Entendido
           </button>
-        </div>
+        </footer>
       </div>
     </div>
   );

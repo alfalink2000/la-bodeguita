@@ -1,7 +1,3 @@
-// components/admin/SearchFilter/SearchFilter.jsx
-import { Search } from "lucide-react";
-import "./SearchFilter.css";
-
 const SearchFilter = ({
   searchTerm,
   onSearchChange,
@@ -12,33 +8,32 @@ const SearchFilter = ({
   onCategoryChange = () => {},
 }) => {
   return (
-    <div className="search-filter">
-      <div className="search-filter__search">
-        <Search className="search-filter__icon" />
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div className="admin-input-wrapper">
+        <span className="admin-input-wrapper__icon material-symbols-outlined">search</span>
         <input
           type="text"
           placeholder={placeholder}
-          className="search-filter__input"
+          className="admin-input"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
         />
       </div>
 
       {showCategoryFilter && categories.length > 0 && (
-        <div className="search-filter__category">
-          <select
-            value={selectedCategory}
-            onChange={(e) => onCategoryChange(e.target.value)}
-            className="search-filter__select"
-          >
-            <option value="Todos">Todas las categorías</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </div>
+        <select
+          value={selectedCategory}
+          onChange={(e) => onCategoryChange(e.target.value)}
+          className="admin-select"
+          style={{ maxWidth: "100%" }}
+        >
+          <option value="Todos">Todas las categorías</option>
+          {categories.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
       )}
     </div>
   );

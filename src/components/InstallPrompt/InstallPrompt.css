@@ -1,216 +1,161 @@
-/* components/InstallPrompt/InstallPrompt.css */
-
-/* Contenedor principal */
 .install-prompt {
   position: fixed;
-  bottom: 20px;
-  left: 20px;
-  right: 20px;
-  z-index: 9999;
-  animation: slideUp 0.3s ease-out;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  animation: install-prompt-slide-up 0.3s ease-out;
 }
 
-/* iOS específico */
-.install-prompt.ios {
-  bottom: auto;
-  top: 20px;
-}
-
-/* Tarjeta de contenido */
-.install-prompt__content {
-  background: white;
-  border-radius: 20px;
-  padding: 24px 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  position: relative;
+.install-prompt__container {
   max-width: 400px;
   margin: 0 auto;
-  border: 1px solid #e5e7eb;
+  background-color: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--color-outline-variant) 30%, transparent);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  padding: 24px;
+  position: relative;
 }
 
-/* Botón cerrar */
 .install-prompt__close {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #9ca3af;
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: none;
   border-radius: 50%;
-  transition: all 0.2s;
+  background: transparent;
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
 .install-prompt__close:hover {
-  background: #f3f4f6;
-  color: #4b5563;
+  background: var(--color-surface-container);
 }
 
-/* Icono principal */
+.install-prompt__close span {
+  font-size: 18px;
+}
+
+.install-prompt__icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background-color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 4px 12px rgba(13, 51, 47, 0.25);
+}
+
 .install-prompt__icon {
-  font-size: 56px;
-  text-align: center;
-  margin-bottom: 12px;
+  font-size: 28px !important;
+  color: var(--color-on-primary);
+  font-variation-settings: "FILL" 1;
 }
 
-/* Título */
 .install-prompt__title {
+  font-family: var(--font-headline-md);
   font-size: 22px;
   font-weight: 600;
+  color: var(--color-on-surface);
   text-align: center;
-  margin-bottom: 8px;
-  color: #1f2937;
+  margin: 0 0 8px;
 }
 
-/* Texto descriptivo */
 .install-prompt__text {
-  text-align: center;
-  color: #6b7280;
-  margin-bottom: 20px;
+  font-family: Inter, sans-serif;
   font-size: 14px;
   line-height: 1.5;
+  color: var(--color-on-surface-variant);
+  text-align: center;
+  margin: 0 0 20px;
 }
 
-/* Sección de instalación manual (cuando no hay beforeinstallprompt) */
 .install-prompt__manual {
-  background: #fef3c7;
-  border-left: 4px solid #f59e0b;
-  padding: 12px;
+  background: var(--color-surface-container);
   border-radius: 12px;
+  padding: 16px;
   margin-bottom: 20px;
   font-size: 13px;
-  color: #92400e;
+  color: var(--color-on-surface-variant);
+  line-height: 1.6;
 }
 
-.install-prompt__manual p {
-  margin: 0 0 8px 0;
-  font-weight: 600;
+.install-prompt__manual-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--color-on-surface);
 }
 
-.install-prompt__manual ol {
+.install-prompt__list {
   margin: 0;
   padding-left: 20px;
 }
 
-.install-prompt__manual li {
-  margin-bottom: 4px;
-}
-
-/* Pasos para iOS */
-.install-prompt__steps {
-  text-align: left;
-  margin: 20px 0;
-  padding-left: 20px;
-}
-
-.install-prompt__steps li {
-  margin-bottom: 12px;
-  color: #4b5563;
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.ios-icon {
-  display: inline-block;
-  background: #f3f4f6;
-  padding: 4px 8px;
-  border-radius: 8px;
-  margin-left: 6px;
-  font-size: 16px;
-}
-
-/* Beneficios (opcional) */
-.install-prompt__benefits {
+.install-prompt__actions {
   display: flex;
-  justify-content: space-around;
-  margin-bottom: 20px;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.install-prompt__benefits span {
-  flex: 1;
-  text-align: center;
-  padding: 8px;
-  background: #f9fafb;
-  border-radius: 12px;
-  font-size: 12px;
-  color: #4b5563;
-}
-
-/* Contenedor de botones */
-.install-prompt__buttons {
-  display: flex;
-  gap: 12px;
-  margin-top: 16px;
-}
-
-/* Estilos base para botones */
-.install-prompt__button--primary,
-.install-prompt__button--secondary {
-  flex: 1;
+.install-prompt__btn {
+  width: 100%;
   padding: 12px;
   border: none;
   border-radius: 12px;
-  font-size: 15px;
-  font-weight: 500;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  text-align: center;
+  min-height: 44px;
 }
 
-/* Botón principal (Instalar ahora) */
-.install-prompt__button--primary {
-  background: #3b82f6;
-  color: white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+.install-prompt__btn--primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: 0 4px 12px rgba(13, 51, 47, 0.25);
 }
 
-.install-prompt__button--primary:hover {
-  background: #2563eb;
+.install-prompt__btn--primary:hover {
+  opacity: 0.9;
   transform: translateY(-1px);
 }
 
-/* Botón secundario (Ahora no) */
-.install-prompt__button--secondary {
-  background: #f3f4f6;
-  color: #4b5563;
+.install-prompt__btn--primary:active {
+  transform: scale(0.98);
 }
 
-.install-prompt__button--secondary:hover {
-  background: #e5e7eb;
+.install-prompt__btn--secondary {
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface);
 }
 
-/* Animación de entrada */
-@keyframes slideUp {
+.install-prompt__btn--secondary:hover {
+  background: var(--color-surface-container);
+}
+
+.install-prompt__btn--secondary:active {
+  transform: scale(0.98);
+}
+
+@keyframes install-prompt-slide-up {
   from {
-    transform: translateY(100px);
     opacity: 0;
+    transform: translateY(20px);
   }
   to {
-    transform: translateY(0);
     opacity: 1;
-  }
-}
-
-/* Responsive para escritorio */
-@media (min-width: 768px) {
-  .install-prompt {
-    left: auto;
-    right: 20px;
-    bottom: 20px;
-    width: 380px;
-  }
-
-  .install-prompt.ios {
-    left: auto;
-    right: 20px;
-    top: 20px;
-    bottom: auto;
+    transform: translateY(0);
   }
 }

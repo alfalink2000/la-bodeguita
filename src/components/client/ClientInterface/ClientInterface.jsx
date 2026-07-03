@@ -1,62 +1,28 @@
-// components/client/ClientInterface.jsx - VERSIÓN COMPLETA CORREGIDA
-import React, {
-  useState,
-  useMemo,
-  useEffect,
-  useCallback,
-  useRef,
-} from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useProductsSync } from "../../../hooks/useProductsSync";
 import { useAppNavigation } from "../../../hooks/useNavigationHistory";
-import {
-  HiOutlineShoppingBag,
-  HiOutlineFire,
-  HiOutlineTag,
-  HiOutlinePhone,
-  HiOutlineSparkles,
-  HiOutlineClock,
-  HiOutlineLocationMarker,
-  HiOutlineSearch,
-  HiOutlineStar,
-  HiOutlineCog,
-  HiOutlineInformationCircle,
-  HiOutlineMenu,
-  HiOutlineChat,
-  HiOutlineCollection,
-} from "react-icons/hi";
-
-// Components
-import Header from "../../common/Header/Header";
-import SearchBar from "../../common/SearchBar/SearchBar";
-import ProductGrid from "../ProductGrid/ProductGrid";
-import ProductDetail from "../ProductDetail/ProductDetail";
-import BottomNavigation from "../../common/BottomNavigation/BottomNavigation";
-import InitialInfoModal from "../../common/InitialInfoModal/InitialInfoModal";
-import CartModal from "../../common/CartModal/CartModal";
-import SideMenu from "../SideMenu/SideMenu";
-import ChatModal from "../ChatModal/ChatModal";
-import UserProfile from "../UserProfile/UserProfile";
-
-// Actions & Selectors
 import { loadFeaturedProducts } from "../../../actions/featuredProductsActions";
 import { getStores } from "../../../actions/storesActions";
 import { getCategories } from "../../../actions/categoriesActions";
+import { addToCart, toggleCartModal } from "../../../actions/cartActions";
+import { selectCartItemsCount } from "../../../selectors/cartSelectors";
 import {
   selectProducts,
   selectCategories,
   selectPopularProducts,
   selectOfferProducts,
-  selectCategoryOptions,
 } from "../../../selectors/productSelectors";
-
-import image from "../../../assets/images/shop.png";
+import Header from "../../common/Header/Header";
+import ProductDetail from "../ProductDetail/ProductDetail";
+import InitialInfoModal from "../../common/InitialInfoModal/InitialInfoModal";
+import CartModal from "../../common/CartModal/CartModal";
+import SideMenu from "../SideMenu/SideMenu";
+import RightSidebar from "../DesktopSidebar/DesktopSidebar";
+import ChatModal from "../ChatModal/ChatModal";
+import UserProfile from "../UserProfile/UserProfile";
+import "../client.css";
 import "./ClientInterface.css";
-import "./ClientInterface.desktop.css";
-
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "https://minimarket-backend-6z9m.onrender.com";
 
 const SECTIONS = {
   TODOS: "todos",
@@ -74,106 +40,67 @@ const ClientInterface = ({
   userData,
 }) => {
   useProductsSync(60000);
-
   const dispatch = useDispatch();
-  const { saveAction, resetNavigation, canGoBack, getStackInfo } =
-    useAppNavigation({
-      moduleName: "client",
-    });
+  const { saveAction, resetNavigation } = useAppNavigation({ moduleName: "client" });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [activeSection, setActiveSection] = useState(SECTIONS.TODOS);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [isDesktop, setIsDesktop] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-
   const [unreadOrders, setUnreadOrders] = useState(() => {
     const saved = localStorage.getItem("unread_orders_count");
     return saved ? parseInt(saved) : 0;
   });
-
   const [unreadMessages, setUnreadMessages] = useState(0);
-  const isListenerRegistered = useRef(false);
-
-  const stores = useSelector((state) => state.stores.stores);
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
+  const stores = useSelector((state) => state.stores.stores);
   const products = useSelector(selectProducts);
   const categories = useSelector(selectCategories);
   const popularProducts = useSelector(selectPopularProducts);
   const offerProducts = useSelector(selectOfferProducts);
-  const categoryOptions = useSelector(selectCategoryOptions);
+  const cartItemsCount = useSelector(selectCartItemsCount);
   const appConfig = useSelector((state) => state.appConfig.config);
 
-  // ============================================
-  // PARTE 1: Cargar tiendas al inicio
-  // ============================================
   useEffect(() => {
-    if (stores.length === 0) {
-      dispatch(getStores());
-    }
+    if (stores.length === 0) dispatch(getStores());
   }, [dispatch, stores.length]);
 
-  // ============================================
-  // PARTE 2: Seleccionar primera tienda automáticamente
-  // ============================================
   useEffect(() => {
     if (stores.length > 0 && !selectedStoreId) {
       setSelectedStoreId(stores[0].id.toString());
     }
   }, [stores, selectedStoreId]);
 
-  // ============================================
-  // PARTE 3: Cargar categorías cuando cambia la tienda (CORREGIDO)
-  // ============================================
   useEffect(() => {
     if (!selectedStoreId) {
       setFilteredCategories([]);
       return;
     }
-
-    const loadCategoriesForSelectedStore = async () => {
+    const API_URL = import.meta.env.VITE_API_URL || "https://minimarket-backend-6z9m.onrender.com";
+    const loadCategories = async () => {
       setIsLoadingCategories(true);
       try {
-        // ✅ Método 1: Usar el endpoint específico por tienda
-        const res = await fetch(
-          `${API_URL}/api/stores/${selectedStoreId}/categories`,
-        );
+        const res = await fetch(`${API_URL}/api/stores/${selectedStoreId}/categories`);
         const data = await res.json();
-
-        if (data.ok && data.categories && data.categories.length > 0) {
-          // Filtrar para eliminar "Todos" si existe
-          const cats = data.categories.filter((cat) => cat.name !== "Todos");
-          setFilteredCategories(cats);
-          console.log(
-            `✅ Cargadas ${cats.length} categorías para tienda ${selectedStoreId}`,
-          );
+        if (data.ok && data.categories?.length > 0) {
+          setFilteredCategories(data.categories.filter((cat) => cat.name !== "Todos"));
         } else {
-          // ✅ Método 2: Fallback - filtrar desde Redux
-          const filtered = categoryOptions.filter(
-            (cat) =>
-              cat.store_id?.toString() === selectedStoreId &&
-              cat.name !== "Todos",
+          const filtered = categories.filter(
+            (cat) => cat.store_id?.toString() === selectedStoreId && cat.name !== "Todos",
           );
           setFilteredCategories(filtered.length > 0 ? filtered : []);
-          console.log(`✅ Filtradas ${filtered.length} categorías desde Redux`);
         }
-
-        // Resetear categoría seleccionada al cambiar de tienda
         setSelectedCategory("Todos");
-      } catch (error) {
-        console.error("Error cargando categorías para tienda:", error);
-        // Fallback a filtrado local
-        const filtered = categoryOptions.filter(
-          (cat) =>
-            cat.store_id?.toString() === selectedStoreId &&
-            cat.name !== "Todos",
+      } catch {
+        const filtered = categories.filter(
+          (cat) => cat.store_id?.toString() === selectedStoreId && cat.name !== "Todos",
         );
         setFilteredCategories(filtered);
         setSelectedCategory("Todos");
@@ -181,48 +108,17 @@ const ClientInterface = ({
         setIsLoadingCategories(false);
       }
     };
+    loadCategories();
+  }, [selectedStoreId, categories]);
 
-    loadCategoriesForSelectedStore();
-  }, [selectedStoreId, categoryOptions]);
-
-  // ============================================
-  // PARTE 4: Cargar todas las categorías al inicio (para Redux)
-  // ============================================
   useEffect(() => {
-    if (categoryOptions.length === 0) {
-      dispatch(getCategories());
-    }
-  }, [dispatch, categoryOptions.length]);
+    if (categories.length === 0) dispatch(getCategories());
+  }, [dispatch, categories.length]);
 
-  // ============================================
-  // PARTE 5: Guardar contador de pedidos no leídos
-  // ============================================
   useEffect(() => {
     localStorage.setItem("unread_orders_count", unreadOrders);
   }, [unreadOrders]);
 
-  // ============================================
-  // PARTE 6: Escuchar evento de nuevo pedido
-  // ============================================
-  useEffect(() => {
-    if (isListenerRegistered.current) return;
-
-    const handleOrderCreated = (event) => {
-      setUnreadOrders((prev) => prev + 1);
-    };
-
-    window.addEventListener("order-created", handleOrderCreated);
-    isListenerRegistered.current = true;
-
-    return () => {
-      window.removeEventListener("order-created", handleOrderCreated);
-      isListenerRegistered.current = false;
-    };
-  }, []);
-
-  // ============================================
-  // PARTE 7: Resetear al hacer logout
-  // ============================================
   useEffect(() => {
     if (!isLoggedIn) {
       setUnreadOrders(0);
@@ -230,19 +126,17 @@ const ClientInterface = ({
     }
   }, [isLoggedIn]);
 
-  // ============================================
-  // PARTE 8: Resetear contador manualmente
-  // ============================================
   const resetUnreadOrders = useCallback(() => {
     setUnreadOrders(0);
     localStorage.setItem("unread_orders_count", "0");
   }, []);
 
-  // ============================================
-  // PARTE 9: Handlers de navegación
-  // ============================================
   const handleSectionChange = useCallback(
     (sectionId) => {
+      if (sectionId === SECTIONS.CONTACTO) {
+        setIsChatOpen(true);
+        return;
+      }
       if (activeSection !== sectionId) {
         setActiveSection(sectionId);
         saveAction("section", { from: activeSection, to: sectionId });
@@ -255,110 +149,28 @@ const ClientInterface = ({
   const handleProductClick = useCallback(
     (product) => {
       setSelectedProduct(product);
-      saveAction("detail", {
-        type: "product",
-        id: product.id,
-        name: product.name,
-      });
+      saveAction("detail", { type: "product", id: product.id, name: product.name });
     },
     [saveAction],
   );
-
-  const handleOpenChat = useCallback(() => {
-    setIsChatOpen(true);
-    saveAction("modal", { type: "chat" });
-  }, [saveAction]);
-
-  const handleOpenSideMenu = useCallback(() => {
-    setIsSideMenuOpen(true);
-    saveAction("modal", { type: "sidemenu" });
-  }, [saveAction]);
-
-  const handleOpenProfile = useCallback(() => {
-    setShowProfile(true);
-    saveAction("modal", { type: "profile" });
-  }, [saveAction]);
-
-  const handleOpenInfoModal = useCallback(() => {
-    setShowInfoModal(true);
-    saveAction("modal", { type: "info" });
-  }, [saveAction]);
-
-  // ============================================
-  // PARTE 10: Eventos de navegación global
-  // ============================================
-  useEffect(() => {
-    const handleCloseDetail = () => {
-      setSelectedProduct(null);
-    };
-
-    const handleCloseModal = (event) => {
-      const modalType = event.detail?.data?.type;
-      switch (modalType) {
-        case "chat":
-          setIsChatOpen(false);
-          break;
-        case "sidemenu":
-          setIsSideMenuOpen(false);
-          break;
-        case "profile":
-          setShowProfile(false);
-          break;
-        case "info":
-          setShowInfoModal(false);
-          break;
-        default:
-          setIsChatOpen(false);
-          setIsSideMenuOpen(false);
-          setShowProfile(false);
-          setShowInfoModal(false);
-      }
-    };
-
-    const handleSectionBack = (event) => {
-      const previousSection = event.detail?.data?.to || "todos";
-      setActiveSection(previousSection);
-    };
-
-    window.addEventListener("client:close-detail", handleCloseDetail);
-    window.addEventListener("client:close-modal", handleCloseModal);
-    window.addEventListener("client:section-back", handleSectionBack);
-
-    return () => {
-      window.removeEventListener("client:close-detail", handleCloseDetail);
-      window.removeEventListener("client:close-modal", handleCloseModal);
-      window.removeEventListener("client:section-back", handleSectionBack);
-    };
-  }, []);
 
   useEffect(() => {
     resetNavigation();
     return () => resetNavigation();
   }, [resetNavigation]);
 
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log("📊 Estado navegación cliente:", getStackInfo());
-    }
-  }, [getStackInfo, activeSection, selectedProduct, isChatOpen]);
-
-  // ============================================
-  // PARTE 11: Cargar mensajes no leídos
-  // ============================================
   const loadUnreadMessages = useCallback(async () => {
+    const API_URL = import.meta.env.VITE_API_URL || "https://minimarket-backend-6z9m.onrender.com";
     const token = localStorage.getItem("token");
     if (!token) return;
-
     try {
       const res = await fetch(`${API_URL}/api/chat/unread-count`, {
         headers: { "x-token": token },
       });
       const data = await res.json();
-      if (data.ok) {
-        setUnreadMessages(data.unreadCount || 0);
-      }
+      if (data.ok) setUnreadMessages(data.unreadCount || 0);
     } catch (err) {
-      console.error("Error cargando mensajes no leídos:", err);
+      console.error("Error cargando mensajes:", err);
     }
   }, []);
 
@@ -370,9 +182,6 @@ const ClientInterface = ({
     }
   }, [isLoggedIn, loadUnreadMessages]);
 
-  // ============================================
-  // PARTE 12: Filtrar productos por tienda
-  // ============================================
   const storeFilteredProducts = useMemo(() => {
     if (!selectedStoreId) return products;
     return products.filter(
@@ -380,9 +189,6 @@ const ClientInterface = ({
     );
   }, [products, selectedStoreId]);
 
-  // ============================================
-  // PARTE 13: Mostrar modal de bienvenida
-  // ============================================
   useEffect(() => {
     if (appConfig?.show_initialinfo !== false) {
       const timer = setTimeout(() => setShowInfoModal(true), 1000);
@@ -390,30 +196,12 @@ const ClientInterface = ({
     }
   }, [appConfig?.show_initialinfo]);
 
-  // ============================================
-  // PARTE 14: Cargar productos destacados
-  // ============================================
   useEffect(() => {
     if (Array.isArray(products) && Array.isArray(categories)) {
       dispatch(loadFeaturedProducts());
     }
   }, [dispatch, products, categories]);
 
-  // ============================================
-  // PARTE 15: Detectar tamaño de pantalla
-  // ============================================
-  useEffect(() => {
-    const checkScreenSize = () => {
-      setIsDesktop(window.innerWidth >= 1024);
-    };
-    checkScreenSize();
-    window.addEventListener("resize", checkScreenSize);
-    return () => window.removeEventListener("resize", checkScreenSize);
-  }, []);
-
-  // ============================================
-  // PARTE 16: Filtrar productos por búsqueda y categoría
-  // ============================================
   const filteredProducts = useMemo(() => {
     const productsToFilter =
       activeSection === SECTIONS.TODOS
@@ -438,460 +226,340 @@ const ClientInterface = ({
         product.category?.name === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [
-    storeFilteredProducts,
-    popularProducts,
-    offerProducts,
-    searchTerm,
-    selectedCategory,
-    activeSection,
-  ]);
-
-  const getProductsCount = useCallback(() => {
-    return `${filteredProducts.length} ${
-      filteredProducts.length === 1 ? "producto" : "productos"
-    }`;
-  }, [filteredProducts]);
-
-  const handleBackFromDetail = useCallback(() => {
-    setSelectedProduct(null);
-  }, []);
+  }, [storeFilteredProducts, popularProducts, offerProducts, searchTerm, selectedCategory, activeSection]);
 
   const handleWhatsAppClick = useCallback(
     (productName) => {
       const phoneNumber = appConfig?.whatsapp_number || "5491112345678";
-      const message = `¡Hola! Estoy interesado en el producto: ${productName}`;
-      const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
-        message,
-      )}`;
-      window.open(whatsappUrl, "_blank");
+      window.open(
+        `https://wa.me/${phoneNumber}?text=${encodeURIComponent(`¡Hola! Estoy interesado en el producto: ${productName}`)}`,
+        "_blank",
+      );
     },
     [appConfig?.whatsapp_number],
   );
-
-  const InfoButton = useCallback(
-    () => (
-      <button
-        className="header-action header-action--icon"
-        title="Información de la tienda"
-        onClick={() => {
-          window.dispatchEvent(new CustomEvent("open-help-modal"));
-        }}
-      >
-        <HiOutlineInformationCircle className="header-action__icon" />
-      </button>
-    ),
-    [],
-  );
-
-  const TitleWithIcon = useCallback(() => {
-    const handleImageError = (e) => {
-      e.target.src = image;
-      e.target.onerror = null;
-    };
-    const isValidLogoUrl = (url) => {
-      if (!url) return false;
-      try {
-        const parsedUrl = new URL(url);
-        return (
-          parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:"
-        );
-      } catch {
-        return false;
-      }
-    };
-    const logoUrl = appConfig?.logo_url;
-    const shouldUseCustomLogo = isValidLogoUrl(logoUrl);
-
-    return (
-      <div className="header-title-with-icon">
-        <img
-          src={shouldUseCustomLogo ? logoUrl : image}
-          alt={`Logo ${appConfig?.app_name}`}
-          className="header-icon"
-          onError={handleImageError}
-          loading="lazy"
-        />
-        <div className="header-text">
-          <span className="header-main-title">{appConfig?.app_name}</span>
-          <span className="header-subtitle">{appConfig?.app_description}</span>
-        </div>
-      </div>
-    );
-  }, [appConfig]);
-
-  const DesktopNavigation = useCallback(
-    () => (
-      <div className="desktop-navigation">
-        <InfoButton />
-        <button
-          className="header-action header-action--icon"
-          title="Búsqueda avanzada"
-          onClick={() =>
-            document.querySelector(".desktop-search input")?.focus()
-          }
-        >
-          <HiOutlineSearch className="header-action__icon" />
-        </button>
-        <div className="header-separator"></div>
-      </div>
-    ),
-    [InfoButton],
-  );
-
-  // ============================================
-  // PARTE 17: Renderizado móvil
-  // ============================================
-  const renderMobileLayout = useMemo(
-    () => (
-      <div className="client-interface__content mobile-layout">
-        <div className="client-interface__search-section">
-          <SearchBar
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            isDesktop={false}
-            appConfig={appConfig}
-          />
-        </div>
-
-        <div className="store-selector-client">
-          <div className="selector-header">
-            <div className="selector-header__title">
-              <HiOutlineCollection className="selector-header__icon" />
-              <div className="decorative-divider">
-                <span className="dot"></span>
-                <span className="dot"></span>
-                <span className="dot"></span>
-              </div>
-              <h3>Tiendas</h3>
-            </div>
-            <div className="selector-header__count">
-              <span className="count-number">{stores.length}</span>
-              <span className="count-label">tiendas</span>
-            </div>
-          </div>
-
-          <div className="store-selector-client__scroll">
-            {stores.map((store) => (
-              <button
-                key={store.id}
-                className={`store-chip ${
-                  selectedStoreId === store.id.toString()
-                    ? "store-chip--active"
-                    : ""
-                }`}
-                onClick={() => {
-                  setSelectedStoreId(store.id.toString());
-                  setSelectedCategory("Todos");
-                }}
-              >
-                <HiOutlineCollection className="store-chip__icon" />
-                <span className="store-chip__text">{store.name}</span>
-              </button>
-            ))}
-            {stores.length <= 3 && (
-              <div className="chips-decoration">
-                <div className="decoration-dots">
-                  <span className="dot"></span>
-                  <span className="dot"></span>
-                  <span className="dot"></span>
-                </div>
-                <div className="decoration-sparkle">✨</div>
-                <div className="decoration-line"></div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="categories-chips">
-          <div className="selector-header">
-            <div className="selector-header__title">
-              <HiOutlineTag className="selector-header__icon" />
-              <div className="decorative-divider">
-                <span className="dot"></span>
-                <span className="dot"></span>
-                <span className="dot"></span>
-              </div>
-              <h3>Categorías</h3>
-            </div>
-            <div className="selector-header__count">
-              <span className="count-number">
-                {
-                  filteredCategories.filter(
-                    (cat) => (cat.name || cat) !== "Todos",
-                  ).length
-                }
-              </span>
-              <span className="count-label">categorías</span>
-            </div>
-          </div>
-
-          <div className="categories-chips__scroll">
-            <button
-              className={`category-chip ${
-                selectedCategory === "Todos" ? "category-chip--active" : ""
-              }`}
-              onClick={() => setSelectedCategory("Todos")}
-            >
-              Todos
-            </button>
-            {isLoadingCategories ? (
-              <div className="category-chip-loading">Cargando...</div>
-            ) : (
-              filteredCategories
-                .filter((cat) => (cat.name || cat) !== "Todos")
-                .map((cat) => (
-                  <button
-                    key={cat.id || cat.name || cat}
-                    className={`category-chip ${
-                      selectedCategory === (cat.name || cat)
-                        ? "category-chip--active"
-                        : ""
-                    }`}
-                    onClick={() => setSelectedCategory(cat.name || cat)}
-                  >
-                    {cat.name || cat}
-                  </button>
-                ))
-            )}
-            {filteredCategories.filter((c) => (c.name || c) !== "Todos")
-              .length <= 3 &&
-              !isLoadingCategories && (
-                <div className="chips-decoration">
-                  <div className="decoration-dots">
-                    <span className="dot"></span>
-                    <span className="dot"></span>
-                    <span className="dot"></span>
-                  </div>
-                  <div className="decoration-sparkle">✨</div>
-                  <div className="decoration-line"></div>
-                </div>
-              )}
-          </div>
-        </div>
-
-        <div className="results-info">
-          <span className="results-info__text">
-            {getProductsCount()} encontrados
-          </span>
-        </div>
-
-        <div className="client-interface__products-section">
-          <ProductGrid
-            products={filteredProducts}
-            onProductClick={handleProductClick}
-            isOfferSection={false}
-          />
-        </div>
-      </div>
-    ),
-    [
-      searchTerm,
-      appConfig,
-      stores,
-      selectedStoreId,
-      filteredCategories,
-      selectedCategory,
-      filteredProducts,
-      getProductsCount,
-      handleProductClick,
-      isLoadingCategories,
-    ],
-  );
-
-  // ============================================
-  // PARTE 18: Renderizado desktop
-  // ============================================
-  const renderDesktopLayout = useMemo(
-    () => (
-      <div className="client-interface__content desktop-layout">
-        <div className="client-interface__search-section desktop-search">
-          <SearchBar
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            isDesktop={true}
-            appConfig={appConfig}
-          />
-        </div>
-
-        <div className="desktop-sidebar">
-          <div className="desktop-stores-nav">
-            <h3 className="desktop-stores-title">
-              <HiOutlineCollection className="desktop-stores-icon" /> Tiendas
-            </h3>
-            <div className="desktop-stores-list">
-              {stores.map((store) => (
-                <button
-                  key={store.id}
-                  className={`desktop-section-button ${
-                    selectedStoreId === store.id.toString()
-                      ? "desktop-section-button--active"
-                      : ""
-                  }`}
-                  onClick={() => {
-                    setSelectedStoreId(store.id.toString());
-                    setSelectedCategory("Todos");
-                  }}
-                >
-                  <HiOutlineCollection className="desktop-section-icon" />
-                  <span className="desktop-section-text">{store.name}</span>
-                  <span className="desktop-section-badge">
-                    {
-                      products.filter(
-                        (p) => p.store_id?.toString() === store.id.toString(),
-                      ).length
-                    }
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="desktop-categories-nav">
-            <h3 className="desktop-stores-title">
-              <HiOutlineTag className="desktop-stores-icon" /> Categorías
-            </h3>
-            <div className="desktop-stores-list">
-              <button
-                className={`desktop-section-button ${
-                  selectedCategory === "Todos"
-                    ? "desktop-section-button--active"
-                    : ""
-                }`}
-                onClick={() => setSelectedCategory("Todos")}
-              >
-                <span className="desktop-section-text">
-                  Todos los productos
-                </span>
-                <span className="desktop-section-badge">
-                  {storeFilteredProducts.length}
-                </span>
-              </button>
-
-              {isLoadingCategories ? (
-                <div className="desktop-loading">Cargando categorías...</div>
-              ) : (
-                filteredCategories
-                  .filter((cat) => {
-                    const name = (cat.name || cat).trim();
-                    return (
-                      name !== "Todos" && name !== "todos" && name !== "TODOS"
-                    );
-                  })
-                  .map((cat) => (
-                    <button
-                      key={cat.id || cat.name || cat}
-                      className={`desktop-section-button ${
-                        selectedCategory === (cat.name || cat)
-                          ? "desktop-section-button--active"
-                          : ""
-                      }`}
-                      onClick={() => setSelectedCategory(cat.name || cat)}
-                    >
-                      <span className="desktop-section-text">
-                        {cat.name || cat}
-                      </span>
-                      <span className="desktop-section-badge">
-                        {
-                          storeFilteredProducts.filter(
-                            (p) => p.category?.name === (cat.name || cat),
-                          ).length
-                        }
-                      </span>
-                    </button>
-                  ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="desktop-main-content">
-          <div className="results-info results-info--desktop">
-            <span className="results-info__text">
-              {getProductsCount()} encontrados en{" "}
-              {stores.find((s) => s.id.toString() === selectedStoreId)?.name ||
-                "Todas las tiendas"}
-            </span>
-          </div>
-          <div className="desktop-products-section">
-            <ProductGrid
-              products={filteredProducts}
-              onProductClick={handleProductClick}
-              isOfferSection={false}
-            />
-          </div>
-        </div>
-      </div>
-    ),
-    [
-      searchTerm,
-      appConfig,
-      stores,
-      selectedStoreId,
-      storeFilteredProducts,
-      filteredCategories,
-      selectedCategory,
-      products,
-      filteredProducts,
-      getProductsCount,
-      handleProductClick,
-      isLoadingCategories,
-    ],
-  );
-
-  if (!appConfig) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-gray-600 font-medium">Error de configuración</p>
-        </div>
-      </div>
-    );
-  }
 
   if (selectedProduct) {
     return (
       <ProductDetail
         product={selectedProduct}
-        onBack={handleBackFromDetail}
+        onBack={() => setSelectedProduct(null)}
         onWhatsAppClick={handleWhatsAppClick}
       />
     );
   }
 
+  const marqueeText = appConfig?.marquee_text || "🚚 Envíos a domicilio — Calculamos el costo según tu ubicación — ¡Recibe tus productos sin salir de casa! 🚚";
+
+  const categoryChips = [
+    { id: "Todos", name: "Todos" },
+    ...filteredCategories.filter((cat) => cat.name !== "Todos"),
+  ];
+
+  const isPopularSection = activeSection === SECTIONS.TODOS && popularProducts.length > 0;
+  const isOfferSection = activeSection === SECTIONS.TODOS && offerProducts.length > 0;
+
   return (
     <div className="client-interface">
       <Header
-        title={<TitleWithIcon />}
-        onInfoClick={handleOpenInfoModal}
-        showInfoButton={!isDesktop}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onMenuClick={() => setIsSideMenuOpen(true)}
+        onCartClick={() => dispatch(toggleCartModal())}
+        cartItemsCount={cartItemsCount}
+        appName={appConfig?.app_name || "La Bodeguita"}
+      />
+
+      {stores.length > 1 && (
+        <div className="client-store-bar client-store-bar--visible">
+          <span className="client-store-bar__label">Tienda:</span>
+          <select
+            value={selectedStoreId}
+            onChange={(e) => setSelectedStoreId(e.target.value)}
+            className="client-store-bar__select"
+          >
+            {stores.map((store) => (
+              <option key={store.id} value={store.id.toString()}>
+                {store.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {marqueeText && (
+        <div className="client-notice-bar">
+          <div className="client-notice-bar__inner">
+            <span className="client-notice-bar__item">{marqueeText}</span>
+            <span className="client-notice-bar__item">{marqueeText}</span>
+          </div>
+        </div>
+      )}
+
+      <div className={`client-main${isLoggedIn ? " client-main--sidebar" : ""}`}>
+        <div>
+          <div className="client-categories">
+            {categoryChips.map((cat) => (
+              <button
+                key={cat.id}
+                className={`client-category-chip ${selectedCategory === cat.name ? "client-category-chip--active" : ""}`}
+                onClick={() => setSelectedCategory(cat.name)}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+
+          {isPopularSection && (
+            <>
+              <div className="client-section-header">
+                <div className="client-section-title">
+                  <span className="material-symbols-outlined client-section-title-icon">star</span>
+                  Populares
+                </div>
+                <button
+                  className="client-section-link"
+                  onClick={() => handleSectionChange(SECTIONS.POPULARES)}
+                >
+                  Ver todos
+                </button>
+              </div>
+              <div className="client-scroll-row">
+                {popularProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="client-product-card"
+                    onClick={() => handleProductClick(product)}
+                  >
+                    <div className="client-product-card__image-wrap">
+                      <img
+                        className="client-product-card__image"
+                        src={product.image_url || "https://via.placeholder.com/200"}
+                        alt={product.name}
+                        loading="lazy"
+                      />
+                      <button
+                        className="client-product-card__add-btn client-product-card__add-btn--visible"
+                        onClick={(e) => { e.stopPropagation(); dispatch(addToCart(product)); }}
+                        aria-label={`Agregar ${product.name}`}
+                      >
+                        <span className="material-symbols-outlined">add</span>
+                      </button>
+                    </div>
+                    <div className="client-product-card__body">
+                      {product.category?.name && (
+                        <div className="client-product-card__category">{product.category.name}</div>
+                      )}
+                      <h3 className="client-product-card__name">{product.name}</h3>
+                      <div className="client-product-card__footer">
+                        <span className="client-product-card__price">
+                          ${parseFloat(product.price).toFixed(2)}{" "}
+                          <span className="client-product-card__price-currency">CUP</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {isOfferSection && (
+            <>
+              <div className="client-section-header">
+                <div className="client-section-title">
+                  <span className="material-symbols-outlined client-section-title-icon">local_offer</span>
+                  Ofertas
+                </div>
+                <button
+                  className="client-section-link"
+                  onClick={() => handleSectionChange(SECTIONS.OFERTAS)}
+                >
+                  Ver todas
+                </button>
+              </div>
+              <div className="client-scroll-row">
+                {offerProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="client-product-card"
+                    onClick={() => handleProductClick(product)}
+                  >
+                    <div className="client-product-card__image-wrap">
+                      <img
+                        className="client-product-card__image"
+                        src={product.image_url || "https://via.placeholder.com/200"}
+                        alt={product.name}
+                        loading="lazy"
+                      />
+                      <button
+                        className="client-product-card__add-btn client-product-card__add-btn--visible"
+                        onClick={(e) => { e.stopPropagation(); dispatch(addToCart(product)); }}
+                        aria-label={`Agregar ${product.name}`}
+                      >
+                        <span className="material-symbols-outlined">add</span>
+                      </button>
+                    </div>
+                    <div className="client-product-card__body">
+                      {product.category?.name && (
+                        <div className="client-product-card__category">{product.category.name}</div>
+                      )}
+                      <h3 className="client-product-card__name">{product.name}</h3>
+                      <div className="client-product-card__footer">
+                        <span className="client-product-card__price">
+                          ${parseFloat(product.price).toFixed(2)}{" "}
+                          <span className="client-product-card__price-currency">CUP</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          <div className="client-section-header">
+            <div className="client-section-title">
+              <span className="material-symbols-outlined client-section-title-icon">
+                {activeSection === SECTIONS.POPULARES ? "star" : activeSection === SECTIONS.OFERTAS ? "local_offer" : "storefront"}
+              </span>
+              {activeSection === SECTIONS.POPULARES
+                ? "Populares"
+                : activeSection === SECTIONS.OFERTAS
+                  ? "Ofertas"
+                  : "Todos los productos"}
+            </div>
+            {searchTerm && (
+              <div className="client-section-link" style={{ opacity: 0.6 }}>
+                "{searchTerm}"
+              </div>
+            )}
+          </div>
+
+          {filteredProducts.length > 0 ? (
+            <div className="client-product-grid">
+              {filteredProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="client-product-card"
+                  onClick={() => handleProductClick(product)}
+                >
+                  <div className="client-product-card__image-wrap">
+                    <img
+                      className="client-product-card__image"
+                      src={product.image_url || "https://via.placeholder.com/200"}
+                      alt={product.name}
+                      loading="lazy"
+                    />
+                    <button
+                      className="client-product-card__add-btn"
+                      onClick={(e) => { e.stopPropagation(); dispatch(addToCart(product)); }}
+                      aria-label={`Agregar ${product.name}`}
+                    >
+                      <span className="material-symbols-outlined">add</span>
+                    </button>
+                  </div>
+                  <div className="client-product-card__body">
+                    {product.category?.name && (
+                      <div className="client-product-card__category">{product.category.name}</div>
+                    )}
+                    <h3 className="client-product-card__name">{product.name}</h3>
+                    <div className="client-product-card__footer">
+                      <span className="client-product-card__price">
+                        ${parseFloat(product.price).toFixed(2)}{" "}
+                        <span className="client-product-card__price-currency">CUP</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="client-empty">
+              <span className="client-empty__icon material-symbols-outlined">search_off</span>
+              <h3 className="client-empty__title">No se encontraron productos</h3>
+              <p className="client-empty__text">Intenta ajustar los filtros o busca con otro término</p>
+            </div>
+          )}
+        </div>
+
+        <RightSidebar
+          isLoggedIn={isLoggedIn}
+          userData={userData}
+          onLogout={onLogout}
+          onShowLogin={onShowLoginForm}
+          onProfileClick={() => setShowProfile(true)}
+        />
+      </div>
+
+      <nav className="client-bottom-nav">
+        {[
+          { id: SECTIONS.TODOS, icon: "storefront", label: "Tienda" },
+          { id: SECTIONS.POPULARES, icon: "star", label: "Populares" },
+          { id: SECTIONS.OFERTAS, icon: "local_offer", label: "Ofertas" },
+          { id: SECTIONS.CONTACTO, icon: "chat", label: "Contacto" },
+        ].map((item) => (
+          <button
+            key={item.id}
+            onClick={() => handleSectionChange(item.id)}
+            className={`client-bottom-nav__btn ${activeSection === item.id ? "client-bottom-nav__btn--active" : ""}`}
+          >
+            <div className="client-bottom-nav__btn-wrap">
+              <span className="material-symbols-outlined">{item.icon}</span>
+              {item.id === SECTIONS.CONTACTO && unreadMessages > 0 && (
+                <span className="client-bottom-nav__badge">{unreadMessages}</span>
+              )}
+            </div>
+            <span className="client-bottom-nav__label">{item.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      <footer className="client-footer">
+        <div className="client-footer__brand">
+          <span className="material-symbols-outlined client-footer__brand-icon">storefront</span>
+          <span className="client-footer__brand-name">{appConfig?.app_name || "La Bodeguita"}</span>
+        </div>
+        <p className="client-footer__copy">© 2024 La Bodeguita Market. Frescura Cubana.</p>
+      </footer>
+
+      <button
+        className="client-fab-chat"
+        onClick={() => setIsChatOpen(true)}
+        aria-label="Abrir chat"
       >
-        <DesktopNavigation />
-        <button
-          className="header-action header-action--icon sidemenu-trigger"
-          onClick={handleOpenSideMenu}
-          title="Menú"
-        >
-          <HiOutlineMenu className="header-action__icon" />
-        </button>
-      </Header>
+        <span className="material-symbols-outlined">chat</span>
+        {unreadMessages > 0 && (
+          <span className="client-fab-chat__badge">{unreadMessages}</span>
+        )}
+      </button>
 
       <CartModal
         isLoggedIn={isLoggedIn}
         onShowLogin={onShowLoginForm}
-        onOpenChat={handleOpenChat}
-        onOrderCreated={() => {
-          setUnreadOrders((prev) => prev + 1);
-        }}
+        onOpenChat={() => setIsChatOpen(true)}
+        onOrderCreated={() => setUnreadOrders((prev) => prev + 1)}
       />
       <InitialInfoModal
         isOpen={showInfoModal}
         onClose={() => setShowInfoModal(false)}
-        initialInfo={appConfig.initialinfo}
+        initialInfo={appConfig?.initialinfo}
       />
-
-      {isDesktop ? renderDesktopLayout : renderMobileLayout}
-
+      <ChatModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        token={localStorage.getItem("token")}
+        userData={userData}
+      />
+      <SideMenu
+        isOpen={isSideMenuOpen}
+        onClose={() => setIsSideMenuOpen(false)}
+        isLoggedIn={isLoggedIn}
+        userData={userData}
+        onLogout={onLogout}
+        onShowLogin={onShowLoginForm}
+        onProfileClick={() => setShowProfile(true)}
+      />
       {showProfile && (
         <UserProfile
           userData={userData}
@@ -900,67 +568,6 @@ const ClientInterface = ({
           unreadOrdersCount={unreadOrders}
         />
       )}
-
-      {!isDesktop && (
-        <BottomNavigation
-          currentView={currentView}
-          onViewChange={onViewChange}
-          onAdminClick={onShowLoginForm}
-          categories={filteredCategories.map((c) => c.name || c)}
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-          onSearchClick={() => {
-            const searchInput = document.querySelector(
-              ".search-bar__input, .client-interface__search-section input",
-            );
-            searchInput?.focus();
-            searchInput?.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
-          }}
-          activeSection={activeSection}
-          onSectionChange={handleSectionChange}
-          isLoggedIn={isLoggedIn}
-          onLogout={onLogout}
-          onShowLogin={onShowLoginForm}
-          onProfileClick={handleOpenProfile}
-          currentStoreName={
-            stores.find((s) => s.id.toString() === selectedStoreId)?.name ||
-            "Tiendas"
-          }
-          unreadOrdersCount={unreadOrders}
-        />
-      )}
-
-      <button
-        className="floating-chat-button"
-        onClick={handleOpenChat}
-        title="Chatear con soporte"
-      >
-        <HiOutlineChat className="chat-icon" />
-        {unreadMessages > 0 && (
-          <span className="chat-badge">{unreadMessages}</span>
-        )}
-        <div className="chat-pulse"></div>
-      </button>
-
-      <ChatModal
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        token={localStorage.getItem("token")}
-        userData={userData}
-      />
-
-      <SideMenu
-        isOpen={isSideMenuOpen}
-        onClose={() => setIsSideMenuOpen(false)}
-        isLoggedIn={isLoggedIn}
-        userData={userData}
-        onLogout={onLogout}
-        onShowLogin={onShowLoginForm}
-        onProfileClick={handleOpenProfile}
-      />
     </div>
   );
 };

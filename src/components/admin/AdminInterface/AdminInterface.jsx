@@ -1,23 +1,9 @@
-// components/admin/AdminInterface.jsx - VERSIÓN OPTIMIZADA
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useAppNavigation } from "../../../hooks/useNavigationHistory";
-import {
-  HiOutlineChartBar,
-  HiOutlineTag,
-  HiOutlineCube,
-  HiOutlineLogout,
-  HiOutlineMenu,
-  HiOutlineCog,
-  HiOutlineX,
-  HiOutlineShieldCheck,
-  HiOutlineUserCircle,
-  HiOutlineUsers,
-  HiOutlineChat,
-  HiOutlineClipboardList,
-  HiOutlineCollection,
-} from "react-icons/hi";
 import Swal from "sweetalert2";
+
+import "../admin.css";
 
 import AdminHeader from "../AdminHeader/AdminHeader";
 import DashboardStats from "../DashboardStats/DashboardStats";
@@ -42,19 +28,17 @@ import {
 import { startLogout } from "../../../actions/authActions";
 import { resetCart } from "../../../actions/cartActions";
 
-import "./AdminInterface.css";
-
 const API_URL = import.meta.env.VITE_API_URL;
 
 const MENU_ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: HiOutlineChartBar },
-  { id: "orders", label: "Pedidos", icon: HiOutlineClipboardList, badge: true },
-  { id: "chats", label: "Chats", icon: HiOutlineChat, badge: true },
-  { id: "stores", label: "Tiendas", icon: HiOutlineCollection },
-  { id: "products", label: "Productos", icon: HiOutlineCube },
-  { id: "categories", label: "Categorías", icon: HiOutlineTag },
-  { id: "users", label: "Usuarios Admin", icon: HiOutlineUsers },
-  { id: "config", label: "Configuración App", icon: HiOutlineCog },
+  { id: "dashboard", label: "Dashboard", icon: "dashboard" },
+  { id: "orders", label: "Pedidos", icon: "orders", badge: true },
+  { id: "chats", label: "Chats", icon: "chat", badge: true },
+  { id: "stores", label: "Tiendas", icon: "store" },
+  { id: "products", label: "Productos", icon: "inventory" },
+  { id: "categories", label: "Categorías", icon: "category" },
+  { id: "users", label: "Usuarios Admin", icon: "manage_accounts" },
+  { id: "config", label: "Configuración App", icon: "settings" },
 ];
 
 const AdminInterface = ({ onLogout }) => {
@@ -262,10 +246,10 @@ const AdminInterface = ({ onLogout }) => {
         text: "Los productos de esta categoría quedarán sin categoría",
         icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: "#ef4444",
-        cancelButtonColor: "#6b7280",
-        confirmButtonText: "Sí, eliminar",
-        cancelButtonText: "Cancelar",
+      confirmButtonColor: "var(--color-error)",
+      cancelButtonColor: "var(--color-on-surface-variant)",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
       }).then((result) => {
         if (result.isConfirmed) dispatch(deleteCategory(categoryName));
       });
@@ -308,32 +292,33 @@ const AdminInterface = ({ onLogout }) => {
           />
         );
       case "stores":
-        return (
-          <div className="admin-section">
-            <StoreManager />
-          </div>
-        );
+        return <StoreManager />;
       case "products":
         return (
-          <div className="admin-section">
-            <div className="admin-section__header">
-              <h2 className="admin-section__title">Gestión de Productos</h2>
+          <div>
+            <div className="admin-page-header admin-page-header--row">
+              <h2 className="admin-page-header__title">
+                <span className="material-symbols-outlined">inventory</span>
+                Gestión de Productos
+              </h2>
               <button
                 onClick={() => handleOpenProductForm()}
-                className="admin-section__add-button"
+                className="admin-btn admin-btn--primary"
               >
+                <span className="admin-btn__icon">add</span>
                 Agregar Producto
               </button>
             </div>
             {products.length === 0 ? (
-              <div className="admin-section__empty">
-                <HiOutlineCube className="admin-section__empty-icon" />
-                <h3>No hay productos</h3>
-                <p>Comienza agregando tu primer producto al catálogo</p>
+              <div className="admin-empty">
+                <span className="admin-empty__icon material-symbols-outlined">inventory</span>
+                <h3 className="admin-empty__title">No hay productos</h3>
+                <p className="admin-empty__text">Comienza agregando tu primer producto al catálogo</p>
                 <button
                   onClick={() => handleOpenProductForm()}
-                  className="admin-section__empty-button"
+                  className="admin-btn admin-btn--primary"
                 >
+                  <span className="admin-btn__icon">add</span>
                   Agregar Primer Producto
                 </button>
               </div>
@@ -344,8 +329,13 @@ const AdminInterface = ({ onLogout }) => {
         );
       case "categories":
         return (
-          <div className="admin-section">
-            <h2 className="admin-section__title">Gestión de Categorías</h2>
+          <div>
+            <div className="admin-page-header">
+              <h2 className="admin-page-header__title">
+                <span className="material-symbols-outlined">category</span>
+                Gestión de Categorías
+              </h2>
+            </div>
             <CategoryManager
               categories={categories}
               onAddCategory={handleAddCategory}
@@ -356,10 +346,7 @@ const AdminInterface = ({ onLogout }) => {
         );
       case "chats":
         return (
-          <div
-            className="admin-section"
-            style={{ height: "calc(100vh - 120px)", padding: 0 }}
-          >
+          <div style={{ height: "calc(100vh - 120px)" }}>
             <AdminChatManager
               selectedUserId={selectedChatUserId}
               onSelectUser={setSelectedChatUserId}
@@ -369,26 +356,25 @@ const AdminInterface = ({ onLogout }) => {
         );
       case "users":
         return (
-          <div className="admin-section">
-            <h2 className="admin-section__title">
-              Gestión de Usuarios Administradores
-            </h2>
+          <div>
+            <div className="admin-page-header">
+              <h2 className="admin-page-header__title">
+                <span className="material-symbols-outlined">admin_panel_settings</span>
+                Gestión de Usuarios Administradores
+              </h2>
+            </div>
             <AdminUsersManager users={adminUsers} />
           </div>
         );
       case "config":
         return (
-          <div className="admin-section">
-            <h2 className="admin-section__title">Configuración de la App</h2>
+          <div>
             <AppConfigManager />
           </div>
         );
       case "orders":
         return (
-          <div
-            className="admin-section"
-            style={{ height: "calc(100vh - 120px)", padding: 0 }}
-          >
+          <div style={{ height: "calc(100vh - 120px)" }}>
             <AdminOrdersManager
               token={localStorage.getItem("token")}
               onOpenChatWithUser={handleOpenChatFromOrders}
@@ -414,85 +400,88 @@ const AdminInterface = ({ onLogout }) => {
   };
 
   return (
-    <div className="admin-interface">
+    <div className="admin-layout">
       <AdminHeader>
-        <div className="admin-header__content">
-          <div className="admin-header__left">
-            <div className="admin-header__brand">
-              <div className="admin-header__icon-wrapper">
-                <HiOutlineShieldCheck className="admin-header__icon" />
-              </div>
-              <div className="admin-header__text">
-                <h1 className="admin-header__title">Panel de Administración</h1>
-                <p className="admin-header__subtitle">
-                  Gestión completa de tu tienda
-                </p>
-              </div>
-            </div>
+        <div className="admin-header__brand">
+          <div className="admin-header__logo">
+            <span className="admin-header__logo-icon material-symbols-outlined">admin_panel_settings</span>
           </div>
-          <div className="admin-header__right">
-            <div className="admin-header__user-info">
-              <HiOutlineUserCircle className="admin-header__user-icon" />
-              <div className="admin-header__user-details">
-                <span className="admin-header__user-name">Administrador</span>
-                <span className="admin-header__user-role">Super Admin</span>
-              </div>
-            </div>
-            <button
-              className="admin-interface__mobile-menu"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Menú de navegación"
-            >
-              {isMobileMenuOpen ? <HiOutlineX /> : <HiOutlineMenu />}
-            </button>
+          <div className="admin-header__info">
+            <h1 className="admin-header__info-title">La Bodeguita — Admin</h1>
+            <p className="admin-header__info-subtitle">Gestión completa de tu tienda</p>
           </div>
+        </div>
+        <div className="admin-header__user">
+          <div className="admin-header__user-details">
+            <p className="admin-header__info-title" style={{ fontSize: "var(--text-label-sm)" }}>Administrador</p>
+            <p className="admin-header__info-subtitle">Super Admin</p>
+          </div>
+          <div className="admin-header__user-avatar">
+            <span className="admin-header__user-avatar-icon material-symbols-outlined">person</span>
+          </div>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="admin-header__menu-btn"
+            aria-label="Menú de navegación"
+          >
+            <span className="material-symbols-outlined">
+              {isMobileMenuOpen ? "close" : "menu"}
+            </span>
+          </button>
         </div>
       </AdminHeader>
 
-      <div className="admin-interface__layout">
-        <nav
-          className={`admin-sidebar ${isMobileMenuOpen ? "admin-sidebar--open" : ""}`}
-        >
-          <div className="admin-sidebar__header">
-            <h3 className="admin-sidebar__title">Menú Admin</h3>
-          </div>
-          <div className="admin-sidebar__menu">
-            {MENU_ITEMS.map((item) => {
-              const Icon = item.icon;
-              let badgeCount = 0;
-              if (item.id === "chats") badgeCount = chatBadgeCount;
-              else if (item.id === "orders") badgeCount = pendingOrders;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleSectionChange(item.id)}
-                  className={`admin-sidebar__item ${activeSection === item.id ? "admin-sidebar__item--active" : ""}`}
-                >
-                  <Icon className="admin-sidebar__icon" />
-                  <span className="admin-sidebar__label">{item.label}</span>
-                  {badgeCount > 0 && (
-                    <span
-                      className={`admin-sidebar__badge ${item.id === "chats" && usersNeedingAttention > 0 ? "admin-sidebar__badge--warning" : ""}`}
-                    >
-                      {badgeCount > 99 ? "99+" : badgeCount}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-            <button
-              onClick={handleLogout}
-              className="admin-sidebar__item admin-sidebar__item--logout"
-            >
-              <HiOutlineLogout className="admin-sidebar__icon" />
-              <span className="admin-sidebar__label">Cerrar Sesión</span>
-            </button>
-          </div>
-        </nav>
-        <main className="admin-main">
-          <div className="admin-main__content">{renderContent()}</div>
-        </main>
-      </div>
+      <nav
+        className={`admin-layout__sidebar ${isMobileMenuOpen ? "admin-layout__sidebar--open" : ""}`}
+      >
+        <div className="admin-layout__sidebar-header">
+          <h3 className="admin-layout__sidebar-title">La Bodeguita</h3>
+        </div>
+        <div className="admin-layout__sidebar-nav">
+          {MENU_ITEMS.map((item) => {
+            let badgeCount = 0;
+            if (item.id === "chats") badgeCount = chatBadgeCount;
+            else if (item.id === "orders") badgeCount = pendingOrders;
+            const badgeClass = item.id === "chats" && usersNeedingAttention > 0
+              ? "admin-nav__badge--warning"
+              : "admin-nav__badge--primary";
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleSectionChange(item.id)}
+                className={`admin-nav__item ${activeSection === item.id ? "admin-nav__item--active" : ""}`}
+              >
+                <span className="admin-nav__icon material-symbols-outlined">{item.icon}</span>
+                <span className="admin-nav__label">{item.label}</span>
+                {badgeCount > 0 && (
+                  <span className={`admin-nav__badge ${badgeClass}`}>
+                    {badgeCount > 99 ? "99+" : badgeCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+          <hr className="admin-layout__sidebar-divider" />
+          <button
+            onClick={handleLogout}
+            className="admin-nav__item admin-nav__item--danger"
+          >
+            <span className="admin-nav__icon material-symbols-outlined">logout</span>
+            <span className="admin-nav__label">Cerrar Sesión</span>
+          </button>
+        </div>
+      </nav>
+
+      {isMobileMenuOpen && (
+        <div
+          className="admin-layout__overlay admin-layout__overlay--visible"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      <main className="admin-layout__content desktop-main-content">
+        <div className="admin-layout__content-inner">{renderContent()}</div>
+      </main>
 
       {showAddForm && (
         <ProductForm

@@ -1,14 +1,4 @@
-// components/admin/AdminDiagnostic/AdminDiagnostic.jsx - VERSIÓN OPTIMIZADA
 import React, { useState, useEffect } from "react";
-import {
-  HiOutlineShieldCheck,
-  HiOutlineUser,
-  HiOutlineRefresh,
-  HiOutlineClipboardCopy,
-  HiOutlineCheck,
-  HiOutlineX,
-} from "react-icons/hi";
-import "./AdminDiagnostic.css";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
@@ -94,13 +84,13 @@ const AdminDiagnostic = () => {
       const data = await res.json();
       if (data.ok) {
         localStorage.setItem("token", data.token);
-        alert("✅ Login con admin exitoso! Recargando página...");
+        alert("[OK] Login con admin exitoso! Recargando página...");
         window.location.reload();
       } else {
-        alert(`❌ Error: ${data.msg}`);
+        alert(`[ERROR] ${data.msg}`);
       }
     } catch (error) {
-      alert(`❌ Error: ${error.message}`);
+      alert(`[ERROR] ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -134,25 +124,28 @@ const AdminDiagnostic = () => {
   return (
     <div className="admin-diagnostic">
       <div className="admin-diagnostic__header">
-        <HiOutlineShieldCheck className="admin-diagnostic__icon" />
-        <h2>Diagnóstico de Administrador</h2>
-        <button className="admin-diagnostic__copy" onClick={copyDiagnostic}>
-          {copied ? <HiOutlineCheck /> : <HiOutlineClipboardCopy />}
+        <div className="admin-diagnostic__header-left">
+          <span className="admin-diagnostic__icon material-symbols-outlined">verified</span>
+          <h2 className="admin-diagnostic__title">Diagnóstico de Administrador</h2>
+        </div>
+        <button
+          className="admin-btn admin-btn--secondary admin-btn--sm"
+          onClick={copyDiagnostic}
+        >
+          <span className="admin-btn__icon admin-btn__icon--sm material-symbols-outlined">{copied ? "check" : "content_copy"}</span>
           {copied ? "Copiado" : "Copiar diagnóstico"}
         </button>
       </div>
 
-      <div
-        className={`admin-diagnostic__status ${isAdmin ? "success" : "error"}`}
-      >
-        <div className="status-icon">
-          {isAdmin ? <HiOutlineCheck size={24} /> : <HiOutlineX size={24} />}
+      <div className={`admin-diagnostic__status ${isAdmin ? "admin-diagnostic__status--success" : "admin-diagnostic__status--error"}`}>
+        <div className="admin-diagnostic__status-icon">
+          <span className="material-symbols-outlined">{isAdmin ? "check" : "close"}</span>
         </div>
-        <div className="status-info">
-          <h3>
-            {isAdmin ? "✅ Usuario Administrador" : "❌ NO es Administrador"}
+        <div>
+          <h3 className="admin-diagnostic__status-title">
+            {isAdmin ? "Usuario Administrador" : "NO es Administrador"}
           </h3>
-          <p>
+          <p className="admin-diagnostic__status-text">
             {isAdmin
               ? "Tienes permisos para gestionar usuarios"
               : "No tienes permisos para eliminar usuarios. Debes iniciar sesión con una cuenta de administrador."}
@@ -161,40 +154,37 @@ const AdminDiagnostic = () => {
       </div>
 
       <div className="admin-diagnostic__section">
-        <h3>
-          <HiOutlineUser /> Token JWT
+        <h3 className="admin-diagnostic__section-title">
+          <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--color-on-surface-variant)" }}>person</span>
+          Token JWT
         </h3>
         {tokenInfo?.error ? (
-          <div className="error-message">{tokenInfo.error}</div>
+          <div className="admin-diagnostic__code" style={{ color: "var(--color-error)" }}>{tokenInfo.error}</div>
         ) : (
-          <div className="info-grid">
-            <div className="info-row">
-              <span className="label">UID:</span>
-              <span className="value">{tokenInfo?.uid || "N/A"}</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+            <div className="admin-diagnostic__row">
+              <span className="admin-diagnostic__row-label">UID:</span>
+              <span className="admin-diagnostic__row-value">{tokenInfo?.uid || "N/A"}</span>
             </div>
-            <div className="info-row">
-              <span className="label">Rol en token:</span>
-              <span
-                className={`value ${tokenInfo?.role === "admin" ? "admin" : "not-admin"}`}
-              >
+            <div className="admin-diagnostic__row">
+              <span className="admin-diagnostic__row-label">Rol en token:</span>
+              <span className={`admin-diagnostic__row-value ${tokenInfo?.role === "admin" ? "admin-diagnostic__row-value--success" : "admin-diagnostic__row-value--error"}`}>
                 {tokenInfo?.role || "NO DEFINIDO"}
               </span>
             </div>
-            <div className="info-row">
-              <span className="label">Token válido:</span>
-              <span
-                className={`value ${tokenInfo?.isValid ? "valid" : "invalid"}`}
-              >
+            <div className="admin-diagnostic__row">
+              <span className="admin-diagnostic__row-label">Token válido:</span>
+              <span className={`admin-diagnostic__row-value ${tokenInfo?.isValid ? "admin-diagnostic__row-value--success" : "admin-diagnostic__row-value--error"}`}>
                 {tokenInfo?.isValid ? "Sí" : "No (expirado)"}
               </span>
             </div>
-            <div className="info-row">
-              <span className="label">Expira:</span>
-              <span className="value">{tokenInfo?.exp || "N/A"}</span>
+            <div className="admin-diagnostic__row">
+              <span className="admin-diagnostic__row-label">Expira:</span>
+              <span className="admin-diagnostic__row-value">{tokenInfo?.exp || "N/A"}</span>
             </div>
-            <div className="info-row full-width">
-              <span className="label">Payload completo:</span>
-              <pre className="json-preview">
+            <div style={{ paddingTop: "4px" }}>
+              <span className="admin-diagnostic__row-label" style={{ display: "block", marginBottom: "8px" }}>Payload completo:</span>
+              <pre className="admin-diagnostic__code">
                 {JSON.stringify(tokenInfo?.raw, null, 2)}
               </pre>
             </div>
@@ -203,54 +193,55 @@ const AdminDiagnostic = () => {
       </div>
 
       <div className="admin-diagnostic__section">
-        <h3>
-          <HiOutlineUser /> Perfil (API /profile)
+        <h3 className="admin-diagnostic__section-title">
+          <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--color-on-surface-variant)" }}>person</span>
+          Perfil (API /profile)
         </h3>
-        {loading && <div className="loading">Cargando...</div>}
+        {loading && <div className="admin-loading"><div className="admin-spinner admin-spinner--sm" /></div>}
         {userInfo?.error ? (
-          <div className="error-message">{userInfo.error}</div>
+          <div className="admin-diagnostic__code" style={{ color: "var(--color-error)" }}>{userInfo.error}</div>
         ) : (
-          <div className="info-grid">
-            <div className="info-row">
-              <span className="label">Username:</span>
-              <span className="value">{userInfo?.user?.username || "N/A"}</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+            <div className="admin-diagnostic__row">
+              <span className="admin-diagnostic__row-label">Username:</span>
+              <span className="admin-diagnostic__row-value">{userInfo?.user?.username || "N/A"}</span>
             </div>
-            <div className="info-row">
-              <span className="label">Rol en BD:</span>
-              <span
-                className={`value ${userInfo?.user?.role === "admin" ? "admin" : "not-admin"}`}
-              >
+            <div className="admin-diagnostic__row">
+              <span className="admin-diagnostic__row-label">Rol en BD:</span>
+              <span className={`admin-diagnostic__row-value ${userInfo?.user?.role === "admin" ? "admin-diagnostic__row-value--success" : "admin-diagnostic__row-value--error"}`}>
                 {userInfo?.user?.role || "NO DEFINIDO"}
               </span>
             </div>
-            <div className="info-row">
-              <span className="label">Activo:</span>
-              <span
-                className={`value ${userInfo?.user?.is_active ? "valid" : "invalid"}`}
-              >
+            <div className="admin-diagnostic__row">
+              <span className="admin-diagnostic__row-label">Activo:</span>
+              <span className={`admin-diagnostic__row-value ${userInfo?.user?.is_active ? "admin-diagnostic__row-value--success" : "admin-diagnostic__row-value--error"}`}>
                 {userInfo?.user?.is_active ? "Sí" : "No"}
               </span>
             </div>
-            <div className="info-row">
-              <span className="label">Email:</span>
-              <span className="value">{userInfo?.user?.email || "N/A"}</span>
+            <div className="admin-diagnostic__row">
+              <span className="admin-diagnostic__row-label">Email:</span>
+              <span className="admin-diagnostic__row-value">{userInfo?.user?.email || "N/A"}</span>
             </div>
           </div>
         )}
       </div>
 
       <div className="admin-diagnostic__section">
-        <h3>🔧 Debug (/debug/me)</h3>
+        <h3 className="admin-diagnostic__section-title">
+          <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--color-on-surface-variant)" }}>build</span>
+          Debug (/debug/me)
+        </h3>
         {diagnosticData?.error ? (
-          <div className="error-message">
-            {diagnosticData.error}
-            <p className="hint">
-              El endpoint /debug/me no existe. Agrégalo temporalmente en
-              routes/auth.js
+          <div>
+            <div className="admin-diagnostic__code" style={{ color: "var(--color-error)" }}>
+              {diagnosticData.error}
+            </div>
+            <p className="admin-diagnostic__row-label" style={{ marginTop: "8px" }}>
+              El endpoint /debug/me no existe. Agrégalo temporalmente en routes/auth.js
             </p>
           </div>
         ) : (
-          <pre className="json-preview">
+          <pre className="admin-diagnostic__code">
             {JSON.stringify(diagnosticData, null, 2)}
           </pre>
         )}
@@ -258,42 +249,46 @@ const AdminDiagnostic = () => {
 
       <div className="admin-diagnostic__actions">
         <button
-          className="btn-refresh"
+          className="admin-btn admin-btn--primary"
           onClick={() => window.location.reload()}
         >
-          <HiOutlineRefresh /> Recargar página
+          <span className="admin-btn__icon material-symbols-outlined">refresh</span>
+          Recargar página
         </button>
         <button
-          className="btn-force-login"
+          className="admin-btn admin-btn--secondary"
           onClick={forceAdminLogin}
           disabled={loading}
         >
-          {loading ? "Cargando..." : "🔐 Forzar login como Admin"}
+          {loading ? "Cargando..." : "Forzar login como Admin"}
         </button>
       </div>
 
-      <div className="admin-diagnostic__solutions">
-        <h3>💡 Posibles soluciones</h3>
-        <ul>
-          <li>
-            <strong>Si el rol en token es "NO DEFINIDO":</strong> El backend no
+      <div className="admin-diagnostic__section">
+        <h3 className="admin-diagnostic__section-title">
+          <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--color-on-surface-variant)" }}>lightbulb</span>
+          Posibles soluciones
+        </h3>
+        <ul style={{ display: "flex", flexDirection: "column", gap: "16px", margin: 0, padding: 0, listStyle: "none" }}>
+          <li style={{ fontFamily: "var(--font-body-md)", fontSize: "var(--text-body-md)", color: "var(--color-on-surface-variant)" }}>
+            <strong>Si el rol en token es &quot;NO DEFINIDO&quot;:</strong> El backend no
             está incluyendo el rol al generar el JWT. Revisa el archivo{" "}
-            <code>helpers/jwt.js</code> - debe incluir <code>role</code> en el
+            <code className="admin-diagnostic__code" style={{ display: "inline", padding: "2px 6px" }}>helpers/jwt.js</code> - debe incluir <code className="admin-diagnostic__code" style={{ display: "inline", padding: "2px 6px" }}>role</code> en el
             payload.
           </li>
-          <li>
-            <strong>Si el rol en token es "customer" o "cliente":</strong> No
-            estás logueado como admin. Usa el botón "Forzar login como Admin"
+          <li style={{ fontFamily: "var(--font-body-md)", fontSize: "var(--text-body-md)", color: "var(--color-on-surface-variant)" }}>
+            <strong>Si el rol en token es &quot;customer&quot; o &quot;cliente&quot;:</strong> No
+            estás logueado como admin. Usa el botón &quot;Forzar login como Admin&quot;
             arriba.
           </li>
-          <li>
+          <li style={{ fontFamily: "var(--font-body-md)", fontSize: "var(--text-body-md)", color: "var(--color-on-surface-variant)" }}>
             <strong>Si el token está expirado:</strong> Haz logout y vuelve a
             iniciar sesión.
           </li>
-          <li>
+          <li style={{ fontFamily: "var(--font-body-md)", fontSize: "var(--text-body-md)", color: "var(--color-on-surface-variant)" }}>
             <strong>Si el usuario no existe en BD o no es admin:</strong>{" "}
             Ejecuta este SQL:
-            <pre className="sql-code">{`UPDATE users SET role = 'admin' WHERE username = 'admin';
+            <pre className="admin-diagnostic__code" style={{ marginTop: "8px" }}>{`UPDATE users SET role = 'admin' WHERE username = 'admin';
 INSERT INTO users (username, password_hash, email, full_name, role, is_active) VALUES ('admin', crypt('admin123', gen_salt('bf')), 'admin@farmaexpress.com', 'Administrador', 'admin', true);`}</pre>
           </li>
         </ul>

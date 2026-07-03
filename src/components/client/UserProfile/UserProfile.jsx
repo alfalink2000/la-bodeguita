@@ -1,26 +1,5 @@
-// components/client/UserProfile/UserProfile.jsx - VERSIÓN COMPLETA OPTIMIZADA
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  HiOutlineX,
-  HiOutlineUser,
-  HiOutlinePhone,
-  HiOutlineLocationMarker,
-  HiOutlineMail,
-  HiOutlineClipboardList,
-  HiOutlineClock,
-  HiOutlineTruck,
-  HiOutlineCurrencyDollar,
-  HiOutlineShoppingBag,
-  HiOutlineLogout,
-  HiOutlineIdentification,
-  HiOutlineAtSymbol,
-  HiOutlineChevronDown,
-  HiOutlineChevronUp,
-  HiOutlineLockClosed,
-  HiOutlineEye,
-  HiOutlineEyeOff,
-} from "react-icons/hi";
 import Swal from "sweetalert2";
 import { startLogout, updateUserProfile } from "../../../actions/authActions";
 import { resetCart } from "../../../actions/cartActions";
@@ -82,10 +61,7 @@ const UserProfile = ({
   const currencySymbol = useSelector(selectCurrencySymbol);
 
   const toggleExpandOrder = (orderId) => {
-    setExpandedOrders((prev) => ({
-      ...prev,
-      [orderId]: !prev[orderId],
-    }));
+    setExpandedOrders((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
   };
 
   useEffect(() => {
@@ -112,14 +88,12 @@ const UserProfile = ({
   const loadOrders = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
-
     setLoadingOrders(true);
     try {
       const res = await fetch(`${API_URL}/api/orders/mine`, {
         headers: { "x-token": token },
       });
       const data = await res.json();
-
       if (data.ok) {
         setOrders(data.pedidos || []);
       }
@@ -152,33 +126,38 @@ const UserProfile = ({
       case "open":
         return {
           label: "Abierto",
-          color: "#3b82f6",
-          bg: "#dbeafe",
-          icon: "🆕",
+          color: "var(--color-primary)",
+          bg: "color-mix(in srgb, var(--color-primary) 8%, transparent)",
+          icon: "hourglass_top",
         };
       case "pending":
         return {
           label: "En Proceso",
-          color: "#f59e0b",
-          bg: "#fef3c7",
-          icon: "⏳",
+          color: "var(--color-warning)",
+          bg: "color-mix(in srgb, var(--color-warning) 15%, transparent)",
+          icon: "progress_activity",
         };
       case "completed":
         return {
           label: "Completado",
-          color: "#10b981",
-          bg: "#d1fae5",
-          icon: "✅",
+          color: "var(--color-primary)",
+          bg: "color-mix(in srgb, var(--color-primary) 8%, transparent)",
+          icon: "check_circle",
         };
       case "cancelled":
         return {
           label: "Cancelado",
-          color: "#ef4444",
-          bg: "#fee2e2",
-          icon: "❌",
+          color: "var(--color-error)",
+          bg: "color-mix(in srgb, var(--color-error) 10%, transparent)",
+          icon: "cancel",
         };
       default:
-        return { label: status, color: "#6b7280", bg: "#f3f4f6", icon: "📦" };
+        return {
+          label: status,
+          color: "var(--color-on-surface-variant)",
+          bg: "var(--color-surface-container)",
+          icon: "package",
+        };
     }
   };
 
@@ -220,20 +199,16 @@ const UserProfile = ({
 
   const validatePasswordForm = () => {
     const errors = {};
-
     if (!passwordData.currentPassword.trim()) {
       errors.currentPassword = "La contraseña actual es obligatoria";
     }
-
     if (passwordData.newPassword && passwordData.newPassword.length < 6) {
       errors.newPassword =
         "La nueva contraseña debe tener al menos 6 caracteres";
     }
-
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       errors.confirmPassword = "Las contraseñas no coinciden";
     }
-
     setPasswordErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -245,38 +220,29 @@ const UserProfile = ({
         icon: "warning",
         title: "Errores en el formulario",
         html: errorMessages,
-        confirmButtonColor: "#059669",
+        confirmButtonColor: "var(--color-primary)",
       });
       return;
     }
-
     setChangingPassword(true);
-
     try {
       const token = localStorage.getItem("token");
-
       const res = await fetch(`${API_URL}/api/auth/profile/password`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-token": token,
-        },
+        headers: { "Content-Type": "application/json", "x-token": token },
         body: JSON.stringify({
           current_password: passwordData.currentPassword,
           new_password: passwordData.newPassword,
         }),
       });
-
       const data = await res.json();
-
       if (data.ok) {
         Swal.fire({
           icon: "success",
           title: "Contraseña actualizada",
           text: "Tu contraseña ha sido cambiada correctamente",
-          confirmButtonColor: "#059669",
+          confirmButtonColor: "var(--color-primary)",
         });
-
         setPasswordData({
           currentPassword: "",
           newPassword: "",
@@ -288,7 +254,7 @@ const UserProfile = ({
           icon: "error",
           title: "Error",
           text: data.msg || "No se pudo cambiar la contraseña",
-          confirmButtonColor: "#ef4444",
+          confirmButtonColor: "var(--color-error)",
         });
       }
     } catch (err) {
@@ -297,7 +263,7 @@ const UserProfile = ({
         icon: "error",
         title: "Error de conexión",
         text: "No se pudo conectar con el servidor",
-        confirmButtonColor: "#ef4444",
+        confirmButtonColor: "var(--color-error)",
       });
     } finally {
       setChangingPassword(false);
@@ -332,13 +298,11 @@ const UserProfile = ({
         icon: "error",
         title: "GPS no disponible",
         text: "Tu dispositivo no soporta geolocalización",
-        confirmButtonColor: "#059669",
+        confirmButtonColor: "var(--color-primary)",
       });
       return;
     }
-
     setGettingLocation(true);
-
     Swal.fire({
       title: "Obteniendo ubicación...",
       text: "Por favor permite el acceso a tu ubicación",
@@ -347,11 +311,9 @@ const UserProfile = ({
         Swal.showLoading();
       },
     });
-
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-
         try {
           const res = await fetch(`${API_URL}/api/geocoding/reverse`, {
             method: "POST",
@@ -359,27 +321,20 @@ const UserProfile = ({
             body: JSON.stringify({ lat: latitude, lng: longitude }),
           });
           const data = await res.json();
-
-          let addressText;
-
-          if (data.ok && data.display_name) {
-            addressText = data.display_name;
-          } else {
-            addressText = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-          }
-
+          let addressText =
+            data.ok && data.display_name
+              ? data.display_name
+              : `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
           setEditForm((prev) => ({
             ...prev,
             lat: latitude,
             lng: longitude,
             address: addressText,
           }));
-
           setGettingLocation(false);
-
           Swal.fire({
             icon: "success",
-            title: "¡Ubicación obtenida!",
+            title: "Ubicación obtenida!",
             text:
               addressText.length > 60
                 ? addressText.substring(0, 60) + "..."
@@ -396,12 +351,10 @@ const UserProfile = ({
             lng: longitude,
             address: coordText,
           }));
-
           setGettingLocation(false);
-
           Swal.fire({
             icon: "success",
-            title: "¡Ubicación obtenida!",
+            title: "Ubicación obtenida!",
             text: "Coordenadas GPS registradas correctamente",
             timer: 2000,
             showConfirmButton: false,
@@ -411,9 +364,7 @@ const UserProfile = ({
       (error) => {
         console.error("Error GPS:", error);
         setGettingLocation(false);
-
         let errorMsg = "No se pudo obtener tu ubicación.";
-
         switch (error.code) {
           case error.PERMISSION_DENIED:
             errorMsg =
@@ -426,19 +377,14 @@ const UserProfile = ({
             errorMsg = "Tiempo de espera agotado al obtener ubicación.";
             break;
         }
-
         Swal.fire({
           icon: "error",
           title: "Error de ubicación",
           text: errorMsg,
-          confirmButtonColor: "#059669",
+          confirmButtonColor: "var(--color-primary)",
         });
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0,
-      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
   };
 
@@ -448,45 +394,39 @@ const UserProfile = ({
         icon: "error",
         title: "Campo requerido",
         text: "El nombre de usuario es obligatorio",
-        confirmButtonColor: "#059669",
+        confirmButtonColor: "var(--color-primary)",
       });
       return;
     }
-
     if (!validateUsername(editForm.username)) {
       Swal.fire({
         icon: "error",
         title: "Usuario inválido",
         text: usernameError,
-        confirmButtonColor: "#059669",
+        confirmButtonColor: "var(--color-primary)",
       });
       return;
     }
-
     if (editForm.email && editForm.email.trim() !== "") {
       if (!validateEmail(editForm.email)) {
         Swal.fire({
           icon: "error",
           title: "Email inválido",
           text: emailError,
-          confirmButtonColor: "#059669",
+          confirmButtonColor: "var(--color-primary)",
         });
         return;
       }
     }
-
     setSaving(true);
-
     const bodyData = {
       username: editForm.username.trim(),
       phone: editForm.phone?.trim() || "",
       address: editForm.address?.trim() || "",
     };
-
     if (editForm.email && editForm.email.trim() !== "") {
       bodyData.email = editForm.email.trim();
     }
-
     if (
       editForm.lat !== null &&
       editForm.lat !== undefined &&
@@ -501,18 +441,15 @@ const UserProfile = ({
     ) {
       bodyData.lng = parseFloat(editForm.lng);
     }
-
     try {
       const success = await dispatch(updateUserProfile(bodyData));
-
       if (success) {
         Swal.fire({
           icon: "success",
           title: "Perfil actualizado",
           text: "Tus datos han sido actualizados correctamente.",
-          confirmButtonColor: "#059669",
+          confirmButtonColor: "var(--color-primary)",
         });
-
         setIsEditing(false);
       }
     } catch (err) {
@@ -521,7 +458,7 @@ const UserProfile = ({
         icon: "error",
         title: "Error de conexión",
         text: "No se pudo conectar con el servidor",
-        confirmButtonColor: "#ef4444",
+        confirmButtonColor: "var(--color-error)",
       });
     } finally {
       setSaving(false);
@@ -530,12 +467,12 @@ const UserProfile = ({
 
   const handleLogout = () => {
     Swal.fire({
-      title: "¿Cerrar sesión?",
+      title: "Cerrar sesión?",
       text: "Se cerrará tu sesión actual",
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#6b7280",
+      confirmButtonColor: "var(--color-error)",
+      cancelButtonColor: "var(--color-on-surface-variant)",
       confirmButtonText: "Sí, cerrar sesión",
       cancelButtonText: "Cancelar",
     }).then((result) => {
@@ -551,50 +488,79 @@ const UserProfile = ({
   };
 
   return (
-    <div className="user-profile-overlay" onClick={onClose}>
-      <div className="user-profile-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="up-header">
-          <button className="up-close" onClick={onClose}>
-            <HiOutlineX size={20} />
+    <div
+      className="user-profile"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="user-profile__container"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <header className="user-profile__header">
+          <button
+            onClick={onClose}
+            className="user-profile__close-btn"
+            aria-label="Cerrar"
+          >
+            <span className="material-symbols-outlined">close</span>
           </button>
-          <div className="up-avatar">
-            <HiOutlineUser size={32} />
+          <div className="user-profile__avatar">
+            <span className="user-profile__avatar-icon material-symbols-outlined">
+              person
+            </span>
           </div>
-          <h3 className="up-name">
+          <h3 className="user-profile__name">
             {userData?.full_name || userData?.username || "Usuario"}
           </h3>
-          <p className="up-role">@{userData?.username || userData?.name}</p>
-        </div>
+          <p className="user-profile__username">
+            @{userData?.username || userData?.name}
+          </p>
+        </header>
 
-        <div className="up-tabs">
+        {/* Tabs */}
+        <nav className="user-profile__tabs">
           <button
-            className={`up-tab ${activeTab === "profile" ? "up-tab--active" : ""}`}
+            className={`user-profile__tab ${activeTab === "profile" ? "user-profile__tab--active" : ""}`}
             onClick={() => setActiveTab("profile")}
           >
-            <HiOutlineUser size={16} />
+            <span className="user-profile__tab-icon material-symbols-outlined">
+              person
+            </span>
             <span>Perfil</span>
           </button>
           <button
-            className={`up-tab ${activeTab === "orders" ? "up-tab--active" : ""}`}
+            className={`user-profile__tab ${activeTab === "orders" ? "user-profile__tab--active" : ""}`}
             onClick={() => setActiveTab("orders")}
           >
-            <HiOutlineClipboardList size={16} />
+            <span className="user-profile__tab-icon material-symbols-outlined">
+              list_alt
+            </span>
             <span>Pedidos</span>
             {unreadOrdersCount > 0 && (
-              <span className="up-tab-badge">{unreadOrdersCount}</span>
+              <span className="user-profile__tab-badge">
+                {unreadOrdersCount}
+              </span>
             )}
           </button>
-        </div>
+        </nav>
 
-        <div className="up-content-wrapper">
+        {/* Content */}
+        <div className="user-profile__content">
           {activeTab === "profile" ? (
-            <div className="up-profile-section">
-              <div className="up-field">
-                <label>
-                  <HiOutlineIdentification size={14} /> Usuario de acceso
+            <div className="user-profile__profile-section">
+              {/* Username */}
+              <div className="user-profile__field">
+                <label className="user-profile__label">
+                  <span className="material-symbols-outlined user-profile__label-icon">
+                    badge
+                  </span>
+                  Usuario de acceso
                 </label>
                 {isEditing ? (
-                  <div>
+                  <div className="user-profile__field-content">
                     <input
                       type="text"
                       value={editForm.username}
@@ -604,28 +570,32 @@ const UserProfile = ({
                       }}
                       onBlur={(e) => validateUsername(e.target.value)}
                       placeholder="Tu usuario para iniciar sesión"
-                      className={usernameError ? "up-input-error" : ""}
+                      className={`user-profile__input ${usernameError ? "user-profile__input--error" : ""}`}
                     />
                     {usernameError && (
-                      <span className="up-error-text">{usernameError}</span>
+                      <p className="user-profile__error">{usernameError}</p>
                     )}
-                    <small className="up-hint">
+                    <p className="user-profile__hint">
                       Este es el nombre que usas para iniciar sesión
-                    </small>
+                    </p>
                   </div>
                 ) : (
-                  <span>
+                  <p className="user-profile__value">
                     @{userData?.username || userData?.name || "No registrado"}
-                  </span>
+                  </p>
                 )}
               </div>
 
-              <div className="up-field">
-                <label>
-                  <HiOutlineAtSymbol size={14} /> Correo electrónico
+              {/* Email */}
+              <div className="user-profile__field">
+                <label className="user-profile__label">
+                  <span className="material-symbols-outlined user-profile__label-icon">
+                    mail
+                  </span>
+                  Correo electrónico
                 </label>
                 {isEditing ? (
-                  <div>
+                  <div className="user-profile__field-content">
                     <input
                       type="email"
                       value={editForm.email}
@@ -643,20 +613,26 @@ const UserProfile = ({
                         }
                       }}
                       placeholder="ejemplo@correo.com"
-                      className={emailError ? "up-input-error" : ""}
+                      className={`user-profile__input ${emailError ? "user-profile__input--error" : ""}`}
                     />
                     {emailError && (
-                      <span className="up-error-text">{emailError}</span>
+                      <p className="user-profile__error">{emailError}</p>
                     )}
                   </div>
                 ) : (
-                  <span>{userData?.email || "No registrado"}</span>
+                  <p className="user-profile__value">
+                    {userData?.email || "No registrado"}
+                  </p>
                 )}
               </div>
 
-              <div className="up-field">
-                <label>
-                  <HiOutlinePhone size={14} /> Teléfono
+              {/* Phone */}
+              <div className="user-profile__field">
+                <label className="user-profile__label">
+                  <span className="material-symbols-outlined user-profile__label-icon">
+                    phone
+                  </span>
+                  Teléfono
                 </label>
                 {isEditing ? (
                   <input
@@ -666,18 +642,25 @@ const UserProfile = ({
                       setEditForm({ ...editForm, phone: e.target.value })
                     }
                     placeholder="+53 5XXXXXXXX"
+                    className="user-profile__input"
                   />
                 ) : (
-                  <span>{userData?.phone || "No registrado"}</span>
+                  <p className="user-profile__value">
+                    {userData?.phone || "No registrado"}
+                  </p>
                 )}
               </div>
 
-              <div className="up-field">
-                <label>
-                  <HiOutlineLocationMarker size={14} /> Dirección
+              {/* Address */}
+              <div className="user-profile__field">
+                <label className="user-profile__label">
+                  <span className="material-symbols-outlined user-profile__label-icon">
+                    location_on
+                  </span>
+                  Dirección
                 </label>
                 {isEditing ? (
-                  <>
+                  <div className="user-profile__field-content">
                     <textarea
                       rows="2"
                       value={editForm.address}
@@ -685,48 +668,57 @@ const UserProfile = ({
                         setEditForm({ ...editForm, address: e.target.value })
                       }
                       placeholder="Tu dirección de entrega"
+                      className="user-profile__textarea"
                     />
                     <button
                       type="button"
-                      className="up-gps-btn"
                       onClick={handleGetLocation}
                       disabled={gettingLocation}
+                      className="user-profile__gps-btn"
                     >
-                      <HiOutlineLocationMarker size={14} />
+                      <span className="material-symbols-outlined">
+                        my_location
+                      </span>
                       {gettingLocation
                         ? "Obteniendo ubicación..."
                         : "Usar mi ubicación actual GPS"}
                     </button>
                     {editForm.lat && editForm.lng && (
-                      <div className="up-coords-info">
-                        📍 Lat: {Number(editForm.lat).toFixed(6)}, Lng:{" "}
+                      <p className="user-profile__coords">
+                        Lat: {Number(editForm.lat).toFixed(6)}, Lng:{" "}
                         {Number(editForm.lng).toFixed(6)}
-                      </div>
+                      </p>
                     )}
-                  </>
+                  </div>
                 ) : (
-                  <span>
-                    {userData?.address || "No registrada"}
+                  <div>
+                    <p className="user-profile__value">
+                      {userData?.address || "No registrada"}
+                    </p>
                     {userData?.lat && userData?.lng && (
-                      <div className="up-coords-info">
-                        📍 Ubicación GPS registrada
-                      </div>
+                      <p className="user-profile__coords">
+                        Ubicación GPS registrada
+                      </p>
                     )}
-                  </span>
+                  </div>
                 )}
               </div>
 
+              {/* Password Section (edit mode) */}
               {isEditing && (
-                <div className="up-password-section">
-                  <div className="up-password-divider">
+                <div className="user-profile__password-section">
+                  <div className="user-profile__divider">
                     <span>Cambiar Contraseña (Opcional)</span>
                   </div>
 
-                  <div className="up-field">
-                    <label>
-                      <HiOutlineLockClosed size={14} /> Contraseña actual
+                  <div className="user-profile__field">
+                    <label className="user-profile__label">
+                      <span className="material-symbols-outlined user-profile__label-icon">
+                        lock
+                      </span>
+                      Contraseña actual
                     </label>
-                    <div className="up-password-wrapper">
+                    <div className="user-profile__password-wrapper">
                       <input
                         type={showCurrentPassword ? "text" : "password"}
                         value={passwordData.currentPassword}
@@ -737,36 +729,38 @@ const UserProfile = ({
                           })
                         }
                         placeholder="Ingresa tu contraseña actual"
-                        className={
-                          passwordErrors.currentPassword ? "up-input-error" : ""
-                        }
+                        className={`user-profile__input ${passwordErrors.currentPassword ? "user-profile__input--error" : ""}`}
                       />
                       <button
                         type="button"
-                        className="up-password-toggle"
+                        className="user-profile__password-toggle"
                         onClick={() =>
                           setShowCurrentPassword(!showCurrentPassword)
                         }
+                        aria-label="Mostrar/ocultar contraseña"
                       >
-                        {showCurrentPassword ? (
-                          <HiOutlineEyeOff size={16} />
-                        ) : (
-                          <HiOutlineEye size={16} />
-                        )}
+                        <span className="material-symbols-outlined">
+                          {showCurrentPassword
+                            ? "visibility_off"
+                            : "visibility"}
+                        </span>
                       </button>
                     </div>
                     {passwordErrors.currentPassword && (
-                      <span className="up-error-text">
+                      <p className="user-profile__error">
                         {passwordErrors.currentPassword}
-                      </span>
+                      </p>
                     )}
                   </div>
 
-                  <div className="up-field">
-                    <label>
-                      <HiOutlineLockClosed size={14} /> Nueva contraseña
+                  <div className="user-profile__field">
+                    <label className="user-profile__label">
+                      <span className="material-symbols-outlined user-profile__label-icon">
+                        lock
+                      </span>
+                      Nueva contraseña
                     </label>
-                    <div className="up-password-wrapper">
+                    <div className="user-profile__password-wrapper">
                       <input
                         type={showNewPassword ? "text" : "password"}
                         value={passwordData.newPassword}
@@ -777,35 +771,34 @@ const UserProfile = ({
                           })
                         }
                         placeholder="Mínimo 6 caracteres"
-                        className={
-                          passwordErrors.newPassword ? "up-input-error" : ""
-                        }
+                        className={`user-profile__input ${passwordErrors.newPassword ? "user-profile__input--error" : ""}`}
                       />
                       <button
                         type="button"
-                        className="up-password-toggle"
+                        className="user-profile__password-toggle"
                         onClick={() => setShowNewPassword(!showNewPassword)}
+                        aria-label="Mostrar/ocultar contraseña"
                       >
-                        {showNewPassword ? (
-                          <HiOutlineEyeOff size={16} />
-                        ) : (
-                          <HiOutlineEye size={16} />
-                        )}
+                        <span className="material-symbols-outlined">
+                          {showNewPassword ? "visibility_off" : "visibility"}
+                        </span>
                       </button>
                     </div>
                     {passwordErrors.newPassword && (
-                      <span className="up-error-text">
+                      <p className="user-profile__error">
                         {passwordErrors.newPassword}
-                      </span>
+                      </p>
                     )}
                   </div>
 
-                  <div className="up-field">
-                    <label>
-                      <HiOutlineLockClosed size={14} /> Confirmar nueva
-                      contraseña
+                  <div className="user-profile__field">
+                    <label className="user-profile__label">
+                      <span className="material-symbols-outlined user-profile__label-icon">
+                        lock
+                      </span>
+                      Confirmar nueva contraseña
                     </label>
-                    <div className="up-password-wrapper">
+                    <div className="user-profile__password-wrapper">
                       <input
                         type={showConfirmPassword ? "text" : "password"}
                         value={passwordData.confirmPassword}
@@ -816,36 +809,35 @@ const UserProfile = ({
                           })
                         }
                         placeholder="Confirma tu nueva contraseña"
-                        className={
-                          passwordErrors.confirmPassword ? "up-input-error" : ""
-                        }
+                        className={`user-profile__input ${passwordErrors.confirmPassword ? "user-profile__input--error" : ""}`}
                       />
                       <button
                         type="button"
-                        className="up-password-toggle"
+                        className="user-profile__password-toggle"
                         onClick={() =>
                           setShowConfirmPassword(!showConfirmPassword)
                         }
+                        aria-label="Mostrar/ocultar contraseña"
                       >
-                        {showConfirmPassword ? (
-                          <HiOutlineEyeOff size={16} />
-                        ) : (
-                          <HiOutlineEye size={16} />
-                        )}
+                        <span className="material-symbols-outlined">
+                          {showConfirmPassword
+                            ? "visibility_off"
+                            : "visibility"}
+                        </span>
                       </button>
                     </div>
                     {passwordErrors.confirmPassword && (
-                      <span className="up-error-text">
+                      <p className="user-profile__error">
                         {passwordErrors.confirmPassword}
-                      </span>
+                      </p>
                     )}
                   </div>
 
                   <button
                     type="button"
-                    className="up-change-password-btn"
                     onClick={handleChangePassword}
                     disabled={changingPassword}
+                    className="user-profile__change-password-btn"
                   >
                     {changingPassword
                       ? "Actualizando..."
@@ -854,19 +846,20 @@ const UserProfile = ({
                 </div>
               )}
 
-              <div className="up-actions">
+              {/* Actions */}
+              <div className="user-profile__actions">
                 {isEditing ? (
                   <>
                     <button
-                      className="up-btn up-btn--save"
                       onClick={handleSaveProfile}
                       disabled={saving || !!usernameError || !!emailError}
+                      className="user-profile__btn user-profile__btn--primary"
                     >
                       {saving ? "Guardando..." : "Guardar Cambios"}
                     </button>
                     <button
-                      className="up-btn up-btn--cancel"
                       onClick={handleEditToggle}
+                      className="user-profile__btn user-profile__btn--secondary"
                     >
                       Cancelar
                     </button>
@@ -874,17 +867,17 @@ const UserProfile = ({
                 ) : (
                   <>
                     <button
-                      className="up-btn up-btn--edit"
                       onClick={handleEditToggle}
+                      className="user-profile__btn user-profile__btn--primary"
                     >
-                      <HiOutlineUser size={16} />
+                      <span className="material-symbols-outlined">edit</span>
                       Editar Perfil
                     </button>
                     <button
-                      className="up-btn up-btn--cancel"
                       onClick={handleLogout}
+                      className="user-profile__btn user-profile__btn--logout"
                     >
-                      <HiOutlineLogout size={16} />
+                      <span className="material-symbols-outlined">logout</span>
                       Cerrar Sesión
                     </button>
                   </>
@@ -892,98 +885,109 @@ const UserProfile = ({
               </div>
             </div>
           ) : (
-            <div className="up-orders-section">
+            <div className="user-profile__orders-section">
               {loadingOrders ? (
-                <div className="up-empty">
-                  <div className="spinning">🌀</div>
+                <div className="user-profile__orders-state">
+                  <span className="user-profile__orders-state-icon material-symbols-outlined user-profile__spin">
+                    sync
+                  </span>
                   <p>Cargando tus pedidos...</p>
                 </div>
               ) : orders.length === 0 ? (
-                <div className="up-empty">
-                  <HiOutlineShoppingBag className="up-empty-icon" />
+                <div className="user-profile__orders-state">
+                  <span className="user-profile__orders-state-icon material-symbols-outlined">
+                    shopping_bag
+                  </span>
                   <h4>No tienes pedidos</h4>
                   <p>Realiza tu primer pedido para verlo aquí</p>
                 </div>
               ) : (
-                <div className="up-orders-list">
+                <div className="user-profile__orders-list">
                   {orders.map((order) => {
                     const statusConfig = getStatusConfig(order.status);
                     const items = order.items || [];
                     const isExpanded = expandedOrders[order.id];
-
                     return (
-                      <div key={order.id} className="up-order-card">
-                        <div className="up-order-header">
-                          <span className="up-order-id">
-                            Pedido #{order.id}
-                          </span>
-                          <span
-                            className="up-order-status"
-                            style={{
-                              background: statusConfig.bg,
-                              color: statusConfig.color,
-                            }}
-                          >
-                            {statusConfig.icon} {statusConfig.label}
-                          </span>
+                      <div key={order.id} className="user-profile__order-card">
+                        <div className="user-profile__order-header">
+                          <div className="user-profile__order-header-top">
+                            <span className="user-profile__order-id">
+                              Pedido #{order.id}
+                            </span>
+                            <span
+                              className="user-profile__order-status"
+                              style={{
+                                background: statusConfig.bg,
+                                color: statusConfig.color,
+                              }}
+                            >
+                              <span className="material-symbols-outlined user-profile__order-status-icon">
+                                {statusConfig.icon}
+                              </span>
+                              {statusConfig.label}
+                            </span>
+                          </div>
+                          <div className="user-profile__order-date">
+                            <span className="material-symbols-outlined">
+                              schedule
+                            </span>
+                            {formatDate(order.created_at)}
+                          </div>
                         </div>
 
-                        <div className="up-order-time">
-                          <HiOutlineClock size={12} />{" "}
-                          {formatDate(order.created_at)}
-                        </div>
-
-                        <div className="up-order-details">
+                        <div className="user-profile__order-info">
                           {order.wants_delivery ? (
-                            <span className="up-order-delivery">
-                              <HiOutlineTruck size={12} />
+                            <span className="user-profile__order-delivery">
+                              <span className="material-symbols-outlined">
+                                local_shipping
+                              </span>
                               {order.delivery_needs_manual_contact
                                 ? "Delivery (Pendiente contacto)"
                                 : `Delivery: ${currencySymbol}${order.delivery_price || 0}`}
                             </span>
                           ) : (
-                            <span className="up-order-pickup">
-                              <HiOutlineShoppingBag size={12} />
+                            <span className="user-profile__order-pickup">
+                              <span className="material-symbols-outlined">
+                                store
+                              </span>
                               Retiro en tienda
                             </span>
                           )}
-                          <span className="up-order-total">
-                            <HiOutlineCurrencyDollar size={12} />
+                          <span className="user-profile__order-total">
+                            <span className="material-symbols-outlined">
+                              payments
+                            </span>
                             Total: {currencySymbol}
                             {parseFloat(order.total_amount).toFixed(2)}
                           </span>
                         </div>
 
-                        <div className="up-order-products">
+                        <div className="user-profile__order-products">
                           <button
-                            className="up-products-toggle-btn"
                             onClick={() => toggleExpandOrder(order.id)}
+                            className="user-profile__order-toggle"
                           >
-                            {isExpanded ? (
-                              <>
-                                <HiOutlineChevronUp size={16} />
-                                <span>Ocultar productos ({items.length})</span>
-                              </>
-                            ) : (
-                              <>
-                                <HiOutlineChevronDown size={16} />
-                                <span>Ver productos ({items.length})</span>
-                              </>
-                            )}
+                            <span className="material-symbols-outlined">
+                              {isExpanded ? "expand_less" : "expand_more"}
+                            </span>
+                            <span>
+                              {isExpanded ? "Ocultar" : "Ver"} productos (
+                              {items.length})
+                            </span>
                           </button>
-
                           {isExpanded && (
-                            <div className="up-products-list">
+                            <div className="user-profile__order-items">
                               {items.map((item, idx) => (
-                                <div key={idx} className="up-product-item">
-                                  <span className="up-product-name">
+                                <div
+                                  key={idx}
+                                  className="user-profile__order-item"
+                                >
+                                  <span className="user-profile__order-item-name">
                                     {item.name}
                                   </span>
-                                  <div className="up-product-details">
-                                    <span className="up-product-quantity">
-                                      x{item.quantity}
-                                    </span>
-                                    <span className="up-product-price">
+                                  <div className="user-profile__order-item-meta">
+                                    <span>x{item.quantity}</span>
+                                    <span>
                                       {currencySymbol}
                                       {(
                                         parseFloat(item.price) * item.quantity
@@ -997,45 +1001,47 @@ const UserProfile = ({
                         </div>
 
                         {order.status === "open" && (
-                          <button
-                            className="up-order-cancel"
-                            onClick={() => {
-                              Swal.fire({
-                                title: "¿Cancelar pedido?",
-                                text: "Esta acción no se puede deshacer",
-                                icon: "warning",
-                                showCancelButton: true,
-                                confirmButtonColor: "#ef4444",
-                                cancelButtonColor: "#6b7280",
-                                confirmButtonText: "Sí, cancelar",
-                                cancelButtonText: "Cancelar",
-                              }).then(async (result) => {
-                                if (result.isConfirmed) {
-                                  const token = localStorage.getItem("token");
-                                  const res = await fetch(
-                                    `${API_URL}/api/orders/cancel/${order.id}`,
-                                    {
-                                      method: "PUT",
-                                      headers: { "x-token": token },
-                                    },
-                                  );
-                                  const data = await res.json();
-                                  if (data.ok) {
-                                    Swal.fire(
-                                      "Pedido cancelado",
-                                      "",
-                                      "success",
+                          <div className="user-profile__order-cancel-wrapper">
+                            <button
+                              onClick={() => {
+                                Swal.fire({
+                                  title: "Cancelar pedido?",
+                                  text: "Esta acción no se puede deshacer",
+                                  icon: "warning",
+                                  showCancelButton: true,
+                                  confirmButtonColor: "var(--color-error)",
+                                  cancelButtonColor: "var(--color-on-surface-variant)",
+                                  confirmButtonText: "Sí, cancelar",
+                                  cancelButtonText: "Cancelar",
+                                }).then(async (result) => {
+                                  if (result.isConfirmed) {
+                                    const token = localStorage.getItem("token");
+                                    const res = await fetch(
+                                      `${API_URL}/api/orders/cancel/${order.id}`,
+                                      {
+                                        method: "PUT",
+                                        headers: { "x-token": token },
+                                      },
                                     );
-                                    loadOrders();
-                                  } else {
-                                    Swal.fire("Error", data.msg, "error");
+                                    const data = await res.json();
+                                    if (data.ok) {
+                                      Swal.fire(
+                                        "Pedido cancelado",
+                                        "",
+                                        "success",
+                                      );
+                                      loadOrders();
+                                    } else {
+                                      Swal.fire("Error", data.msg, "error");
+                                    }
                                   }
-                                }
-                              });
-                            }}
-                          >
-                            Cancelar Pedido
-                          </button>
+                                });
+                              }}
+                              className="user-profile__order-cancel-btn"
+                            >
+                              Cancelar Pedido
+                            </button>
+                          </div>
                         )}
                       </div>
                     );

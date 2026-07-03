@@ -1,470 +1,174 @@
-/* Reset y estilos base mejorados */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@import "tailwindcss";
 
-:root {
-  /* Colores principales mejorados */
-  --primary-blue: #2563eb;
-  --primary-blue-dark: #1d4ed8;
-  --primary-blue-light: #dbeafe;
-  --primary-green: #059669;
-  --primary-green-dark: #047857;
-  --primary-green-light: #d1fae5;
-  --accent-teal: #0d9488;
-  --accent-teal-light: #ccfbf1;
+@theme {
+  --color-surface: var(--color-surface, #F8F5EE);
+  --color-surface-dim: var(--color-surface-dim, #D5D1CA);
+  --color-surface-bright: var(--color-surface-bright, #FCFAF5);
+  --color-surface-container-lowest: var(--color-surface-container-lowest, #FFFFFF);
+  --color-surface-container-low: var(--color-surface-container-low, #F4F0EA);
+  --color-surface-container: var(--color-surface-container, #EDEAE3);
+  --color-surface-container-high: var(--color-surface-container-high, #E8E4DC);
+  --color-surface-container-highest: var(--color-surface-container-highest, #E2DED6);
+  --color-on-surface: var(--color-on-surface, #1B1C1A);
+  --color-on-surface-variant: var(--color-on-surface-variant, #49454F);
+  --color-inverse-surface: var(--color-inverse-surface, #30312E);
+  --color-inverse-on-surface: var(--color-inverse-on-surface, #F2F0ED);
+  --color-outline: var(--color-outline, #7A767F);
+  --color-outline-variant: var(--color-outline-variant, #CAC6CF);
+  --color-surface-tint: var(--color-surface-tint, #0D332F);
+  --color-primary: var(--color-primary, #0D332F);
+  --color-on-primary: var(--color-on-primary, #FFFFFF);
+  --color-primary-container: var(--color-primary-container, #D4E8D1);
+  --color-on-primary-container: var(--color-on-primary-container, #0D332F);
+  --color-inverse-primary: var(--color-inverse-primary, #9ED1BD);
+  --color-secondary: var(--color-secondary, #C8A84E);
+  --color-on-secondary: var(--color-on-secondary, #FFFFFF);
+  --color-secondary-container: var(--color-secondary-container, #F5EFD5);
+  --color-on-secondary-container: var(--color-on-secondary-container, #3A2E0F);
+  --color-tertiary: var(--color-tertiary, #C97B5A);
+  --color-on-tertiary: var(--color-on-tertiary, #FFFFFF);
+  --color-tertiary-container: var(--color-tertiary-container, #FBE9E0);
+  --color-on-tertiary-container: var(--color-on-tertiary-container, #5A2A1A);
+  --color-error: var(--color-error, #BA1A1A);
+  --color-on-error: var(--color-on-error, #FFFFFF);
+  --color-error-container: var(--color-error-container, #FFDAD6);
+  --color-on-error-container: var(--color-on-error-container, #93000A);
+  --color-primary-fixed: var(--color-primary-fixed, #0D332F);
+  --color-primary-fixed-dim: var(--color-primary-fixed-dim, #1A5C4A);
+  --color-on-primary-fixed: var(--color-on-primary-fixed, #FFFFFF);
+  --color-on-primary-fixed-variant: var(--color-on-primary-fixed-variant, #E8F5E9);
+  --color-secondary-fixed: var(--color-secondary-fixed, #F5EFD5);
+  --color-secondary-fixed-dim: var(--color-secondary-fixed-dim, #C8A84E);
+  --color-on-secondary-fixed: var(--color-on-secondary-fixed, #1A1A1A);
+  --color-on-secondary-fixed-variant: var(--color-on-secondary-fixed-variant, #3A2E0F);
+  --color-tertiary-fixed: var(--color-tertiary-fixed, #FBE9E0);
+  --color-tertiary-fixed-dim: var(--color-tertiary-fixed-dim, #C97B5A);
+  --color-on-tertiary-fixed: var(--color-on-tertiary-fixed, #5A2A1A);
+  --color-on-tertiary-fixed-variant: var(--color-on-tertiary-fixed-variant, #5A2A1A);
+  --color-background: var(--color-background, #FCFAF5);
+  --color-on-background: var(--color-on-background, #1B1C1A);
+  --color-surface-variant: var(--color-surface-variant, #E4E2DE);
+  --color-warning: var(--color-warning, #C8A84E);
+  --color-on-warning: var(--color-on-warning, #1A1A1A);
 
-  /* Escala de grises refinada */
-  --white: #ffffff;
-  --gray-50: #f8fafc;
-  --gray-100: #f1f5f9;
-  --gray-200: #e2e8f0;
-  --gray-300: #cbd5e1;
-  --gray-400: #94a3b8;
-  --gray-500: #64748b;
-  --gray-600: #475569;
-  --gray-700: #334155;
-  --gray-800: #1e293b;
-  --gray-900: #0f172a;
+  --font-headline-xl: "Playfair Display", Georgia, serif;
+  --font-headline-lg: "Playfair Display", Georgia, serif;
+  --font-headline-md: "Playfair Display", Georgia, serif;
+  --font-headline-lg-mobile: "Playfair Display", Georgia, serif;
+  --font-price-display: "Playfair Display", Georgia, serif;
+  --font-body-lg: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body-md: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-label-md: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-label-sm: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  /* Estados semánticos */
-  --success: #10b981;
-  --success-light: #ecfdf5;
-  --warning: #f59e0b;
-  --warning-light: #fffbeb;
-  --error: #ef4444;
-  --error-light: #fef2f2;
+  --text-headline-xl: 40px;
+  --text-headline-xl--line-height: 48px;
+  --text-headline-xl--letter-spacing: -0.02em;
+  --text-headline-xl--font-weight: 700;
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 40px;
+  --text-headline-lg--letter-spacing: -0.01em;
+  --text-headline-lg--font-weight: 700;
+  --text-headline-lg-mobile: 28px;
+  --text-headline-lg-mobile--line-height: 34px;
+  --text-headline-lg-mobile--font-weight: 700;
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--font-weight: 600;
+  --text-price-display: 20px;
+  --text-price-display--line-height: 24px;
+  --text-price-display--font-weight: 700;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+  --text-body-lg--font-weight: 400;
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+  --text-body-md--font-weight: 400;
+  --text-label-md: 14px;
+  --text-label-md--line-height: 20px;
+  --text-label-md--letter-spacing: 0.01em;
+  --text-label-md--font-weight: 600;
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: 16px;
+  --text-label-sm--font-weight: 500;
 
-  /* Sombras más profesionales */
-  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px 0 rgb(0 0 0 / 0.06);
-  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
-  --shadow-md:
-    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
-  --shadow-lg:
-    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
-  --shadow-xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-
-  /* Border radius consistente */
   --radius-sm: 0.25rem;
-  --radius: 0.5rem;
+  --radius-default: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
+  --radius-xl: 0.75rem;
   --radius-full: 9999px;
 
-  /* Espaciado sistemático */
-  --space-xs: 0.25rem;
-  --space-sm: 0.5rem;
-  --space-md: 1rem;
-  --space-lg: 1.5rem;
-  --space-xl: 2rem;
-  --space-2xl: 3rem;
+  --spacing-base: 8px;
+  --spacing-container-margin: 20px;
+  --spacing-gutter: 16px;
+  --spacing-stack-sm: 4px;
+  --spacing-stack-md: 12px;
+  --spacing-stack-lg: 24px;
+  --spacing-section-gap: 48px;
+  --animate-slideDown: slideDown 0.3s ease-out;
+  --animate-marquee: marquee 20s linear infinite;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 body {
-  font-family:
-    "Inter",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    "Roboto",
-    "Oxygen",
-    "Ubuntu",
-    "Cantarell",
-    sans-serif;
-  background-color: var(--gray-50);
-  color: var(--gray-800);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-on-background);
   line-height: 1.6;
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings:
-    "kern" 1,
-    "liga" 1;
   overflow-x: hidden;
   width: 100%;
   max-width: 100%;
 }
 
-/* Tipografía mejorada */
-.text-xs {
-  font-size: 0.75rem;
-  line-height: 1rem;
-  letter-spacing: 0.025em;
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 24;
 }
 
-.text-sm {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  letter-spacing: 0.01em;
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-surface-container-low); border-radius: 9999px; }
+::-webkit-scrollbar-thumb { background: var(--color-outline-variant); border-radius: 9999px; transition: background-color 0.2s ease; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-outline); }
 
-.text-base {
-  font-size: 1rem;
-  line-height: 1.5rem;
-  letter-spacing: 0;
-}
-
-.text-lg {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-  letter-spacing: -0.01em;
-}
-
-.text-xl {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
-  letter-spacing: -0.02em;
-}
-
-.text-2xl {
-  font-size: 1.5rem;
-  line-height: 2rem;
-  letter-spacing: -0.025em;
-}
-
-.text-3xl {
-  font-size: 1.875rem;
-  line-height: 2.25rem;
-  letter-spacing: -0.03em;
-}
-
-/* Pesos de fuente */
-.font-normal {
-  font-weight: 400;
-}
-.font-medium {
-  font-weight: 500;
-}
-.font-semibold {
-  font-weight: 600;
-}
-.font-bold {
-  font-weight: 700;
-}
-.font-extrabold {
-  font-weight: 800;
-}
-
-/* Utilidades de texto */
-.text-primary {
-  color: var(--gray-900);
-}
-.text-secondary {
-  color: var(--gray-600);
-}
-.text-tertiary {
-  color: var(--gray-500);
-}
-.text-accent {
-  color: var(--primary-blue);
-}
-
-.leading-tight {
-  line-height: 1.25;
-}
-.leading-normal {
-  line-height: 1.6;
-}
-.leading-relaxed {
-  line-height: 1.75;
-}
-
-/* Utilidades de espaciado */
-.p-xs {
-  padding: var(--space-xs);
-}
-.p-sm {
-  padding: var(--space-sm);
-}
-.p-md {
-  padding: var(--space-md);
-}
-.p-lg {
-  padding: var(--space-lg);
-}
-
-.m-xs {
-  margin: var(--space-xs);
-}
-.m-sm {
-  margin: var(--space-sm);
-}
-.m-md {
-  margin: var(--space-md);
-}
-.m-lg {
-  margin: var(--space-lg);
-}
-
-/* Estados de interacción mejorados */
-.hover-lift {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.pressable {
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.pressable:active {
-  transform: translateY(1px);
-  box-shadow: var(--shadow-sm);
-}
-
-/* ============================================
-   SCROLLBAR - VERSIÓN MEJORADA
-   ============================================ */
-
-/* Scrollbar por defecto - visible solo en desktop */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--gray-100);
-  border-radius: var(--radius-full);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--gray-400);
-  border-radius: var(--radius-full);
-  transition: background-color 0.2s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--gray-500);
-}
-
-/* ===== EN MÓVIL: OCULTAR SCROLLBARS COMPLETAMENTE ===== */
 @media (max-width: 768px) {
-  /* Ocultar scrollbars en todos los elementos en móvil */
-  ::-webkit-scrollbar {
-    width: 0px !important;
-    height: 0px !important;
-    display: none !important;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent !important;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: transparent !important;
-  }
-
-  /* Para Firefox */
-  * {
-    scrollbar-width: none !important;
-  }
-
-  /* Para IE/Edge */
-  * {
-    -ms-overflow-style: none !important;
-  }
+  ::-webkit-scrollbar { width: 0px !important; height: 0px !important; display: none !important; }
+  ::-webkit-scrollbar-track { background: transparent !important; }
+  ::-webkit-scrollbar-thumb { background: transparent !important; }
+  * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
 }
 
-/* ===== EXCEPCIONES: Mostrar scrollbar solo en elementos específicos en desktop ===== */
 @media (min-width: 769px) {
-  /* Solo estos elementos pueden tener scrollbar visible en desktop */
-  .desktop-main-content,
-  .desktop-sidebar,
-  .admin-chat__list,
-  .admin-chat__conv-messages,
-  .address-suggestions,
-  .ao-list,
-  .admin-orders .ao-list {
+  .desktop-main-content, .desktop-sidebar, .admin-chat__list,
+  .admin-chat__conv-messages, .address-suggestions, .ao-list, .admin-orders .ao-list {
     scrollbar-width: thin;
   }
-
-  .desktop-main-content::-webkit-scrollbar,
-  .desktop-sidebar::-webkit-scrollbar,
-  .admin-chat__list::-webkit-scrollbar,
-  .admin-chat__conv-messages::-webkit-scrollbar,
-  .address-suggestions::-webkit-scrollbar,
-  .ao-list::-webkit-scrollbar,
-  .admin-orders .ao-list::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-    display: block;
-  }
 }
 
-/* ============================================
-   OCULTAR SCROLLBAR EN SELECTORES DE TIENDAS Y CATEGORÍAS
-   ============================================ */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Ocultar scrollbar en los contenedores de chips en todos los dispositivos */
-.store-selector-client__scroll,
-.categories-chips__scroll,
-.category-filter {
-  scrollbar-width: none !important; /* Firefox */
-  -ms-overflow-style: none !important; /* IE/Edge */
-}
+html { scroll-behavior: smooth; }
 
-.store-selector-client__scroll::-webkit-scrollbar,
-.categories-chips__scroll::-webkit-scrollbar,
-.category-filter::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-  background: transparent !important;
-}
-
-/* Focus states para accesibilidad */
-.focus-ring {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-}
-
-.focus-ring:focus-visible {
-  outline: 2px solid var(--primary-blue);
-  outline-offset: 2px;
-}
-
-/* Transiciones para el contenido principal */
-.content-hidden {
-  opacity: 0;
-  transform: translateY(10px);
-  transition: all 0.8s ease-out;
-}
-
-.content-visible {
-  opacity: 1;
-  transform: translateY(0);
-  transition: all 0.8s ease-out 0.3s;
-}
-
-/* ============================================
-   CORRECCIÓN PARA MÓVIL
-   ============================================ */
-
-/* Asegurar que no haya scroll horizontal en ningún dispositivo */
-html,
-body {
-  overflow-x: hidden !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  position: relative;
-}
-
-/* Para móvil, asegurar que el bottom-nav sea fijo */
-@media (max-width: 1023px) {
-  .bottom-nav {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    z-index: 1000 !important;
-    border-radius: 0 !important;
-  }
-
-  /* Forzar que el contenedor principal no tenga scroll horizontal */
-  .client-interface,
-  .client-interface__content,
-  .mobile-layout {
-    overflow-x: hidden !important;
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-
-  /* Asegurar que los chips (tiendas y categorías) no causen scroll horizontal */
-  .store-selector-client__scroll,
-  .categories-chips__scroll {
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Asegurar que los chips no desborden el contenedor */
-  .store-chip,
-  .category-chip {
-    flex-shrink: 0;
-  }
-
-  /* Asegurar que el contenido tenga espacio para el bottom-nav */
-  .client-interface__content {
-    padding-bottom: 85px !important;
-  }
-}
-
-/* ============================================
-   SWEETALERT Z-INDEX
-   ============================================ */
-
-/* Aumentar z-index de SweetAlert para que aparezca encima del modal */
-.swal2-container {
-  z-index: 20000 !important;
-}
-
-.swal2-popup {
-  z-index: 20001 !important;
-}
-
-/* Asegurar que los toasts también estén por encima */
-.swal2-toast {
-  z-index: 20000 !important;
-}
-
-/* ============================================
-   UTILIDADES ADICIONALES
-   ============================================ */
-
-/* Ocultar scrollbar en elementos específicos en desktop también */
-.no-scrollbar {
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-}
-
-/* Scroll suave para toda la aplicación */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Reducir movimiento para usuarios que lo prefieran */
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 
-/* Mejoras de accesibilidad */
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--primary-green);
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-/* Deshabilitar outline para clics de mouse, mantener para teclado */
-button:focus:not(:focus-visible),
-a:focus:not(:focus-visible) {
-  outline: none;
-}
+button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }

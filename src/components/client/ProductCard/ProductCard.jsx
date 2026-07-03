@@ -1,11 +1,9 @@
-// components/client/ProductCard/ProductCard.jsx
 import React, { useCallback, memo, useState, useEffect } from "react";
-import { FiPhone, FiPlus, FiMinus, FiShoppingCart } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, updateCartQuantity } from "../../../actions/cartActions";
 import { selectCartItems } from "../../../selectors/cartSelectors";
+import Swal from "sweetalert2";
 import "./ProductCard.css";
-import "./ProductCard.desktop.css";
 
 const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
   const dispatch = useDispatch();
@@ -43,14 +41,6 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
     [onProductClick, product],
   );
 
-  const handleWhatsAppClick = useCallback(
-    (e) => {
-      e.stopPropagation();
-      onWhatsAppClick?.(product.name);
-    },
-    [onWhatsAppClick, product.name],
-  );
-
   const handleAddToCart = useCallback(
     async (e) => {
       e.stopPropagation();
@@ -81,7 +71,7 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
               icon: "error",
               title: "Producto agotado",
               text: `Lo sentimos, ${product.name} ya no está disponible.`,
-              confirmButtonColor: "#059669",
+              confirmButtonColor: "var(--color-primary)",
             });
             setIsCheckingStock(false);
             return;
@@ -92,7 +82,7 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
               icon: "warning",
               title: "Stock insuficiente",
               text: `Solo hay ${currentStock} unidades disponibles de ${product.name}.`,
-              confirmButtonColor: "#059669",
+              confirmButtonColor: "var(--color-primary)",
             });
             setIsCheckingStock(false);
             return;
@@ -123,7 +113,7 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
           icon: "warning",
           title: "Stock insuficiente",
           text: `Solo hay ${product.stock_quantity} unidades disponibles.`,
-          confirmButtonColor: "#059669",
+          confirmButtonColor: "var(--color-primary)",
           timer: 2000,
         });
       }
@@ -132,13 +122,21 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
   );
 
   const handleImageError = useCallback((e) => {
-    e.target.src =
-      "https://via.placeholder.com/200x200?text=Imagen+No+Disponible";
+    e.target.src = "https://via.placeholder.com/200x200?text=Producto";
   }, []);
 
   return (
-    <div className="product-card" onClick={handleCardClick}>
-      <div className="product-card__image-container">
+    <div
+      className="product-card"
+      onClick={handleCardClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") handleCardClick();
+      }}
+    >
+      {/* Imagen */}
+      <div className="product-card__image-wrapper">
         <img
           src={product.image_url}
           alt={product.name}
@@ -146,74 +144,88 @@ const ProductCard = memo(({ product, onWhatsAppClick, onProductClick }) => {
           onError={handleImageError}
           loading="lazy"
         />
-        <div
-          className={`product-card__status ${isAvailable ? "available" : "out-of-stock"}`}
+
+        {/* Badge de estado */}
+        <span
+          className={`product-card__status-badge ${isAvailable ? "product-card__status-badge--available" : "product-card__status-badge--soldout"}`}
         >
-          {isAvailable ? "🟢 Disponible" : "🔴 Agotado"}
-        </div>
-        <div className="product-card__currency-badge">{currency}</div>
+          {isAvailable ? "Disponible" : "Agotado"}
+        </span>
+
+        {/* Badge de moneda */}
+        <span className="product-card__currency-badge">{currency}</span>
+
+        {/* Badge de cantidad en carrito */}
         {currentQuantity > 0 && (
-          <div className="product-card__cart-badge">{currentQuantity}</div>
+          <span className="product-card__cart-badge">{currentQuantity}</span>
         )}
       </div>
 
-      <div className="product-card__content">
+      {/* Contenido */}
+      <div className="product-card__body">
         <h3 className="product-card__name">{product.name}</h3>
-        <div className="product-card__info-row">
-          <div className="product-card__price">
+
+        <div className="product-card__meta">
+          <span className="product-card__price">
             {getCurrencySymbol()} {formatPrice(product.price)}
-          </div>
-          <div className="product-card__category">{product.category?.name}</div>
+          </span>
+          <span className="product-card__category">
+            {product.category?.name}
+          </span>
         </div>
 
-        {/* ✅ Mostrar stock disponible */}
-        <div className="product-card__stock-info">
-          <span className="stock-label">Stock:</span>
+        {/* Stock */}
+        <div className="product-card__stock">
+          <span className="product-card__stock-label">Stock:</span>
           <span
-            className={`stock-value ${product.stock_quantity <= 5 ? "low-stock" : product.stock_quantity <= 10 ? "medium-stock" : "good-stock"}`}
+            className={`product-card__stock-value ${product.stock_quantity <= 5 ? "product-card__stock-value--low" : product.stock_quantity <= 10 ? "product-card__stock-value--medium" : "product-card__stock-value--good"}`}
           >
             {product.stock_quantity} unidades
           </span>
         </div>
 
+        {/* Descripción */}
         <p className="product-card__description">
           {product.description?.substring(0, 80) || "Producto de calidad..."}
           {product.description && product.description.length > 80 ? "..." : ""}
         </p>
 
+        {/* Controles de cantidad o botón agregar */}
         {showQuantity || currentQuantity > 0 ? (
-          <div className="product-card__quantity-controls">
+          <div className="product-card__quantity">
             <button
-              className="quantity-btn minus"
+              className="product-card__quantity-btn product-card__quantity-btn--minus"
               onClick={(e) => handleQuantityChange(e, -1)}
               disabled={!isAvailable || isCheckingStock}
+              aria-label="Reducir cantidad"
             >
-              <FiMinus size={14} />
+              <span className="material-symbols-outlined">remove</span>
             </button>
-            <span className="quantity-display">{currentQuantity}</span>
+            <span className="product-card__quantity-value">
+              {currentQuantity}
+            </span>
             <button
-              className="quantity-btn plus"
+              className="product-card__quantity-btn product-card__quantity-btn--plus"
               onClick={(e) => handleQuantityChange(e, 1)}
               disabled={
                 !isAvailable ||
                 isCheckingStock ||
                 currentQuantity >= product.stock_quantity
               }
+              aria-label="Aumentar cantidad"
             >
-              <FiPlus size={14} />
+              <span className="material-symbols-outlined">add</span>
             </button>
           </div>
         ) : (
-          <div className="product-card__action-buttons">
-            <button
-              className="product-card__cart-btn"
-              onClick={handleAddToCart}
-              disabled={!isAvailable || isCheckingStock}
-            >
-              <FiShoppingCart className="cart-icon" />
-              {isCheckingStock ? "Verificando..." : "Agregar"}
-            </button>
-          </div>
+          <button
+            className="product-card__add-btn"
+            onClick={handleAddToCart}
+            disabled={!isAvailable || isCheckingStock}
+          >
+            <span className="material-symbols-outlined">shopping_cart</span>
+            {isCheckingStock ? "Verificando..." : "Agregar"}
+          </button>
         )}
       </div>
     </div>

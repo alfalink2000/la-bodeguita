@@ -1,10 +1,4 @@
-// components/common/CategoryFilter/CategoryFilter.jsx - VERSIÓN OPTIMIZADA
 import { useRef, useEffect, useState } from "react";
-import {
-  HiOutlineChevronLeft,
-  HiOutlineChevronRight,
-  HiOutlineSparkles,
-} from "react-icons/hi";
 import "./CategoryFilter.css";
 
 const CategoryFilter = ({
@@ -13,21 +7,12 @@ const CategoryFilter = ({
   onCategoryChange,
   productsCount,
   title = "Categorías",
-  icon = "📂",
+  icon = "folder",
 }) => {
   const scrollContainerRef = useRef(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
   const [isOverflowing, setIsOverflowing] = useState(false);
-
-  const checkOverflow = () => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      const hasOverflow = container.scrollWidth > container.clientWidth;
-      setIsOverflowing(hasOverflow);
-      updateArrowsVisibility();
-    }
-  };
 
   const updateArrowsVisibility = () => {
     const container = scrollContainerRef.current;
@@ -40,18 +25,20 @@ const CategoryFilter = ({
     }
   };
 
-  const scrollLeft = () => {
+  const checkOverflow = () => {
     const container = scrollContainerRef.current;
     if (container) {
-      container.scrollBy({ left: -200, behavior: "smooth" });
+      setIsOverflowing(container.scrollWidth > container.clientWidth);
+      updateArrowsVisibility();
     }
   };
 
+  const scrollLeft = () => {
+    scrollContainerRef.current?.scrollBy({ left: -200, behavior: "smooth" });
+  };
+
   const scrollRight = () => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.scrollBy({ left: 200, behavior: "smooth" });
-    }
+    scrollContainerRef.current?.scrollBy({ left: 200, behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -70,28 +57,20 @@ const CategoryFilter = ({
 
   useEffect(() => {
     checkOverflow();
-    updateArrowsVisibility();
   }, [categories]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (container && selectedCategory) {
       const selectedButton = container.querySelector(
-        `.category-filter__button[data-category="${selectedCategory}"]`,
+        `[data-category="${selectedCategory}"]`,
       );
       if (selectedButton) {
-        const buttonRect = selectedButton.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        if (
-          buttonRect.left < containerRect.left ||
-          buttonRect.right > containerRect.right
-        ) {
-          selectedButton.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-            inline: "center",
-          });
-        }
+        selectedButton.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "center",
+        });
       }
     }
   }, [selectedCategory]);
@@ -99,62 +78,60 @@ const CategoryFilter = ({
   const hasFewCategories = categories.length <= 3;
 
   return (
-    <div className="category-filter-wrapper">
-      <div className="category-filter-header">
-        <div className="category-filter-header__title">
-          <span className="category-filter-header__icon">{icon}</span>
-          <h3>{title}</h3>
+    <div className="category-filter">
+      <div className="category-filter__header">
+        <div className="category-filter__title">
+          <span className="category-filter__title-icon">{icon}</span>
+          <h3 className="category-filter__title-text">{title}</h3>
         </div>
         {productsCount !== undefined && (
-          <div className="category-filter-header__count">
-            <span className="count-number">{productsCount}</span>
-            <span className="count-label">productos</span>
+          <div className="category-filter__count">
+            <span className="category-filter__count-number">
+              {productsCount}
+            </span>
+            <span className="category-filter__count-label">productos</span>
           </div>
         )}
       </div>
 
-      <div
-        className={`category-filter-container ${hasFewCategories ? "category-filter-container--few-items" : ""}`}
-      >
+      <div className="category-filter__scroll-wrapper">
         {isOverflowing && showLeftArrow && (
           <button
             className="category-filter__arrow category-filter__arrow--left"
             onClick={scrollLeft}
             aria-label="Desplazar izquierda"
           >
-            <HiOutlineChevronLeft />
+            <span className="category-filter__arrow-icon material-symbols-outlined">
+              chevron_left
+            </span>
           </button>
         )}
 
-        <div className="category-filter" ref={scrollContainerRef}>
-          <div className="category-filter__container">
-            {categories.map((category, index) => (
+        <div className="category-filter__scroll" ref={scrollContainerRef}>
+          <div
+            className={`category-filter__list ${hasFewCategories ? "category-filter__list--centered" : ""}`}
+          >
+            {categories.map((category) => (
               <button
                 key={category}
                 data-category={category}
                 onClick={() => onCategoryChange(category)}
-                className={`category-filter__button ${selectedCategory === category ? "category-filter__button--active" : ""}`}
+                className={`category-filter__chip ${selectedCategory === category ? "category-filter__chip--active" : ""}`}
                 aria-pressed={selectedCategory === category}
-                style={{ animationDelay: `${index * 0.03}s` }}
               >
-                <span className="category-filter__button-text">{category}</span>
-                {selectedCategory === category && (
-                  <span className="category-filter__button-indicator"></span>
-                )}
+                {category}
               </button>
             ))}
 
             {hasFewCategories && (
               <div className="category-filter__decorations">
-                <div className="decoration-dots">
-                  <span className="dot"></span>
-                  <span className="dot"></span>
-                  <span className="dot"></span>
+                <div className="category-filter__decoration-dots">
+                  <span className="category-filter__decoration-dot" />
+                  <span className="category-filter__decoration-dot" />
+                  <span className="category-filter__decoration-dot" />
                 </div>
-                <div className="decoration-sparkle">
-                  <HiOutlineSparkles />
-                </div>
-                <div className="decoration-line"></div>
+                <span className="material-symbols-outlined">auto_awesome</span>
+                <div className="category-filter__decoration-line" />
               </div>
             )}
           </div>
@@ -166,13 +143,15 @@ const CategoryFilter = ({
             onClick={scrollRight}
             aria-label="Desplazar derecha"
           >
-            <HiOutlineChevronRight />
+            <span className="category-filter__arrow-icon material-symbols-outlined">
+              chevron_right
+            </span>
           </button>
         )}
       </div>
 
       {isOverflowing && (
-        <div className="category-filter-scroll-hint">
+        <div className="category-filter__scroll-hint">
           <span>← Desliza para ver más →</span>
         </div>
       )}

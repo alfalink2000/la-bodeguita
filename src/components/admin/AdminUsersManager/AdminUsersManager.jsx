@@ -1,23 +1,6 @@
-// components/admin/AdminUsersManager/AdminUsersManager.jsx
 import React, { useState, useMemo } from "react";
 import { useDispatch } from "react-redux";
 import Swal from "sweetalert2";
-import {
-  HiOutlinePencil,
-  HiOutlineTrash,
-  HiOutlineEye,
-  HiOutlineEyeOff,
-  HiOutlineUsers,
-  HiOutlineSearch,
-  HiOutlineFilter,
-  HiOutlineX,
-  HiOutlineChevronDown,
-  HiOutlineChevronUp,
-  HiOutlineShieldCheck,
-  HiOutlineUserGroup,
-  HiOutlineUser,
-  HiOutlineRefresh,
-} from "react-icons/hi";
 import {
   updateAdminUser,
   toggleUserStatus,
@@ -25,19 +8,17 @@ import {
   setActiveAdminUser,
 } from "../../../actions/adminUsersActions";
 import AdminUserForm from "../AdminUserForm/AdminUserForm";
-import "./AdminUsersManager.css";
 
 const AdminUsersManager = ({ users = [] }) => {
   const dispatch = useDispatch();
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all"); // all | admin | customer
-  const [statusFilter, setStatusFilter] = useState("all"); // all | active | inactive
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [expandedCards, setExpandedCards] = useState({});
 
-  // Separar usuarios por rol
   const adminUsers = useMemo(
     () => users.filter((u) => u.role === "admin"),
     [users],
@@ -47,7 +28,6 @@ const AdminUsersManager = ({ users = [] }) => {
     [users],
   );
 
-  // Calcular estadísticas
   const stats = useMemo(
     () => ({
       total: users.length,
@@ -63,11 +43,8 @@ const AdminUsersManager = ({ users = [] }) => {
     [users, adminUsers, customerUsers],
   );
 
-  // Filtrar usuarios
   const filteredUsers = useMemo(() => {
     let result = [...users];
-
-    // Filtrar por rol
     if (roleFilter === "admin") {
       result = result.filter((u) => u.role === "admin");
     } else if (roleFilter === "customer") {
@@ -75,15 +52,11 @@ const AdminUsersManager = ({ users = [] }) => {
         (u) => u.role === "customer" || u.role === "cliente",
       );
     }
-
-    // Filtrar por estado
     if (statusFilter === "active") {
       result = result.filter((u) => u.is_active);
     } else if (statusFilter === "inactive") {
       result = result.filter((u) => !u.is_active);
     }
-
-    // Filtrar por búsqueda
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       result = result.filter(
@@ -93,7 +66,6 @@ const AdminUsersManager = ({ users = [] }) => {
           (u.full_name || "").toLowerCase().includes(search),
       );
     }
-
     return result;
   }, [users, roleFilter, statusFilter, searchTerm]);
 
@@ -108,25 +80,23 @@ const AdminUsersManager = ({ users = [] }) => {
   };
 
   const handleToggleStatus = (user) => {
-    // Proteger: no desactivar el último admin activo
     if (user.role === "admin" && user.is_active && stats.activeAdmins <= 1) {
       Swal.fire({
         icon: "error",
         title: "Acción no permitida",
         text: "No se puede desactivar al último administrador activo. Debe existir al menos un administrador para gestionar el sistema.",
-        confirmButtonColor: "#ef4444",
+        confirmButtonColor: "var(--color-error)",
       });
       return;
     }
-
     const actionText = user.is_active ? "desactivar" : "activar";
     Swal.fire({
       title: `¿${actionText === "desactivar" ? "Desactivar" : "Activar"} usuario?`,
       text: `¿Estás seguro de que quieres ${actionText} a "${user.username}"?${user.is_active ? " No podrá acceder al sistema." : ""}`,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: user.is_active ? "#f59e0b" : "#10b981",
-      cancelButtonColor: "#6b7280",
+      confirmButtonColor: user.is_active ? "var(--color-secondary)" : "var(--color-primary)",
+      cancelButtonColor: "var(--color-on-surface-variant)",
       confirmButtonText: `Sí, ${actionText}`,
       cancelButtonText: "Cancelar",
     }).then((result) => {
@@ -137,38 +107,34 @@ const AdminUsersManager = ({ users = [] }) => {
   };
 
   const handleDelete = (user) => {
-    // Proteger: no eliminar el último admin
     if (user.role === "admin" && stats.admins <= 1) {
       Swal.fire({
         icon: "error",
         title: "Acción no permitida",
         text: "No se puede eliminar al único administrador. Debe existir al menos un administrador en el sistema.",
-        confirmButtonColor: "#ef4444",
+        confirmButtonColor: "var(--color-error)",
       });
       return;
     }
-
-    // Proteger: no eliminar el último usuario del sistema
     if (stats.isLastUser) {
       Swal.fire({
         icon: "error",
         title: "Acción no permitida",
         text: "No se puede eliminar el último usuario del sistema.",
-        confirmButtonColor: "#ef4444",
+        confirmButtonColor: "var(--color-error)",
       });
       return;
     }
-
     Swal.fire({
       title: "¿Eliminar usuario?",
       html: `
         <p>¿Estás seguro de que quieres eliminar a <strong>"${user.username}"</strong>?</p>
-        <p style="color: #ef4444; font-size: 0.85rem;">Esta acción no se puede deshacer.</p>
+        <p style="color: var(--color-error); font-size: 0.85rem;">Esta acción no se puede deshacer.</p>
       `,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#6b7280",
+      confirmButtonColor: "var(--color-error)",
+      cancelButtonColor: "var(--color-on-surface-variant)",
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
     }).then((result) => {
@@ -180,10 +146,8 @@ const AdminUsersManager = ({ users = [] }) => {
 
   const handleSubmit = async (userData) => {
     try {
-      console.log("📤 Enviando datos del formulario:", userData);
-
+      console.log("Enviando datos del formulario:", userData);
       const result = await dispatch(updateAdminUser(userData));
-
       if (result) {
         setShowEditForm(false);
         setEditingUser(null);
@@ -213,481 +177,356 @@ const AdminUsersManager = ({ users = [] }) => {
     searchTerm || roleFilter !== "all" || statusFilter !== "all";
 
   return (
-    <div className="admin-users-manager">
-      {/* ===== ESTADÍSTICAS ===== */}
-      <div className="aum-stats">
-        <div className="aum-stat aum-stat--total">
-          <div className="aum-stat__icon">
-            <HiOutlineUsers />
-          </div>
-          <div className="aum-stat__content">
-            <span className="aum-stat__number">{stats.total}</span>
-            <span className="aum-stat__label">Total Usuarios</span>
+    <div>
+      {/* Stats */}
+      <div className="admin-stat-grid">
+        <div className="admin-stat">
+          <span className="material-symbols-outlined admin-stat__icon">people</span>
+          <div>
+            <p className="admin-stat__value">{stats.total}</p>
+            <p className="admin-stat__label">Total Usuarios</p>
           </div>
         </div>
-
-        <div className="aum-stat aum-stat--admins">
-          <div className="aum-stat__icon">
-            <HiOutlineShieldCheck />
-          </div>
-          <div className="aum-stat__content">
-            <span className="aum-stat__number">{stats.admins}</span>
-            <span className="aum-stat__label">Administradores</span>
-            <span className="aum-stat__sublabel">
-              {stats.activeAdmins} activo{stats.activeAdmins !== 1 ? "s" : ""}
-            </span>
+        <div className="admin-stat">
+          <span className="material-symbols-outlined admin-stat__icon">admin_panel</span>
+          <div>
+            <p className="admin-stat__value">{stats.admins}</p>
+            <p className="admin-stat__label">Administradores</p>
+            <p className="admin-stat__label">{stats.activeAdmins} activo{stats.activeAdmins !== 1 ? "s" : ""}</p>
           </div>
         </div>
-
-        <div className="aum-stat aum-stat--customers">
-          <div className="aum-stat__icon">
-            <HiOutlineUserGroup />
-          </div>
-          <div className="aum-stat__content">
-            <span className="aum-stat__number">{stats.customers}</span>
-            <span className="aum-stat__label">Clientes</span>
-            <span className="aum-stat__sublabel">
-              {stats.activeCustomers} activo
-              {stats.activeCustomers !== 1 ? "s" : ""}
-            </span>
+        <div className="admin-stat">
+          <span className="material-symbols-outlined admin-stat__icon">person</span>
+          <div>
+            <p className="admin-stat__value">{stats.customers}</p>
+            <p className="admin-stat__label">Clientes</p>
+            <p className="admin-stat__label">{stats.activeCustomers} activo{stats.activeCustomers !== 1 ? "s" : ""}</p>
           </div>
         </div>
-
-        <div className="aum-stat aum-stat--inactive">
-          <div className="aum-stat__icon">
-            <HiOutlineEyeOff />
-          </div>
-          <div className="aum-stat__content">
-            <span className="aum-stat__number">{stats.inactiveTotal}</span>
-            <span className="aum-stat__label">Inactivos</span>
+        <div className="admin-stat">
+          <span className="material-symbols-outlined admin-stat__icon">visibility_off</span>
+          <div>
+            <p className="admin-stat__value">{stats.inactiveTotal}</p>
+            <p className="admin-stat__label">Inactivos</p>
           </div>
         </div>
       </div>
 
-      {/* ===== ALERTA ÚLTIMO ADMIN ===== */}
+      {/* Last admin alert */}
       {stats.isLastAdmin && stats.activeAdmins === 1 && (
-        <div className="aum-alert">
-          <HiOutlineShieldCheck />
-          <div className="aum-alert__content">
-            <strong>Administrador único</strong>
-            <p>
-              Solo existe un administrador activo en el sistema. No puede ser
-              desactivado ni eliminado por seguridad.
-            </p>
+        <div className="admin-alert admin-alert--info">
+          <span className="material-symbols-outlined admin-alert__icon">admin_panel</span>
+          <div className="admin-alert__content">
+            <strong className="admin-alert__title">Administrador único</strong>
+            <p className="admin-alert__text">Solo existe un administrador activo en el sistema. No puede ser desactivado ni eliminado por seguridad.</p>
           </div>
         </div>
       )}
 
-      {/* ===== BOTÓN FILTROS MÓVIL ===== */}
+      {/* Mobile filters button */}
       <button
-        className="aum-mobile-filters-btn"
+        className="admin-mobile-filter-btn"
         onClick={() => setShowMobileFilters(!showMobileFilters)}
       >
-        <HiOutlineFilter />
-        <span>Filtros {hasActiveFilters && "(Activos)"}</span>
-        {showMobileFilters ? <HiOutlineChevronUp /> : <HiOutlineChevronDown />}
+        <span className="material-symbols-outlined">filter_alt</span>
+        <span className="admin-mobile-filter-btn__label">Filtros {hasActiveFilters && "(Activos)"}</span>
+        <span className="material-symbols-outlined">
+          {showMobileFilters ? "expand_less" : "expand_more"}
+        </span>
       </button>
 
-      {/* ===== FILTROS ===== */}
-      <div
-        className={`aum-filters ${showMobileFilters ? "aum-filters--open" : ""}`}
-      >
-        {/* Búsqueda */}
-        <div className="aum-search">
-          <HiOutlineSearch className="aum-search__icon" />
+      {/* Filters */}
+      <div className={`admin-mobile-filter-body ${showMobileFilters ? "admin-mobile-filter-body--open" : ""}`}>
+        {/* Search */}
+        <div className="admin-input-wrapper">
+          <span className="material-symbols-outlined admin-input-wrapper__icon">search</span>
           <input
             type="text"
             placeholder="Buscar por nombre, email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="aum-search__input"
+            className="admin-input"
           />
           {searchTerm && (
             <button
-              className="aum-search__clear"
+              className="admin-input-wrapper__clear"
               onClick={() => setSearchTerm("")}
               aria-label="Limpiar búsqueda"
             >
-              <HiOutlineX />
+              <span className="material-symbols-outlined admin-input-wrapper__clear-icon">close</span>
             </button>
           )}
         </div>
 
-        {/* Filtro por tipo de usuario */}
-        <div className="aum-filter-group">
-          <span className="aum-filter-label">Tipo:</span>
-          <div className="aum-filter-chips">
+        {/* Role filter */}
+        <div className="admin-filter-group">
+          <span className="admin-filter-group__label">Tipo:</span>
+          <div className="admin-pills">
             <button
-              className={`aum-chip ${roleFilter === "all" ? "aum-chip--active" : ""}`}
+              className={`admin-pill ${roleFilter === "all" ? "admin-pill--active" : ""}`}
               onClick={() => setRoleFilter("all")}
             >
               Todos
             </button>
             <button
-              className={`aum-chip aum-chip--admin ${roleFilter === "admin" ? "aum-chip--active" : ""}`}
+              className={`admin-pill ${roleFilter === "admin" ? "admin-pill--active" : ""}`}
               onClick={() => setRoleFilter("admin")}
             >
-              <HiOutlineShieldCheck size={12} /> Admin ({stats.admins})
+              <span className="material-symbols-outlined">admin_panel</span>
+              Admin<span className="admin-pill__count">({stats.admins})</span>
             </button>
             <button
-              className={`aum-chip aum-chip--customer ${roleFilter === "customer" ? "aum-chip--active" : ""}`}
+              className={`admin-pill ${roleFilter === "customer" ? "admin-pill--active" : ""}`}
               onClick={() => setRoleFilter("customer")}
             >
-              <HiOutlineUser size={12} /> Clientes ({stats.customers})
+              <span className="material-symbols-outlined">person</span>
+              Clientes<span className="admin-pill__count">({stats.customers})</span>
             </button>
           </div>
         </div>
 
-        {/* Filtro por estado */}
-        <div className="aum-filter-group">
-          <span className="aum-filter-label">Estado:</span>
-          <div className="aum-filter-chips">
+        {/* Status filter */}
+        <div className="admin-filter-group">
+          <span className="admin-filter-group__label">Estado:</span>
+          <div className="admin-pills">
             <button
-              className={`aum-chip ${statusFilter === "all" ? "aum-chip--active" : ""}`}
+              className={`admin-pill ${statusFilter === "all" ? "admin-pill--active" : ""}`}
               onClick={() => setStatusFilter("all")}
             >
               Todos
             </button>
             <button
-              className={`aum-chip aum-chip--active-status ${statusFilter === "active" ? "aum-chip--active" : ""}`}
+              className={`admin-pill ${statusFilter === "active" ? "admin-pill--active" : ""}`}
               onClick={() => setStatusFilter("active")}
             >
-              Activos ({stats.activeTotal})
+              Activos<span className="admin-pill__count">({stats.activeTotal})</span>
             </button>
             <button
-              className={`aum-chip aum-chip--inactive-status ${statusFilter === "inactive" ? "aum-chip--active" : ""}`}
+              className={`admin-pill ${statusFilter === "inactive" ? "admin-pill--active" : ""}`}
               onClick={() => setStatusFilter("inactive")}
             >
-              Inactivos ({stats.inactiveTotal})
+              Inactivos<span className="admin-pill__count">({stats.inactiveTotal})</span>
             </button>
           </div>
         </div>
 
-        {/* Limpiar filtros */}
         {hasActiveFilters && (
-          <button className="aum-clear-filters" onClick={clearFilters}>
-            <HiOutlineRefresh size={14} />
+          <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={clearFilters}>
+            <span className="material-symbols-outlined admin-btn__icon--sm">refresh</span>
             Limpiar todos los filtros
           </button>
         )}
       </div>
 
-      {/* ===== INFO RESULTADOS ===== */}
-      <div className="aum-results-info">
-        <span>
-          Mostrando {filteredUsers.length} de {users.length} usuarios
+      {/* Results info */}
+      <div className="admin-results-info">
+        <div className="admin-results-info__tags">
+          <span>
+            Mostrando {filteredUsers.length} de {users.length} usuarios
+          </span>
           {roleFilter !== "all" && (
-            <span className="aum-tag">
+            <span className="admin-results-info__tag">
               {roleFilter === "admin" ? "Administradores" : "Clientes"}
             </span>
           )}
           {statusFilter !== "all" && (
-            <span className="aum-tag">
+            <span className="admin-results-info__tag">
               {statusFilter === "active" ? "Activos" : "Inactivos"}
             </span>
           )}
           {searchTerm && (
-            <span className="aum-tag aum-tag--search">"{searchTerm}"</span>
+            <span className="admin-results-info__tag">"{searchTerm}"</span>
           )}
-        </span>
+        </div>
       </div>
 
-      {/* ===== LISTA DE USUARIOS ===== */}
-      <div className="aum-list">
-        {filteredUsers.length === 0 ? (
-          <div className="aum-empty">
-            <HiOutlineUsers className="aum-empty__icon" />
-            <h3>No se encontraron usuarios</h3>
-            <p>Intenta ajustar los filtros de búsqueda</p>
-            {hasActiveFilters && (
-              <button className="aum-empty__btn" onClick={clearFilters}>
-                <HiOutlineRefresh /> Limpiar filtros
-              </button>
-            )}
-          </div>
-        ) : (
-          <>
-            {/* ===== VISTA DESKTOP: TABLA ===== */}
-            <div className="aum-table-wrapper">
-              <table className="aum-table">
-                <thead>
-                  <tr>
-                    <th>Usuario</th>
-                    <th>Email</th>
-                    <th>Rol</th>
-                    <th>Estado</th>
-                    <th>Fecha</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map((user) => (
-                    <tr
-                      key={user.id}
-                      className={`aum-row ${!user.is_active ? "aum-row--inactive" : ""}`}
-                    >
-                      <td className="aum-row__user">
-                        <div className="aum-row__avatar">
-                          {user.role === "admin" ? (
-                            <HiOutlineShieldCheck />
-                          ) : (
-                            <HiOutlineUser />
-                          )}
-                        </div>
-                        <div className="aum-row__user-info">
-                          <span className="aum-row__name">
-                            {user.full_name || user.username}
-                            {user.role === "admin" &&
-                              stats.activeAdmins <= 1 &&
-                              user.is_active && (
-                                <span className="aum-badge aum-badge--primary">
-                                  Único admin
-                                </span>
+      {/* User list */}
+      {filteredUsers.length === 0 ? (
+        <div className="admin-empty">
+          <span className="material-symbols-outlined admin-empty__icon">people</span>
+          <h3 className="admin-empty__title">No se encontraron usuarios</h3>
+          <p className="admin-empty__text">Intenta ajustar los filtros de búsqueda</p>
+          {hasActiveFilters && (
+            <button className="admin-btn admin-btn--primary" onClick={clearFilters}>
+              <span className="material-symbols-outlined admin-btn__icon">refresh</span>
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Desktop table */}
+          <div className="admin-hide-mobile">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th className="admin-table__th">Usuario</th>
+                  <th className="admin-table__th">Email</th>
+                  <th className="admin-table__th">Rol</th>
+                  <th className="admin-table__th">Estado</th>
+                  <th className="admin-table__th">Fecha</th>
+                  <th className="admin-table__th">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((user) => {
+                  const isProtected = user.role === "admin" && user.is_active && stats.activeAdmins <= 1;
+                  return (
+                    <tr key={user.id} className={`admin-table__row ${!user.is_active ? "admin-table__row--muted" : ""}`}>
+                      <td className="admin-table__td">
+                        <div className="admin-mobile-card__header" style={{ padding: 0, cursor: "default" }}>
+                          <span className="material-symbols-outlined admin-mobile-card__avatar">
+                            {user.role === "admin" ? "admin_panel" : "person"}
+                          </span>
+                          <div className="admin-mobile-card__info">
+                            <div className="admin-mobile-card__title">
+                              <span className="admin-mobile-card__name">
+                                {user.full_name || user.username}
+                              </span>
+                              {isProtected && (
+                                <span className="admin-badge admin-badge--primary">Único admin</span>
                               )}
-                          </span>
-                          <span className="aum-row__username">
-                            @{user.username}
-                          </span>
+                            </div>
+                            <span className="admin-mobile-card__meta">@{user.username}</span>
+                          </div>
                         </div>
                       </td>
-                      <td className="aum-row__email">{user.email || "—"}</td>
-                      <td>
-                        <span
-                          className={`aum-role-badge ${
-                            user.role === "admin"
-                              ? "aum-role-badge--admin"
-                              : "aum-role-badge--customer"
-                          }`}
-                        >
+                      <td className="admin-table__td">{user.email || "—"}</td>
+                      <td className="admin-table__td">
+                        <span className={`admin-badge ${
+                          user.role === "admin"
+                            ? "admin-badge--primary"
+                            : "admin-badge--neutral"
+                        }`}>
                           {user.role === "admin" ? "Admin" : "Cliente"}
                         </span>
                       </td>
-                      <td>
-                        <span
-                          className={`aum-status-badge ${
-                            user.is_active
-                              ? "aum-status-badge--active"
-                              : "aum-status-badge--inactive"
-                          }`}
-                        >
+                      <td className="admin-table__td">
+                        <span className={`admin-badge ${
+                          user.is_active
+                            ? "admin-badge--success"
+                            : "admin-badge--error"
+                        }`}>
                           {user.is_active ? "Activo" : "Inactivo"}
                         </span>
                       </td>
-                      <td className="aum-row__date">
-                        {new Date(
-                          user.createdAt || user.created_at,
-                        ).toLocaleDateString("es-ES", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
+                      <td className="admin-table__td">
+                        {new Date(user.createdAt || user.created_at).toLocaleDateString("es-ES", {
+                          day: "2-digit", month: "2-digit", year: "numeric",
                         })}
                       </td>
-                      <td className="aum-row__actions">
-                        <button
-                          onClick={() => handleEdit(user)}
-                          className="aum-btn aum-btn--edit"
-                          title="Editar usuario"
-                        >
-                          <HiOutlinePencil />
+                      <td className="admin-table__td">
+                        <div className="admin-table__actions">
+                          <button onClick={() => handleEdit(user)} className="admin-btn admin-btn--icon admin-btn--ghost">
+                            <span className="material-symbols-outlined admin-btn__icon--sm">edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleToggleStatus(user)}
+                            className={`admin-btn admin-btn--icon ${user.is_active ? "admin-btn--danger" : "admin-btn--ghost"}`}
+                            disabled={user.role === "admin" && user.is_active && stats.activeAdmins <= 1}
+                          >
+                            <span className="material-symbols-outlined admin-btn__icon--sm">
+                              {user.is_active ? "visibility_off" : "visibility"}
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(user)}
+                            className="admin-btn admin-btn--icon admin-btn--danger"
+                            disabled={(user.role === "admin" && stats.admins <= 1) || stats.isLastUser}
+                          >
+                            <span className="material-symbols-outlined admin-btn__icon--sm">delete</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="admin-mobile-cards">
+            {filteredUsers.map((user) => {
+              const isExpanded = expandedCards[user.id];
+              const isProtected = user.role === "admin" && user.is_active && stats.activeAdmins <= 1;
+              return (
+                <div key={user.id} className={`admin-mobile-card ${!user.is_active ? "admin-mobile-card--muted" : ""}`}>
+                  <div className="admin-mobile-card__header" onClick={() => toggleExpand(user.id)}>
+                    <span className="material-symbols-outlined admin-mobile-card__avatar">
+                      {user.role === "admin" ? "admin_panel" : "person"}
+                    </span>
+                    <div className="admin-mobile-card__info">
+                      <div className="admin-mobile-card__title">
+                        <span className="admin-mobile-card__name">{user.full_name || user.username}</span>
+                        {isProtected && <span className="admin-badge admin-badge--primary">Protegido</span>}
+                      </div>
+                      <span className="admin-mobile-card__meta">@{user.username}</span>
+                      <div className="admin-mobile-card__meta">
+                        <span className={`admin-badge ${
+                          user.role === "admin" ? "admin-badge--primary" : "admin-badge--neutral"
+                        }`}>
+                          {user.role === "admin" ? "Admin" : "Cliente"}
+                        </span>
+                        <span className={`admin-badge ${
+                          user.is_active ? "admin-badge--success" : "admin-badge--error"
+                        }`}>
+                          {user.is_active ? "Activo" : "Inactivo"}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="material-symbols-outlined admin-mobile-card__expand">
+                      {isExpanded ? "expand_less" : "expand_more"}
+                    </span>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="admin-mobile-card__body">
+                      <div className="admin-mobile-card__details">
+                        <div className="admin-mobile-card__detail">
+                          <span className="admin-mobile-card__detail-label">Email</span>
+                          <span className="admin-mobile-card__detail-value">{user.email || "—"}</span>
+                        </div>
+                        <div className="admin-mobile-card__detail">
+                          <span className="admin-mobile-card__detail-label">Fecha registro</span>
+                          <span className="admin-mobile-card__detail-value">
+                            {new Date(user.createdAt || user.created_at).toLocaleDateString("es-ES", {
+                              day: "2-digit", month: "long", year: "numeric",
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="admin-mobile-card__actions">
+                        <button onClick={() => handleEdit(user)} className="admin-btn admin-btn--secondary admin-btn--sm admin-btn--full">
+                          <span className="material-symbols-outlined admin-btn__icon--sm">edit</span>
+                          Editar
                         </button>
                         <button
                           onClick={() => handleToggleStatus(user)}
-                          className={`aum-btn ${
-                            user.is_active
-                              ? "aum-btn--deactivate"
-                              : "aum-btn--activate"
-                          }`}
-                          title={
-                            user.is_active
-                              ? "Desactivar usuario"
-                              : "Activar usuario"
-                          }
-                          disabled={
-                            user.role === "admin" &&
-                            user.is_active &&
-                            stats.activeAdmins <= 1
-                          }
+                          className={`admin-btn admin-btn--sm admin-btn--full ${user.is_active ? "admin-btn--danger" : "admin-btn--secondary"}`}
+                          disabled={user.role === "admin" && user.is_active && stats.activeAdmins <= 1}
                         >
-                          {user.is_active ? (
-                            <HiOutlineEyeOff />
-                          ) : (
-                            <HiOutlineEye />
-                          )}
+                          <span className="material-symbols-outlined admin-btn__icon--sm">{user.is_active ? "visibility_off" : "visibility"}</span>
+                          {user.is_active ? "Desactivar" : "Activar"}
                         </button>
                         <button
                           onClick={() => handleDelete(user)}
-                          className="aum-btn aum-btn--delete"
-                          title="Eliminar usuario"
-                          disabled={
-                            (user.role === "admin" && stats.admins <= 1) ||
-                            stats.isLastUser
-                          }
+                          className="admin-btn admin-btn--danger admin-btn--sm admin-btn--full"
+                          disabled={(user.role === "admin" && stats.admins <= 1) || stats.isLastUser}
                         >
-                          <HiOutlineTrash />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* ===== VISTA MÓVIL: TARJETAS ===== */}
-            <div className="aum-cards">
-              {filteredUsers.map((user) => {
-                const isExpanded = expandedCards[user.id];
-                const isProtected =
-                  user.role === "admin" &&
-                  user.is_active &&
-                  stats.activeAdmins <= 1;
-
-                return (
-                  <div
-                    key={user.id}
-                    className={`aum-card ${!user.is_active ? "aum-card--inactive" : ""} ${isProtected ? "aum-card--protected" : ""}`}
-                  >
-                    <div
-                      className="aum-card__main"
-                      onClick={() => toggleExpand(user.id)}
-                    >
-                      <div className="aum-card__avatar">
-                        {user.role === "admin" ? (
-                          <HiOutlineShieldCheck />
-                        ) : (
-                          <HiOutlineUser />
-                        )}
-                      </div>
-                      <div className="aum-card__info">
-                        <div className="aum-card__name-row">
-                          <span className="aum-card__name">
-                            {user.full_name || user.username}
-                          </span>
-                          {isProtected && (
-                            <span className="aum-badge aum-badge--primary aum-badge--sm">
-                              Protegido
-                            </span>
-                          )}
-                        </div>
-                        <span className="aum-card__username">
-                          @{user.username}
-                        </span>
-                        <div className="aum-card__tags">
-                          <span
-                            className={`aum-role-badge ${
-                              user.role === "admin"
-                                ? "aum-role-badge--admin"
-                                : "aum-role-badge--customer"
-                            }`}
-                          >
-                            {user.role === "admin" ? "Admin" : "Cliente"}
-                          </span>
-                          <span
-                            className={`aum-status-badge ${
-                              user.is_active
-                                ? "aum-status-badge--active"
-                                : "aum-status-badge--inactive"
-                            }`}
-                          >
-                            {user.is_active ? "Activo" : "Inactivo"}
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        className="aum-card__expand"
-                        aria-label={isExpanded ? "Colapsar" : "Expandir"}
-                      >
-                        {isExpanded ? (
-                          <HiOutlineChevronUp />
-                        ) : (
-                          <HiOutlineChevronDown />
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Contenido expandible */}
-                    <div
-                      className={`aum-card__details ${isExpanded ? "aum-card__details--open" : ""}`}
-                    >
-                      <div className="aum-card__detail-row">
-                        <span className="aum-card__detail-label">Email</span>
-                        <span className="aum-card__detail-value">
-                          {user.email || "—"}
-                        </span>
-                      </div>
-                      <div className="aum-card__detail-row">
-                        <span className="aum-card__detail-label">
-                          Fecha registro
-                        </span>
-                        <span className="aum-card__detail-value">
-                          {new Date(
-                            user.createdAt || user.created_at,
-                          ).toLocaleDateString("es-ES", {
-                            day: "2-digit",
-                            month: "long",
-                            year: "numeric",
-                          })}
-                        </span>
-                      </div>
-                      <div className="aum-card__actions">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(user);
-                          }}
-                          className="aum-btn aum-btn--edit"
-                        >
-                          <HiOutlinePencil /> Editar
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleStatus(user);
-                          }}
-                          className={`aum-btn ${
-                            user.is_active
-                              ? "aum-btn--deactivate"
-                              : "aum-btn--activate"
-                          }`}
-                          disabled={
-                            user.role === "admin" &&
-                            user.is_active &&
-                            stats.activeAdmins <= 1
-                          }
-                        >
-                          {user.is_active ? (
-                            <>
-                              <HiOutlineEyeOff /> Desactivar
-                            </>
-                          ) : (
-                            <>
-                              <HiOutlineEye /> Activar
-                            </>
-                          )}
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(user);
-                          }}
-                          className="aum-btn aum-btn--delete"
-                          disabled={
-                            (user.role === "admin" && stats.admins <= 1) ||
-                            stats.isLastUser
-                          }
-                        >
-                          <HiOutlineTrash /> Eliminar
+                          <span className="material-symbols-outlined admin-btn__icon--sm">delete</span>
+                          Eliminar
                         </button>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
 
-      {/* ===== MODAL DE EDICIÓN ===== */}
       {showEditForm && (
         <AdminUserForm
           user={editingUser}

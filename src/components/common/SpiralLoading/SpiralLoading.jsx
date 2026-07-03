@@ -1,37 +1,63 @@
-// components/common/SpiralLoading/SpiralLoading.jsx - VERSIÓN OPTIMIZADA
 import { useSelector } from "react-redux";
 import "./SpiralLoading.css";
 
-const SpiralLoading = ({ fadeOut = false }) => {
+/**
+ * SpiralLoading - Pantalla de carga principal
+ *
+ * Muestra un spinner animado con el nombre de la app
+ * y skeleton loaders mientras se cargan los datos iniciales.
+ *
+ * @returns {JSX.Element} Componente de loading
+ */
+const SpiralLoading = () => {
   const appConfig = useSelector((state) => state.appConfig.config);
-  const appName = appConfig?.app_name || "Cruz Market";
-  const appDescription =
-    appConfig?.app_description || "🛒 Tu tienda de confianza";
+  const appName = appConfig?.app_name || "La Bodeguita";
 
   return (
-    <div className={`spiral-loading ${fadeOut ? "fade-out" : ""}`}>
-      <div className="spiral-container">
-        <div className="spiral">
-          <div className="spiral-ring ring-1"></div>
-          <div className="spiral-ring ring-2"></div>
-          <div className="spiral-ring ring-3"></div>
-          <div className="spiral-ring ring-4"></div>
-          <div className="spiral-core"></div>
-        </div>
+    <div
+      className="spiral-loading"
+      role="status"
+      aria-label={`Cargando ${appName}`}
+      aria-live="polite"
+    >
+      {/* Spinner animado */}
+      <div className="spiral-loading__spinner">
+        {/* Anillo base decorativo */}
+        <div className="spiral-loading__ring-base" aria-hidden="true" />
 
-        <div className="floating-particles">
-          <div className="particle particle-1"></div>
-          <div className="particle particle-2"></div>
-          <div className="particle particle-3"></div>
-          <div className="particle particle-4"></div>
-          <div className="particle particle-5"></div>
+        {/* Anillo exterior - gira horario */}
+        <div className="spiral-loading__ring-outer" aria-hidden="true" />
+
+        {/* Anillo interior - gira antihorario */}
+        <div className="spiral-loading__ring-inner" aria-hidden="true" />
+
+        {/* Icono central */}
+        <div className="spiral-loading__icon" aria-hidden="true">
+          <span className="material-symbols-outlined">storefront</span>
         </div>
       </div>
 
-      <div className="welcome-message">
-        <h2>{appName}</h2>
-        <p>{appDescription}</p>
+      {/* Texto de carga */}
+      <div className="spiral-loading__text">
+        <h2 className="spiral-loading__title">{appName}</h2>
+
+        {/* Puntos animados */}
+        <div className="spiral-loading__dots" aria-hidden="true">
+          <span className="spiral-loading__dot" />
+          <span className="spiral-loading__dot" />
+          <span className="spiral-loading__dot" />
+        </div>
       </div>
+
+      {/* Skeleton loader */}
+      <div className="spiral-loading__skeleton" aria-hidden="true">
+        <div className="spiral-loading__skeleton-line" />
+        <div className="spiral-loading__skeleton-line spiral-loading__skeleton-line--short" />
+        <div className="spiral-loading__skeleton-line spiral-loading__skeleton-line--shorter" />
+      </div>
+
+      {/* Texto oculto para screen readers */}
+      <span className="sr-only">Cargando aplicación, por favor espera...</span>
     </div>
   );
 };

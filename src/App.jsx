@@ -51,24 +51,24 @@ const AppContent = () => {
   // ✅ APLICAR TEMA CUANDO LA CONFIGURACIÓN ESTÉ DISPONIBLE
   useEffect(() => {
     if (appConfig && appConfig.theme && !themeApplied) {
-      console.log("🎨 Aplicando tema desde configuración:", appConfig.theme);
+      console.log("Aplicando tema desde configuración:", appConfig.theme);
       applyTheme(appConfig.theme);
       setThemeApplied(true);
     } else if (appConfig && !themeApplied) {
-      console.log("🎨 Aplicando tema por defecto: blue");
-      applyTheme("blue");
-      setThemeApplied(true);
-    }
+    console.log("Aplicando tema por defecto: bodeguita");
+    applyTheme("bodeguita");
+    setThemeApplied(true);
+  }
   }, [appConfig, themeApplied]);
 
   // ✅ CARGAR DATOS INICIALES Y VERIFICAR AUTENTICACIÓN
   const loadInitialData = async () => {
     try {
-      console.log("🚀 Iniciando carga de datos...");
+      console.log("[APP] Iniciando carga de datos...");
 
       if (hasValidCachedData() && !syncCompleted) {
         console.log(
-          "📦 Datos cacheados encontrados, mostrando UI inmediatamente...",
+          "Datos cacheados encontrados, mostrando UI inmediatamente...",
         );
         setUsingCachedData(true);
         setIsLoading(false);
@@ -82,9 +82,9 @@ const AppContent = () => {
       try {
         if (!usingCachedData) setLoadingStatus("Cargando configuración...");
         await dispatch(loadAppConfig());
-        console.log("✅ Configuración cargada/sincronizada");
+        console.log("[OK] Configuración cargada/sincronizada");
       } catch (configError) {
-        console.warn("⚠️ Error cargando configuración:", configError);
+        console.warn("Error cargando configuración:", configError);
         syncErrors.push("config");
         if (!hasValidCachedData()) {
           await dispatch(loadDefaultConfig());
@@ -96,12 +96,12 @@ const AppContent = () => {
 
       const loadPromises = [
         dispatch(getProducts()).catch((error) => {
-          console.warn("⚠️ Error cargando productos:", error);
+          console.warn("Error cargando productos:", error);
           syncErrors.push("products");
           return null;
         }),
         dispatch(getCategories()).catch((error) => {
-          console.warn("⚠️ Error cargando categorías:", error);
+          console.warn("Error cargando categorías:", error);
           syncErrors.push("categories");
           return null;
         }),
@@ -111,7 +111,7 @@ const AppContent = () => {
         if (!usingCachedData) setLoadingStatus("Cargando datos adicionales...");
         loadPromises.push(dispatch(loadFeaturedProducts()));
       } catch (featuredError) {
-        console.warn("⚠️ Productos destacados no cargados:", featuredError);
+        console.warn("Productos destacados no cargados:", featuredError);
       }
 
       await Promise.allSettled(loadPromises);
@@ -121,10 +121,10 @@ const AppContent = () => {
       const token = localStorage.getItem("token");
 
       if (token) {
-        console.log("🔑 Token encontrado, verificando autenticación...");
+        console.log("Token encontrado, verificando autenticación...");
         await dispatch(StartChecking());
       } else {
-        console.log("🔓 No hay token, usuario no autenticado");
+        console.log("No hay token, usuario no autenticado");
         dispatch(checkingFinish());
       }
 
@@ -134,20 +134,20 @@ const AppContent = () => {
 
       if (syncErrors.length > 0) {
         console.warn(
-          `⚠️ Sincronización completada con errores: ${syncErrors.join(", ")}`,
+          `Sincronización completada con errores: ${syncErrors.join(", ")}`,
         );
         setHasErrors(true);
       } else {
-        console.log("✅ Sincronización completada exitosamente");
+        console.log("[OK] Sincronización completada exitosamente");
         setHasErrors(false);
       }
 
       if (usingCachedData) {
         setUsingCachedData(false);
-        console.log("🔄 Cambiando de datos cacheados a datos actualizados");
+        console.log("Cambiando de datos cacheados a datos actualizados");
       }
     } catch (error) {
-      console.error("❌ Error crítico en sincronización:", error);
+      console.error("Error crítico en sincronización:", error);
       setHasErrors(true);
       if (!hasValidCachedData()) {
         setDataLoaded(false);
@@ -160,7 +160,7 @@ const AppContent = () => {
   useEffect(() => {
     const initializeApp = async () => {
       if (hasValidCachedData()) {
-        console.log("🎯 Datos cacheados disponibles, mostrando UI...");
+        console.log("Datos cacheados disponibles, mostrando UI...");
         setIsLoading(false);
       }
       await loadInitialData();
@@ -193,15 +193,15 @@ const AppContent = () => {
       auth?.isLoggedIn &&
       !roleSelectorShownRef.current
     ) {
-      console.log("👤 Usuario autenticado:", auth);
+      console.log("Usuario autenticado:", auth);
       console.log("Rol del usuario:", auth?.role);
 
       if (auth?.role === "admin") {
-        console.log("🎭 Admin detectado, mostrando RoleSelector");
+        console.log("Admin detectado, mostrando RoleSelector");
         roleSelectorShownRef.current = true;
         setShowRoleSelector(true);
       } else if (auth?.role === "client") {
-        console.log("👤 Cliente detectado, mostrando ClientInterface");
+        console.log("Cliente detectado, mostrando ClientInterface");
         setCurrentView("client");
       }
     }
@@ -211,7 +211,7 @@ const AppContent = () => {
   useEffect(() => {
     const maintenanceTimeout = setTimeout(() => {
       if (isLoading && !hasValidCachedData() && !authCheckComplete) {
-        console.log("🚨 Timeout de 12 segundos: Activando modo mantenimiento");
+        console.log("Timeout de 12 segundos: Activando modo mantenimiento");
         setMaintenanceMode(true);
         setIsLoading(false);
         setAuthCheckComplete(true);
@@ -222,7 +222,7 @@ const AppContent = () => {
 
   // ✅ REINTENTAR CONEXIÓN
   const handleRetryConnection = () => {
-    console.log("🔄 Reintentando conexión...");
+    console.log("Reintentando conexión...");
     setMaintenanceMode(false);
     setHasErrors(false);
     setDataLoaded(false);
@@ -239,10 +239,10 @@ const AppContent = () => {
   // ✅ MANEJAR LOGIN EXITOSO DESDE AuthPage
   // ✅ MANEJAR LOGIN EXITOSO DESDE AuthPage
   const handleLoginSuccess = (userData) => {
-    console.log("🔑 Login exitoso desde AuthPage - Datos completos:", userData);
-    console.log("👤 Datos del usuario anidado:", userData.user);
-    console.log("👤 Role del usuario:", userData.user?.role);
-    console.log("👤 ID del usuario:", userData.user?.uid || userData.user?.id);
+    console.log("Login exitoso desde AuthPage - Datos completos:", userData);
+    console.log("Datos del usuario anidado:", userData.user);
+    console.log("Role del usuario:", userData.user?.role);
+    console.log("ID del usuario:", userData.user?.uid || userData.user?.id);
 
     roleSelectorShownRef.current = false;
 
@@ -275,27 +275,27 @@ const AppContent = () => {
     // ✅ FORZAR RECARGA DE ESTADO PARA QUE EL ROLE SELECTOR SE ACTIVE
     // Pequeño delay para asegurar que Redux actualizó el estado
     setTimeout(() => {
-      console.log("🔄 Verificando estado después de login...");
+      console.log("Verificando estado después de login...");
     }, 100);
   };
 
   // ✅ MANEJAR SELECCIÓN DE VISTA CLIENTE DESDE ROLE SELECTOR
   const handleSelectClient = () => {
-    console.log("👁️ Admin seleccionó Vista Cliente");
+    console.log("Admin seleccionó Vista Cliente");
     setShowRoleSelector(false);
     setCurrentView("client");
   };
 
   // ✅ MANEJAR SELECCIÓN DE PANEL ADMIN DESDE ROLE SELECTOR
   const handleSelectAdmin = () => {
-    console.log("⚙️ Admin seleccionó Panel de Administración");
+    console.log("Admin seleccionó Panel de Administración");
     setShowRoleSelector(false);
     setCurrentView("admin");
   };
 
   // ✅ MANEJAR LOGOUT
   const handleLogout = () => {
-    console.log("👋 Cerrando sesión...");
+    console.log("Cerrando sesión...");
     dispatch({ type: types.authLogout });
     localStorage.removeItem("token");
     setCurrentView("client");
@@ -305,7 +305,7 @@ const AppContent = () => {
 
   // ✅ FUNCIÓN PARA CAMBIAR VISTA
   const handleViewChange = (view) => {
-    console.log("🔄 Cambiando vista a:", view);
+    console.log("Cambiando vista a:", view);
     setCurrentView(view);
   };
 
@@ -315,7 +315,7 @@ const AppContent = () => {
   };
 
   // ✅ DEBUG
-  console.log("🔍 Estado App:", {
+  console.log("Estado App:", {
     isLoading,
     maintenanceMode,
     authCheckComplete,
@@ -343,7 +343,7 @@ const AppContent = () => {
       <div className="relative">
         <SpiralLoading />
         <div className="fixed bottom-10 left-0 right-0 text-center z-50">
-          <div className="bg-black bg-opacity-70 text-white inline-block px-6 py-3 rounded-full shadow-lg">
+            <div className="bg-black/70 text-white inline-block px-6 py-3 rounded-full shadow-lg">
             <div className="flex items-center gap-3">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
               <span className="font-medium">{loadingStatus}</span>
@@ -356,13 +356,13 @@ const AppContent = () => {
 
   // ✅ RENDERIZAR AUTH PAGE (NO AUTENTICADO)
   if (!auth?.isLoggedIn) {
-    console.log("🔒 Usuario no autenticado, mostrando AuthPage");
+    console.log("Usuario no autenticado, mostrando AuthPage");
     return <AuthPage onLoginSuccess={handleLoginSuccess} />;
   }
 
   // ✅ RENDERIZAR ROLE SELECTOR (SOLO PARA ADMIN)
   if (showRoleSelector && auth?.role === "admin") {
-    console.log("🎭 Mostrando RoleSelector");
+    console.log("Mostrando RoleSelector");
     return (
       <RoleSelector
         userData={auth}
@@ -373,7 +373,7 @@ const AppContent = () => {
   }
 
   // ✅ USUARIO AUTENTICADO - MOSTRAR INTERFAZ CORRESPONDIENTE
-  console.log("✅ Usuario autenticado, mostrando interfaz:", currentView);
+  console.log("[OK] Usuario autenticado, mostrando interfaz:", currentView);
 
   return (
     <div className="font-sans antialiased">
@@ -402,7 +402,7 @@ const App = () => {
   return (
     <PersistGate
       loading={
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="min-h-screen flex items-center justify-center bg-surface">
           <SpiralLoading />
         </div>
       }

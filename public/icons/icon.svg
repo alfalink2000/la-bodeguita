@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#B22222;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B1A1A;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#DAA520;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="250" fill="url(#bgGradient)"/>
+  
+  <!-- Inner accent ring -->
+  <circle cx="256" cy="256" r="230" fill="none" stroke="url(#goldGradient)" stroke-width="8"/>
+  
+  <!-- Wine glass / bodega bottle silhouette -->
+  <g transform="translate(256, 320) scale(1.2)">
+    <!-- Glass body -->
+    <path d="M-48 0 
+             L-36 -80 
+             Q-36 -120 -20 -140 
+             L20 -140 
+             Q36 -120 36 -80 
+             L48 0 
+             Z" 
+          fill="rgba(255,251,245,0.95)" 
+          stroke="#DAA520" 
+          stroke-width="2"/>
+    
+    <!-- Wine liquid -->
+    <path d="M-32 -20 
+             L-24 -70 
+             Q-24 -90 -12 -105 
+             L12 -105 
+             Q24 -90 24 -70 
+             L32 -20 
+             Z" 
+          fill="#B22222" 
+          opacity="0.9"/>
+    
+    <!-- Highlight on glass -->
+    <path d="M-36 -80 Q-20 -90 -4 -80" 
+          fill="none" 
+          stroke="rgba(255,251,245,0.4)" 
+          stroke-width="3" 
+          stroke-linecap="round"/>
+    
+    <!-- Gold accent line on neck -->
+    <rect x="-38" y="-85" width="76" height="4" fill="url(#goldGradient)" rx="2"/>
+  </g>
+  
+  <!-- "LB" initials or small text -->
+  <text x="256" y="420" 
+        font-family="Georgia, serif" 
+        font-size="48" 
+        font-weight="bold" 
+        fill="#DAA520" 
+        text-anchor="middle" 
+        letter-spacing="4">
+    LB
+  </text>
+  
+  <!-- Small tagline -->
+  <text x="256" y="465" 
+        font-family="Georgia, serif" 
+        font-size="18" 
+        fill="rgba(255,251,245,0.8)" 
+        text-anchor="middle" 
+        letter-spacing="2">
+    PINAR DEL RÍO
+  </text>
+</svg>

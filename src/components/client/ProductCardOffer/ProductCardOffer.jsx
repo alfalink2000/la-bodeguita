@@ -1,7 +1,4 @@
 import React, { useCallback, memo } from "react";
-import { FiPhone } from "react-icons/fi";
-import { HiOutlineFire } from "react-icons/hi";
-import "./ProductCardOffer.css";
 
 const ProductCardOffer = memo(
   ({ product, onWhatsAppClick, onProductClick }) => {
@@ -25,35 +22,37 @@ const ProductCardOffer = memo(
     }, []);
 
     return (
-      <div className="product-card-offer" onClick={handleCardClick}>
-        <div className="offer-hot-badge">
-          <HiOutlineFire className="hot-icon" />
-          <span>HOT</span>
+      <div className="client-offer-card" onClick={handleCardClick}>
+        <div className="client-offer-card__badge">
+          <span className="client-offer-card__badge-icon material-symbols-outlined">local_fire_department</span>
+          <span className="client-offer-card__badge-text">HOT</span>
         </div>
 
-        <div className="product-card-offer__image-container">
+        <div className="client-offer-card__image-wrapper">
           <img
             src={product.image_url}
             alt={product.name}
-            className="product-card-offer__image"
+            className="client-offer-card__image"
             onError={handleImageError}
             loading="lazy"
           />
         </div>
 
-        <div className="product-card-offer__content">
-          <h3 className="product-card-offer__name">{product.name}</h3>
+        <div className="client-offer-card__body">
+          <h3 className="client-offer-card__name">
+            {product.name}
+          </h3>
 
-          <div className="product-card-offer__info-row">
-            <div className="product-card-offer__price">
+          <div className="client-offer-card__row">
+            <div className="client-offer-card__price">
               ${parseFloat(product.price).toFixed(2)}
             </div>
-            <div className="product-card-offer__category">
+            <div className="client-offer-card__category">
               {product.category?.name}
             </div>
           </div>
 
-          <p className="product-card-offer__description">
+          <p className="client-offer-card__description">
             {product.description?.substring(0, 80) ||
               "¡Oferta especial! No te pierdas esta oportunidad..."}
             {product.description && product.description.length > 80
@@ -62,11 +61,11 @@ const ProductCardOffer = memo(
           </p>
 
           <button
-            className="product-card-offer__whatsapp-btn"
+            className="client-offer-card__btn"
             onClick={handleWhatsAppClick}
             disabled={!isAvailable}
           >
-            <FiPhone className="whatsapp-icon" />
+            <span className="client-offer-card__btn-icon material-symbols-outlined">phone</span>
             Consultar Oferta
           </button>
         </div>

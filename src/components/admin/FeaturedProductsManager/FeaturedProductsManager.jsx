@@ -7,13 +7,12 @@ import {
   getFeaturedProducts,
 } from "../../../actions/featuredProductsActions";
 import SearchFilter from "../SearchFilter/SearchFilter";
-import "./FeaturedProductsManager.css";
 
 const FeaturedProductsManager = () => {
   const dispatch = useDispatch();
   const products = useSelector((state) => state.products.products);
   const featuredProducts = useSelector(
-    (state) => state.products.featuredProducts
+    (state) => state.products.featuredProducts,
   );
 
   const [activeTab, setActiveTab] = useState("popular");
@@ -25,7 +24,6 @@ const FeaturedProductsManager = () => {
     dispatch(getFeaturedProducts());
   }, [dispatch]);
 
-  // Memoizar categorías
   const categories = useMemo(() => {
     const uniqueCategories = [
       ...new Set(products.map((p) => p.category?.name).filter(Boolean)),
@@ -33,7 +31,6 @@ const FeaturedProductsManager = () => {
     return ["Todos", ...uniqueCategories];
   }, [products]);
 
-  // Memoizar productos filtrados
   const filteredProducts = useMemo(
     () =>
       products.filter((product) => {
@@ -45,32 +42,31 @@ const FeaturedProductsManager = () => {
           product.category?.name === selectedCategory;
         return matchesSearch && matchesCategory;
       }),
-    [products, searchTerm, selectedCategory]
+    [products, searchTerm, selectedCategory],
   );
 
-  // Handlers optimizados
   const isProductPopular = useCallback(
     (productId) => featuredProducts.popular.includes(productId),
-    [featuredProducts.popular]
+    [featuredProducts.popular],
   );
 
   const isProductOnSale = useCallback(
     (productId) => featuredProducts.onSale.includes(productId),
-    [featuredProducts.onSale]
+    [featuredProducts.onSale],
   );
 
   const handleTogglePopular = useCallback(
     (productId) => {
       dispatch(toggleProductPopular(productId));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const handleToggleOnSale = useCallback(
     (productId) => {
       dispatch(toggleProductOnSale(productId));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const handleSave = useCallback(async () => {
@@ -80,81 +76,88 @@ const FeaturedProductsManager = () => {
         saveFeaturedProducts({
           popular: featuredProducts.popular,
           onSale: featuredProducts.onSale,
-        })
+        }),
       );
     } finally {
       setSaving(false);
     }
   }, [dispatch, featuredProducts]);
 
-  // Componente de producto reutilizable
   const ProductItem = useCallback(
     ({ product, isSelected, onToggle }) => (
       <div
-        className={`product-item ${isSelected ? "selected" : ""}`}
+        className={`admin-product-select${isSelected ? " admin-product-select--selected" : ""}`}
         onClick={() => onToggle(product.id)}
       >
         <img
           src={product.image_url || "/default-product.png"}
           alt={product.name}
-          className="product-image"
+          className="admin-product-select__img"
           onError={(e) => {
             e.target.src = "/default-product.png";
           }}
         />
-        <div className="product-info">
-          <span className="product-name">{product.name}</span>
-          <span className="product-category">
-            {product.category?.name || "Sin categoría"}
-          </span>
-          <span className="product-price">${product.price}</span>
+        <div className="admin-product-select__info">
+          <span className="admin-product-select__name">{product.name}</span>
+          <span className="admin-product-select__category">{product.category?.name || "Sin categoría"}</span>
+          <span className="admin-product-select__price">${product.price}</span>
         </div>
-        <div className="selection-indicator">{isSelected ? "✓" : "+"}</div>
+        <div className="admin-product-select__check">
+          <span className="material-symbols-outlined">
+            {isSelected ? "check" : "add"}
+          </span>
+        </div>
       </div>
     ),
-    []
+    [],
   );
 
   return (
-    <div className="featured-products-manager">
-      <div className="featured-header">
-        <h3>Productos Destacados</h3>
+    <div className="admin-card">
+      {/* Header */}
+      <div className="admin-page-header">
+        <h3 className="admin-page-header__title">Productos Destacados</h3>
         <button
-          className="save-featured-btn"
+          className="admin-btn admin-btn--primary"
           onClick={handleSave}
           disabled={saving}
         >
+          <span className="material-symbols-outlined admin-btn__icon">save</span>
           {saving ? "Guardando..." : "Guardar Cambios"}
         </button>
       </div>
 
-      <div className="stats-bar">
-        <div className="stat-item">
-          <span className="stat-number">{featuredProducts.popular.length}</span>
-          <span className="stat-label">Populares</span>
+      {/* Stats */}
+      <div className="admin-stat-grid">
+        <div className="admin-stat">
+          <p className="admin-stat__value">{featuredProducts.popular.length}</p>
+          <p className="admin-stat__label">Populares</p>
         </div>
-        <div className="stat-item">
-          <span className="stat-number">{featuredProducts.onSale.length}</span>
-          <span className="stat-label">En Oferta</span>
+        <div className="admin-stat">
+          <p className="admin-stat__value">{featuredProducts.onSale.length}</p>
+          <p className="admin-stat__label">En Oferta</p>
         </div>
-        <div className="stat-item">
-          <span className="stat-number">{products.length}</span>
-          <span className="stat-label">Total Productos</span>
+        <div className="admin-stat">
+          <p className="admin-stat__value">{products.length}</p>
+          <p className="admin-stat__label">Total Productos</p>
         </div>
       </div>
 
-      <div className="featured-tabs">
+      {/* Tabs */}
+      <div className="admin-tabs">
         <button
-          className={`tab-button ${activeTab === "popular" ? "active" : ""}`}
+          className={`admin-tab${activeTab === "popular" ? " admin-tab--active" : ""}`}
           onClick={() => setActiveTab("popular")}
         >
-          🏆 Populares ({featuredProducts.popular.length})
+          <span className="material-symbols-outlined admin-tab__icon">emoji_events</span>
+          Populares ({featuredProducts.popular.length})
         </button>
         <button
-          className={`tab-button ${activeTab === "sale" ? "active" : ""}`}
+          className={`admin-tab${activeTab === "sale" ? " admin-tab--active" : ""}`}
           onClick={() => setActiveTab("sale")}
         >
-          🎯 En Oferta ({featuredProducts.onSale.length})
+          <span className="material-symbols-outlined admin-tab__icon">gps_fixed</span>
+          En Oferta ({featuredProducts.onSale.length})
         </button>
       </div>
 
@@ -168,59 +171,41 @@ const FeaturedProductsManager = () => {
         onCategoryChange={setSelectedCategory}
       />
 
-      <div className="featured-content">
-        {activeTab === "popular" && (
-          <div className="products-grid">
-            <div className="products-grid__header">
-              <h4>
-                Selecciona los productos populares (
-                {featuredProducts.popular.length} seleccionados)
-              </h4>
-              <span className="products-count">
-                {filteredProducts.length} productos mostrados
-              </span>
-            </div>
-            <div className="products-list">
-              {filteredProducts.map((product) => (
-                <ProductItem
-                  key={product.id}
-                  product={product}
-                  isSelected={isProductPopular(product.id)}
-                  onToggle={handleTogglePopular}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === "sale" && (
-          <div className="products-grid">
-            <div className="products-grid__header">
-              <h4>
-                Selecciona los productos en oferta (
-                {featuredProducts.onSale.length} seleccionados)
-              </h4>
-              <span className="products-count">
-                {filteredProducts.length} productos mostrados
-              </span>
-            </div>
-            <div className="products-list">
-              {filteredProducts.map((product) => (
-                <ProductItem
-                  key={product.id}
-                  product={product}
-                  isSelected={isProductOnSale(product.id)}
-                  onToggle={handleToggleOnSale}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+      {/* Product grid */}
+      <div>
+        <div className="admin-page-header">
+          <h4 className="admin-page-header__title">
+            {activeTab === "popular"
+              ? `Selecciona los productos populares (${featuredProducts.popular.length} seleccionados)`
+              : `Selecciona los productos en oferta (${featuredProducts.onSale.length} seleccionados)`}
+          </h4>
+          <span className="admin-results-info">{filteredProducts.length} productos mostrados</span>
+        </div>
+        <div className="admin-grid admin-grid--3">
+          {activeTab === "popular" &&
+            filteredProducts.map((product) => (
+              <ProductItem
+                key={product.id}
+                product={product}
+                isSelected={isProductPopular(product.id)}
+                onToggle={handleTogglePopular}
+              />
+            ))}
+          {activeTab === "sale" &&
+            filteredProducts.map((product) => (
+              <ProductItem
+                key={product.id}
+                product={product}
+                isSelected={isProductOnSale(product.id)}
+                onToggle={handleToggleOnSale}
+              />
+            ))}
+        </div>
       </div>
 
       {filteredProducts.length === 0 && products.length > 0 && (
-        <div className="featured-products__empty">
-          <p>No se encontraron productos con los filtros aplicados</p>
+        <div className="admin-empty">
+          <p className="admin-empty__text">No se encontraron productos con los filtros aplicados</p>
         </div>
       )}
     </div>

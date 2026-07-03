@@ -34,7 +34,7 @@ const persistConfig = {
   whitelist: ["products", "categories", "appConfig", "cart"],
   blacklist: ["auth", "chat", "orders", "adminUsers", "stores"], // ✅ Explícito lo que NO persistir
   timeout: 10000, // ✅ Aumentado a 10 segundos para evitar timeouts
-  version: 2,
+  version: 3,
 };
 
 const persistedReducer = persistReducer(persistConfig, reducers);

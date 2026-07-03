@@ -3,20 +3,20 @@ import { types } from "../types/types";
 
 // 🔥 OPTIMIZACIÓN: Centralizar valores por defecto
 const DEFAULT_CONFIG = {
-  app_name: "Cruz Market",
-  app_description: "🛒 Tu tienda de confianza",
-  theme: "blue",
-  whatsapp_number: "+5491112345678",
-  business_hours: "Lun-Vie: 8:00 - 20:00",
-  business_address: "Av. Principal 123",
+  app_name: "La Bodeguita",
+  app_description: "🍽️ Tradición culinaria cubana — Pinar del Río",
+  theme: "bodeguita",
+  whatsapp_number: "+5354123456",
+  business_hours: "Lun-Dom: 9:00 - 1:00",
+  business_address: "Pinar del Río, Cuba",
   initialinfo:
-    "🌟 **Bienvenido a nuestro Minimarket Digital** 🌟\n\n¡Estamos encantados de tenerte aquí! En nuestro minimarket encontrarás productos de calidad, horario extendido y servicio personalizado.",
+    "🇨🇺 **Bienvenido a La Bodeguita** 🇨🇺\n\nUn proyecto de realce de la tradición culinaria cubana en Pinar del Río. Aquí encontrarás alimentos, bebidas y productos de calidad con el sabor auténtico de Cuba.\n\n✅ Envíos gratis en la ciudad\n🚚 Te llevamos tu pedido sin costo adicional\n🎶 Vive una experiencia inolvidable",
   show_initialinfo: true,
   logo_url: null,
   currency: "CUP",
   language: "es",
   marquee_text:
-    "🚚 Envíos a domicilio — Calculamos el costo según tu ubicación — ¡Recibe tus productos sin salir de casa! 🚚",
+    "🇨🇺 La Bodeguita — Tradición culinaria cubana — 🚚 Envíos gratis en Pinar del Río — 🌿 Opciones vegetarianas disponibles — 🐕 Pet friendly — ¡Te esperamos!",
 };
 
 const initialState = {
@@ -29,7 +29,7 @@ export const appConfigReducer = (state = initialState, action) => {
     case types.appConfigLoad:
       return {
         ...state,
-        config: { ...DEFAULT_CONFIG, ...action.payload }, // ✅ Fusionar con defaults
+        config: { ...DEFAULT_CONFIG, ...action.payload, app_name: "La Bodeguita" }, // ✅ Forzar nombre de la tienda
       };
 
     case types.appConfigUpdate:

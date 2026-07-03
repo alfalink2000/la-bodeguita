@@ -1,13 +1,11 @@
-// components/ProductForm/ProductForm.jsx
 import { useState, useEffect } from "react";
-import { useDispatch } from "react-redux"; // ✅ IMPORTAR
-import { insertProduct, updateProduct } from "../../../actions/productsActions"; // ✅ IMPORTAR
+import { useDispatch } from "react-redux";
+import { insertProduct, updateProduct } from "../../../actions/productsActions";
 import StoreSelector from "../StoreSelector/StoreSelector";
 import Swal from "sweetalert2";
-import "./ProductForm.css";
 
 const ProductForm = ({ product, categories, onCancel }) => {
-  const dispatch = useDispatch(); // ✅ AGREGAR
+  const dispatch = useDispatch();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -48,41 +46,32 @@ const ProductForm = ({ product, categories, onCancel }) => {
 
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.name.trim()) {
       newErrors.name = "El nombre del producto es requerido";
     }
-
     if (!formData.description.trim()) {
       newErrors.description = "La descripción del producto es requerida";
     }
-
     if (!formData.price || parseFloat(formData.price) <= 0) {
       newErrors.price = "El precio debe ser un número mayor a 0";
     }
-
     if (!formData.category_id) {
       newErrors.category_id = "Debes seleccionar una categoría";
     }
-
     if (!product && !imageFile && !imagePreview) {
       newErrors.image = "La imagen del producto es requerida";
     }
-
     if (formData.stock_quantity < 0) {
       newErrors.stock_quantity = "El stock no puede ser negativo";
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
     setFormData((prev) => {
       const newFormData = { ...prev, [name]: value };
-
       if (name === "status" && value === "outOfStock") {
         newFormData.stock_quantity = 0;
       } else if (
@@ -100,10 +89,8 @@ const ProductForm = ({ product, categories, onCancel }) => {
       ) {
         newFormData.status = "available";
       }
-
       return newFormData;
     });
-
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -119,7 +106,6 @@ const ProductForm = ({ product, categories, onCancel }) => {
         }));
         return;
       }
-
       if (file.size > 10 * 1024 * 1024) {
         setErrors((prev) => ({
           ...prev,
@@ -127,10 +113,8 @@ const ProductForm = ({ product, categories, onCancel }) => {
         }));
         return;
       }
-
       setImageFile(file);
       setErrors((prev) => ({ ...prev, image: "" }));
-
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -139,10 +123,8 @@ const ProductForm = ({ product, categories, onCancel }) => {
     }
   };
 
-  // ✅ CORREGIDO: Usar Redux en lugar de fetch directo
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) {
       const errorMessages = Object.values(errors).join("<br>");
       Swal.fire({
@@ -153,9 +135,7 @@ const ProductForm = ({ product, categories, onCancel }) => {
       });
       return;
     }
-
     setIsLoading(true);
-
     try {
       const submitFormData = new FormData();
       submitFormData.append("name", formData.name.trim());
@@ -163,32 +143,23 @@ const ProductForm = ({ product, categories, onCancel }) => {
       submitFormData.append("price", formData.price);
       submitFormData.append("category_id", formData.category_id);
       submitFormData.append("status", formData.status);
-      submitFormData.append(
-        "stock_quantity",
-        formData.stock_quantity.toString(),
-      );
-
+      submitFormData.append("stock_quantity", formData.stock_quantity.toString());
       if (formData.store_id) {
         submitFormData.append("store_id", formData.store_id);
       }
-
       if (imageFile) {
         submitFormData.append("image", imageFile);
       }
-
       if (product && product.id) {
         submitFormData.append("id", product.id);
         await dispatch(updateProduct(submitFormData));
       } else {
         await dispatch(insertProduct(submitFormData));
       }
-
-      console.log("✅ [ProductForm] Operación completada, cerrando formulario");
-
-      // ✅ Cerrar formulario
+      console.log("[ProductForm] Operación completada, cerrando formulario");
       onCancel();
     } catch (error) {
-      console.error("❌ Error:", error);
+      console.error("Error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -208,192 +179,175 @@ const ProductForm = ({ product, categories, onCancel }) => {
   };
 
   return (
-    <div className="product-form-overlay">
-      <div className="product-form">
-        <div className="product-form__header">
-          <h2 className="product-form__title">
+    <div className="admin-modal admin-modal--open">
+      <div className="admin-modal__overlay" onClick={onCancel} />
+      <div className="admin-modal__container" style={{ maxWidth: "640px" }}>
+        <div className="admin-modal__header" style={{ position: "sticky" }}>
+          <h2 className="admin-modal__title">
             {product ? "Editar Producto" : "Agregar Producto"}
           </h2>
-          <div className="product-form__required-note">* Campos requeridos</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span className="admin-form-group__helper">* Campos requeridos</span>
+            <button type="button" className="admin-modal__close" onClick={onCancel}>
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="product-form__content">
-          {/* Campo Nombre */}
-          <div className="product-form__group">
-            <label className="product-form__label">Nombre *</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className={`product-form__input ${
-                errors.name ? "product-form__input--error" : ""
-              }`}
-              required
-              placeholder="Nombre del producto"
-              disabled={isLoading}
-            />
-            {errors.name && (
-              <span className="product-form__error">{errors.name}</span>
-            )}
-          </div>
+        <form onSubmit={handleSubmit}>
+          <div className="admin-modal__body" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            {/* Name */}
+            <div className="admin-form-group">
+              <label className="admin-form-group__label">Nombre *</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className={`admin-input ${errors.name ? "admin-input--error" : ""}`}
+                required
+                placeholder="Nombre del producto"
+                disabled={isLoading}
+              />
+              {errors.name && <span className="admin-form-group__error">{errors.name}</span>}
+            </div>
 
-          {/* Campo Descripción */}
-          <div className="product-form__group">
-            <label className="product-form__label">Descripción *</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              rows="3"
-              className={`product-form__textarea ${
-                errors.description ? "product-form__input--error" : ""
-              }`}
-              required
-              placeholder="Descripción del producto"
-              disabled={isLoading}
-            />
-            {errors.description && (
-              <span className="product-form__error">{errors.description}</span>
-            )}
-          </div>
+            {/* Description */}
+            <div className="admin-form-group">
+              <label className="admin-form-group__label">Descripción *</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                rows="3"
+                className={`admin-textarea ${errors.description ? "admin-textarea--error" : ""}`}
+                required
+                placeholder="Descripción del producto"
+                disabled={isLoading}
+              />
+              {errors.description && <span className="admin-form-group__error">{errors.description}</span>}
+            </div>
 
-          {/* Campo Precio */}
-          <div className="product-form__group">
-            <label className="product-form__label">Precio ($) *</label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleInputChange}
-              className={`product-form__input ${
-                errors.price ? "product-form__input--error" : ""
-              }`}
-              required
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-              disabled={isLoading}
-            />
-            {errors.price && (
-              <span className="product-form__error">{errors.price}</span>
-            )}
-          </div>
+            {/* Price */}
+            <div className="admin-form-group">
+              <label className="admin-form-group__label">Precio ($) *</label>
+              <input
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={handleInputChange}
+                className={`admin-input ${errors.price ? "admin-input--error" : ""}`}
+                required
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                disabled={isLoading}
+              />
+              {errors.price && <span className="admin-form-group__error">{errors.price}</span>}
+            </div>
 
-          {/* Campo Categoría */}
-          <div className="product-form__group">
-            <label className="product-form__label">Tienda y Categoría *</label>
-            <StoreSelector
-              selectedStoreId={selectedStoreId}
-              onStoreChange={(storeId) => {
-                setSelectedStoreId(storeId);
-                setFormData((prev) => ({
-                  ...prev,
-                  category_id: "",
-                  store_id: storeId,
-                }));
-              }}
-              selectedCategoryId={selectedCategoryId}
-              onCategoryChange={(catId) => {
-                setSelectedCategoryId(catId);
-                setFormData((prev) => ({ ...prev, category_id: catId }));
-              }}
-              disabled={isLoading}
-            />
-            {errors.category_id && (
-              <span className="product-form__error">{errors.category_id}</span>
-            )}
-          </div>
+            {/* Store & Category */}
+            <div className="admin-form-group">
+              <label className="admin-form-group__label">Tienda y Categoría *</label>
+              <StoreSelector
+                selectedStoreId={selectedStoreId}
+                onStoreChange={(storeId) => {
+                  setSelectedStoreId(storeId);
+                  setFormData((prev) => ({
+                    ...prev,
+                    category_id: "",
+                    store_id: storeId,
+                  }));
+                }}
+                selectedCategoryId={selectedCategoryId}
+                onCategoryChange={(catId) => {
+                  setSelectedCategoryId(catId);
+                  setFormData((prev) => ({ ...prev, category_id: catId }));
+                }}
+                disabled={isLoading}
+              />
+              {errors.category_id && <span className="admin-form-group__error">{errors.category_id}</span>}
+            </div>
 
-          {/* Campo Stock */}
-          <div className="product-form__group">
-            <label className="product-form__label">Stock *</label>
-            <input
-              type="number"
-              name="stock_quantity"
-              value={formData.stock_quantity}
-              onChange={handleInputChange}
-              className={`product-form__input ${
-                errors.stock_quantity ? "product-form__input--error" : ""
-              }`}
-              min="0"
-              required
-              placeholder="0"
-              disabled={isLoading}
-            />
-            {errors.stock_quantity && (
-              <span className="product-form__error">
-                {errors.stock_quantity}
+            {/* Stock */}
+            <div className="admin-form-group">
+              <label className="admin-form-group__label">Stock *</label>
+              <input
+                type="number"
+                name="stock_quantity"
+                value={formData.stock_quantity}
+                onChange={handleInputChange}
+                className={`admin-input ${errors.stock_quantity ? "admin-input--error" : ""}`}
+                min="0"
+                required
+                placeholder="0"
+                disabled={isLoading}
+              />
+              {errors.stock_quantity && <span className="admin-form-group__error">{errors.stock_quantity}</span>}
+              <span className="admin-form-group__helper">
+                <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>check_circle</span>
+                Stock se sincroniza automáticamente con el estado
               </span>
-            )}
-            <small className="product-form__help">
-              ✅ Stock se sincroniza automáticamente con el estado
-            </small>
+            </div>
+
+            {/* Image */}
+            <div className="admin-form-group">
+              <label className="admin-form-group__label">
+                Imagen del Producto {!product && "*"}
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="admin-file-input"
+                disabled={isLoading}
+              />
+              <span className="admin-form-group__helper">Formatos: JPG, PNG, GIF, WebP. Máximo 10MB.</span>
+              {errors.image && <span className="admin-form-group__error">{errors.image}</span>}
+              {imagePreview && (
+                <div className="admin-image-preview">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="admin-image-preview__img"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="admin-image-preview__remove"
+                    disabled={isLoading}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>close</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Status */}
+            <div className="admin-form-group">
+              <label className="admin-form-group__label">Estado</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="admin-select"
+                disabled={isLoading}
+              >
+                <option value="available">Disponible</option>
+                <option value="outOfStock">Agotado</option>
+              </select>
+              <span className="admin-form-group__helper">
+                <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>check_circle</span>
+                Estado se sincroniza automáticamente con el stock
+              </span>
+            </div>
           </div>
 
-          {/* Campo Imagen */}
-          <div className="product-form__group">
-            <label className="product-form__label">
-              Imagen del Producto {!product && "*"}
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className={`product-form__file-input ${
-                errors.image ? "product-form__input--error" : ""
-              }`}
-              disabled={isLoading}
-            />
-            <small className="product-form__help">
-              Formatos: JPG, PNG, GIF, WebP. Máximo 10MB.
-            </small>
-
-            {errors.image && (
-              <span className="product-form__error">{errors.image}</span>
-            )}
-
-            {imagePreview && (
-              <div className="product-form__image-preview">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="product-form__preview-image"
-                />
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="product-form__remove-image"
-                  disabled={isLoading}
-                >
-                  × Eliminar
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Campo Estado */}
-          <div className="product-form__group">
-            <label className="product-form__label">Estado</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-              className="product-form__select"
-              disabled={isLoading}
-            >
-              <option value="available">Disponible</option>
-              <option value="outOfStock">Agotado</option>
-            </select>
-            <small className="product-form__help">
-              ✅ Estado se sincroniza automáticamente con el stock
-            </small>
-          </div>
-
-          <div className="product-form__actions">
+          {/* Actions */}
+          <div className="admin-modal__footer">
             <button
               type="submit"
-              className="product-form__submit"
+              className="admin-btn admin-btn--primary admin-btn--full"
               disabled={isLoading}
             >
               {isLoading
@@ -407,7 +361,7 @@ const ProductForm = ({ product, categories, onCancel }) => {
             <button
               type="button"
               onClick={onCancel}
-              className="product-form__cancel"
+              className="admin-btn admin-btn--secondary admin-btn--full"
               disabled={isLoading}
             >
               Cancelar

@@ -1,12 +1,5 @@
-// components/client/ChatModal/ChatModal.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  HiOutlineX,
-  HiOutlinePaperAirplane,
-  HiOutlineChat,
-  HiOutlineUserCircle,
-} from "react-icons/hi";
 import {
   startLoadClientMessages,
   startSendClientMessage,
@@ -30,18 +23,16 @@ const ChatModal = ({ isOpen, onClose }) => {
     }
   }, [isOpen, dispatch]);
 
-  // Polling solo cuando el modal está abierto
+  // Polling cada 5 segundos
   useEffect(() => {
     if (!isOpen) return;
-
     const interval = setInterval(() => {
       dispatch(startLoadClientMessages());
     }, 5000);
-
     return () => clearInterval(interval);
   }, [isOpen, dispatch]);
 
-  // Auto-scroll
+  // Auto-scroll al final
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -53,6 +44,7 @@ const ChatModal = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
+  // Enviar mensaje
   const handleSend = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || sending) return;
@@ -68,6 +60,25 @@ const ChatModal = ({ isOpen, onClose }) => {
     setSending(false);
   };
 
+  // Cerrar con Escape
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && isOpen) onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  // Bloquear scroll del body
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -77,66 +88,96 @@ const ChatModal = ({ isOpen, onClose }) => {
 
   return (
     <div
-      className="chat-modal-overlay"
+      className="chat-modal"
       onClick={(e) => e.target === e.currentTarget && onClose()}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Chat de soporte"
     >
-      <div className="chat-modal">
-        {/* Header */}
-        <div className="chat-modal__header">
-          <div className="chat-modal__header-left">
-            <div className="chat-modal__header-icon">
-              <HiOutlineChat />
+      <div className="chat-modal__container">
+        {/* ============================================ */}
+        {/* HEADER                                        */}
+        {/* ============================================ */}
+        <header className="chat-modal__header">
+          <div className="chat-modal__agent">
+            <div className="chat-modal__agent-avatar">
+              <span className="chat-modal__agent-avatar-icon material-symbols-outlined">
+                support_agent
+              </span>
             </div>
-            <div className="chat-modal__header-text">
-              <h3 className="chat-modal__title">Soporte FarmaExpress</h3>
-              <p className="chat-modal__subtitle">Respondemos en minutos</p>
+            <div className="chat-modal__agent-info">
+              <h3 className="chat-modal__agent-name">Elena M.</h3>
+              <p className="chat-modal__agent-role">Agente de Soporte</p>
             </div>
           </div>
           <button
-            className="chat-modal__close"
+            className="chat-modal__close-btn"
             onClick={onClose}
             aria-label="Cerrar chat"
+            type="button"
           >
-            <HiOutlineX />
+            <span className="chat-modal__close-icon material-symbols-outlined">
+              close
+            </span>
           </button>
-        </div>
+        </header>
 
-        {/* Mensajes */}
+        {/* ============================================ */}
+        {/* MENSAJES                                      */}
+        {/* ============================================ */}
         <div className="chat-modal__messages">
+          {/* Loading */}
           {loading && messages.length === 0 && (
-            <div className="chat-modal__loading">
-              <div className="chat-modal__spinner"></div>
-              <span>Cargando conversación...</span>
+            <div className="chat-modal__state">
+              <span className="chat-modal__state-icon material-symbols-outlined chat-modal__pulse">
+                chat
+              </span>
+              <span className="chat-modal__state-text">
+                Cargando conversación...
+              </span>
             </div>
           )}
 
+          {/* Empty */}
           {!loading && messages.length === 0 && (
-            <div className="chat-modal__empty">
-              <HiOutlineChat className="chat-modal__empty-icon" />
-              <h4>¡Bienvenido al soporte!</h4>
-              <p>Escribe tu consulta y te responderemos lo antes posible.</p>
+            <div className="chat-modal__state">
+              <span className="chat-modal__state-icon material-symbols-outlined">
+                chat
+              </span>
+              <h4 className="chat-modal__state-title">Bienvenido al soporte</h4>
+              <p className="chat-modal__state-description">
+                Escribe tu consulta y te responderemos lo antes posible.
+              </p>
             </div>
           )}
 
+          {/* Lista de mensajes */}
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`chat-message ${msg.sender === "customer" ? "chat-message--customer" : "chat-message--admin"}`}
+              className={`chat-modal__message ${msg.sender === "customer" ? "chat-modal__message--sent" : "chat-modal__message--received"}`}
             >
-              <div className="chat-message__avatar">
-                {msg.sender === "customer" ? (
-                  <HiOutlineUserCircle />
-                ) : (
-                  <div className="chat-message__admin-badge">FA</div>
-                )}
+              {/* Avatar */}
+              <div
+                className={`chat-modal__message-avatar ${msg.sender === "customer" ? "chat-modal__message-avatar--sent" : "chat-modal__message-avatar--received"}`}
+              >
+                <span className="material-symbols-outlined chat-modal__message-avatar-icon">
+                  {msg.sender === "customer" ? "person" : "support_agent"}
+                </span>
               </div>
-              <div className="chat-message__content">
-                <div className="chat-message__bubble">
-                  <p className="chat-message__text">{msg.message}</p>
+
+              {/* Contenido */}
+              <div
+                className={`chat-modal__message-content ${msg.sender === "customer" ? "chat-modal__message-content--sent" : "chat-modal__message-content--received"}`}
+              >
+                <div
+                  className={`chat-modal__bubble ${msg.sender === "customer" ? "chat-modal__bubble--sent" : "chat-modal__bubble--received"}`}
+                >
+                  <p className="chat-modal__bubble-text">{msg.message}</p>
                 </div>
-                <span className="chat-message__time">
+                <span className="chat-modal__message-time">
                   {formatTime(msg.created_at)}
-                  {msg.sender === "admin" && " • FarmaExpress"}
+                  {msg.sender === "admin" && " · Soporte"}
                 </span>
               </div>
             </div>
@@ -144,7 +185,9 @@ const ChatModal = ({ isOpen, onClose }) => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
+        {/* ============================================ */}
+        {/* INPUT                                         */}
+        {/* ============================================ */}
         <form className="chat-modal__input" onSubmit={handleSend}>
           <input
             ref={inputRef}
@@ -154,13 +197,20 @@ const ChatModal = ({ isOpen, onClose }) => {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             disabled={sending}
+            aria-label="Escribe tu mensaje"
+            autoComplete="off"
           />
           <button
             type="submit"
-            className="chat-modal__send-button"
+            className="chat-modal__send-btn"
             disabled={!newMessage.trim() || sending}
+            aria-label="Enviar mensaje"
           >
-            {sending ? "..." : <HiOutlinePaperAirplane />}
+            <span
+              className={`chat-modal__send-icon material-symbols-outlined ${sending ? "chat-modal__send-icon--loading" : ""}`}
+            >
+              {sending ? "sync" : "send"}
+            </span>
           </button>
         </form>
       </div>
