@@ -71,8 +71,8 @@ const BottomNavigation = ({
   const navItems = [
     {
       id: "catalog",
-      icon: "home",
-      label: "Inicio",
+      icon: "storefront",
+      label: "Tienda",
       action: () => onViewChange("client"),
       isActive: currentView === "client",
     },
@@ -85,7 +85,7 @@ const BottomNavigation = ({
     },
     {
       id: "categories",
-      icon: "sell",
+      icon: "category",
       label: selectedCategory !== "Todos" ? selectedCategory : "Categorías",
       action: () => setShowCategoryMenu(!showCategoryMenu),
       isActive: selectedCategory !== "Todos",
@@ -116,11 +116,6 @@ const BottomNavigation = ({
                 {item.icon}
               </span>
               <span className="bottom-nav__label">{item.label}</span>
-              {item.hasMenu && (
-                <span
-                  className={`bottom-nav__indicator ${item.isActive ? "bottom-nav__indicator--active" : ""}`}
-                />
-              )}
             </button>
           ))}
 
@@ -138,12 +133,9 @@ const BottomNavigation = ({
                 <div
                   className={`bottom-nav__badge ${showBadgeAnimation ? "bottom-nav__badge--pulse" : ""}`}
                 >
-                  <div className="bottom-nav__badge-content">
-                    <span className="bottom-nav__badge-number">
-                      {localUnreadCount > 99 ? "99+" : localUnreadCount}
-                    </span>
-                    <div className="bottom-nav__badge-ripple" />
-                  </div>
+                  <span className="bottom-nav__badge-number">
+                    {localUnreadCount > 99 ? "99+" : localUnreadCount}
+                  </span>
                 </div>
               )}
             </button>
@@ -154,7 +146,7 @@ const BottomNavigation = ({
               title="Iniciar sesión"
             >
               <span className="bottom-nav__icon material-symbols-outlined">
-                person
+                login
               </span>
               <span className="bottom-nav__label">Entrar</span>
             </button>
@@ -165,20 +157,16 @@ const BottomNavigation = ({
           <div className="bottom-nav__category-menu">
             <div className="bottom-nav__category-container">
               <div className="bottom-nav__category-header">
-                <div className="bottom-nav__category-header-left">
-                  <span className="bottom-nav__category-header-icon material-symbols-outlined">
-                    sell
-                  </span>
-                  <h3 className="bottom-nav__category-title">
-                    Filtrar por categoría
-                    {currentStoreName && currentStoreName !== "Tiendas" && (
-                      <span className="bottom-nav__category-subtitle">
-                        {" "}
-                        en {currentStoreName}
-                      </span>
-                    )}
-                  </h3>
-                </div>
+                <h3 className="bottom-nav__category-title">
+                  <span className="material-symbols-outlined">category</span>
+                  Categorías
+                  {currentStoreName && currentStoreName !== "Tiendas" && (
+                    <span className="bottom-nav__category-subtitle">
+                      {" "}
+                      en {currentStoreName}
+                    </span>
+                  )}
+                </h3>
                 <button
                   onClick={() => setShowCategoryMenu(false)}
                   className="bottom-nav__category-close"
@@ -192,27 +180,19 @@ const BottomNavigation = ({
                   onClick={() => handleCategorySelect("Todos")}
                   className={`bottom-nav__category-item ${selectedCategory === "Todos" ? "bottom-nav__category-item--active" : ""}`}
                 >
-                  <span className="bottom-nav__category-item-icon material-symbols-outlined">
+                  <span className="material-symbols-outlined">
                     auto_awesome
                   </span>
-                  <span className="bottom-nav__category-item-name">
-                    Todos los productos
-                  </span>
+                  <span>Todos los productos</span>
                   {selectedCategory === "Todos" && (
-                    <span className="bottom-nav__category-item-check material-symbols-outlined">
-                      check
-                    </span>
+                    <span className="material-symbols-outlined">check</span>
                   )}
                 </button>
 
                 {displayCategories.length === 0 ? (
                   <div className="bottom-nav__category-empty">
-                    <span className="bottom-nav__category-empty-icon material-symbols-outlined">
-                      sell
-                    </span>
-                    <p className="bottom-nav__category-empty-text">
-                      No hay categorías disponibles
-                    </p>
+                    <span className="material-symbols-outlined">category</span>
+                    <p>No hay categorías disponibles</p>
                     <p className="bottom-nav__category-empty-sub">
                       Selecciona una tienda para ver sus categorías
                     </p>
@@ -226,14 +206,10 @@ const BottomNavigation = ({
                         onClick={() => handleCategorySelect(category)}
                         className={`bottom-nav__category-item ${selectedCategory === category ? "bottom-nav__category-item--active" : ""}`}
                       >
-                        <span className="bottom-nav__category-item-icon material-symbols-outlined">
-                          sell
-                        </span>
-                        <span className="bottom-nav__category-item-name">
-                          {category}
-                        </span>
+                        <span className="material-symbols-outlined">sell</span>
+                        <span>{category}</span>
                         {selectedCategory === category && (
-                          <span className="bottom-nav__category-item-check material-symbols-outlined">
+                          <span className="material-symbols-outlined">
                             check
                           </span>
                         )}
@@ -241,13 +217,6 @@ const BottomNavigation = ({
                     ))}
                   </>
                 )}
-
-                <div className="bottom-nav__category-footer">
-                  <span className="bottom-nav__category-footer-dot" />
-                  <span className="bottom-nav__category-footer-dot" />
-                  <span className="bottom-nav__category-footer-dot" />
-                  <span>{displayCategories.length} categorías disponibles</span>
-                </div>
               </div>
             </div>
           </div>

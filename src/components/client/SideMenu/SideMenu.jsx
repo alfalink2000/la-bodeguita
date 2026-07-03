@@ -3,18 +3,29 @@ import { useDispatch, useSelector } from "react-redux";
 import { resetCart } from "../../../actions/cartActions";
 import { selectCartItemsCount } from "../../../selectors/cartSelectors";
 import Swal from "sweetalert2";
+import "./SideMenu.css";
+import "./RightSidebar.css";
 
 const SideMenu = ({
-  isOpen, onClose, isLoggedIn, userData, onLogout, onShowLogin, onProfileClick,
+  isOpen,
+  onClose,
+  isLoggedIn,
+  userData,
+  onLogout,
+  onShowLogin,
+  onProfileClick,
 }) => {
   const dispatch = useDispatch();
   const cartItemsCount = useSelector(selectCartItemsCount);
   const orders = useSelector((state) => state.orders.orders);
   const appConfig = useSelector((state) => state.appConfig.config);
 
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === "Escape") onClose();
-  }, [onClose]);
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Escape") onClose();
+    },
+    [onClose],
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -62,14 +73,21 @@ const SideMenu = ({
       >
         <div className="client-sidebar__header">
           <div className="client-sidebar__header-left">
-            <span className="material-symbols-outlined" style={{ color: "var(--color-primary)", fontSize: "24px" }}>
+            <span
+              className="material-symbols-outlined"
+              style={{ color: "var(--color-primary)", fontSize: "24px" }}
+            >
               storefront
             </span>
             <h2 className="client-sidebar__title">
               {appConfig?.app_name || "La Bodeguita"}
             </h2>
           </div>
-          <button className="client-sidebar__close" onClick={onClose} aria-label="Cerrar menú">
+          <button
+            className="client-sidebar__close"
+            onClick={onClose}
+            aria-label="Cerrar menú"
+          >
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
@@ -77,7 +95,10 @@ const SideMenu = ({
         {isLoggedIn && userData && (
           <div className="client-sidebar__user-card">
             <div className="client-sidebar__avatar">
-              <span className="material-symbols-outlined" style={{ fontSize: "24px", color: "var(--color-primary)" }}>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: "24px", color: "var(--color-primary)" }}
+              >
                 account_circle
               </span>
             </div>
@@ -93,7 +114,10 @@ const SideMenu = ({
         {isLoggedIn && (
           <div className="client-sidebar__stats">
             <div className="client-sidebar__stat">
-              <span className="material-symbols-outlined" style={{ fontSize: "18px", color: "var(--color-primary)" }}>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: "18px", color: "var(--color-primary)" }}
+              >
                 shopping_cart
               </span>
               <div>
@@ -102,7 +126,10 @@ const SideMenu = ({
               </div>
             </div>
             <div className="client-sidebar__stat">
-              <span className="material-symbols-outlined" style={{ fontSize: "18px", color: "var(--color-primary)" }}>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: "18px", color: "var(--color-primary)" }}
+              >
                 receipt_long
               </span>
               <div>
@@ -115,15 +142,21 @@ const SideMenu = ({
 
         <nav className="client-sidebar__nav">
           <button className="client-sidebar__nav-item" onClick={onClose}>
-            <span className="material-symbols-outlined client-sidebar__nav-icon">home</span>
+            <span className="material-symbols-outlined client-sidebar__nav-icon">
+              home
+            </span>
             <span>Inicio</span>
           </button>
           <button className="client-sidebar__nav-item" onClick={onClose}>
-            <span className="material-symbols-outlined client-sidebar__nav-icon">category</span>
+            <span className="material-symbols-outlined client-sidebar__nav-icon">
+              category
+            </span>
             <span>Categorías</span>
           </button>
           <button className="client-sidebar__nav-item" onClick={onClose}>
-            <span className="material-symbols-outlined client-sidebar__nav-icon">local_offer</span>
+            <span className="material-symbols-outlined client-sidebar__nav-icon">
+              local_offer
+            </span>
             <span>Ofertas</span>
           </button>
 
@@ -133,32 +166,49 @@ const SideMenu = ({
             <>
               <button
                 className="client-sidebar__nav-item"
-                onClick={() => { onClose(); onProfileClick(); }}
+                onClick={() => {
+                  onClose();
+                  onProfileClick();
+                }}
               >
-                <span className="material-symbols-outlined client-sidebar__nav-icon">person</span>
+                <span className="material-symbols-outlined client-sidebar__nav-icon">
+                  person
+                </span>
                 <span>Mi Perfil</span>
               </button>
               <button
                 className="client-sidebar__nav-item client-sidebar__nav-item--danger"
                 onClick={handleLogout}
               >
-                <span className="material-symbols-outlined client-sidebar__nav-icon">logout</span>
+                <span className="material-symbols-outlined client-sidebar__nav-icon">
+                  logout
+                </span>
                 <span>Cerrar Sesión</span>
               </button>
             </>
           ) : (
             <button
               className="client-sidebar__nav-item client-sidebar__nav-item--primary"
-              onClick={() => { onClose(); onShowLogin(); }}
+              onClick={() => {
+                onClose();
+                onShowLogin();
+              }}
             >
-              <span className="material-symbols-outlined" style={{ color: "var(--color-on-primary)" }}>person</span>
+              <span
+                className="material-symbols-outlined"
+                style={{ color: "var(--color-on-primary)" }}
+              >
+                person
+              </span>
               <span>Iniciar Sesión</span>
             </button>
           )}
         </nav>
 
         <div className="client-sidebar__footer">
-          <span className="client-sidebar__footer-text">v2.0.0 — Soporte por chat</span>
+          <span className="client-sidebar__footer-text">
+            v2.0.0 — Soporte por chat
+          </span>
         </div>
       </div>
     </>

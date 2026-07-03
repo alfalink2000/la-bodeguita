@@ -1,105 +1,105 @@
 /* ============================================
-   BOTTOM NAVIGATION - Tienda Premium
-   Navegación Inferior con Acentos Dorados
+   BOTTOM NAVIGATION - Optimizada para Móvil
    ============================================ */
 
+/* --- NAV PRINCIPAL --- */
 .bottom-nav {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 50;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-top: 2px solid rgba(200, 150, 62, 0.15);
-  box-shadow: 0 -4px 20px rgba(11, 79, 55, 0.06);
+  background: #ffffff;
+  border-top: 1px solid #e8edea;
+  box-shadow: 0 -2px 12px rgba(11, 79, 55, 0.06);
+  padding: 4px 0;
+  padding-bottom: max(4px, env(safe-area-inset-bottom));
 }
 
 .bottom-nav__container {
   display: flex;
   justify-content: space-around;
-  padding: 8px 0;
-  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  align-items: center;
   max-width: 500px;
   margin: 0 auto;
+  padding: 0 4px;
+  height: 56px;
 }
 
 .bottom-nav__button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 6px 14px;
+  justify-content: center;
+  gap: 1px;
+  padding: 4px 8px;
   background: none;
   border: none;
   cursor: pointer;
   color: #5c6b63;
   position: relative;
-  transition: all 0.3s ease;
-  min-width: 56px;
+  transition: color 0.2s;
+  min-width: 48px;
+  min-height: 44px;
+  border-radius: 12px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .bottom-nav__button--active {
   color: #0b4f37;
 }
 
-.bottom-nav__button--active::before {
-  content: "";
-  position: absolute;
-  top: -8px;
-  width: 28px;
-  height: 3px;
-  background: linear-gradient(90deg, #0b4f37, #c8963e);
-  border-radius: 0 0 3px 3px;
+.bottom-nav__button:active {
+  transform: scale(0.92);
 }
 
 .bottom-nav__icon {
-  font-size: 24px;
-  transition: transform 0.3s ease;
+  font-size: 22px;
+  font-variation-settings: "FILL" 0;
+  transition: font-variation-settings 0.2s;
 }
 
-.bottom-nav__button:hover .bottom-nav__icon {
-  transform: scale(1.1);
+.bottom-nav__button--active .bottom-nav__icon {
+  font-variation-settings: "FILL" 1;
 }
 
 .bottom-nav__label {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1;
   white-space: nowrap;
 }
 
+.bottom-nav__button--active .bottom-nav__label {
+  font-weight: 600;
+}
+
+/* --- BADGE DE NOTIFICACIONES --- */
 .bottom-nav__badge {
   position: absolute;
-  top: -2px;
+  top: 0;
   right: 2px;
-  min-width: 18px;
-  height: 18px;
+  min-width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #c8963e, #d4a853);
-  color: white;
-  font-size: 10px;
+  background: #c8963e;
+  color: #ffffff;
+  font-size: 8px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 4px;
-  box-shadow: 0 2px 8px rgba(200, 150, 62, 0.35);
-  animation: badgeBounce 2s ease-in-out infinite;
-}
-
-@keyframes badgeBounce {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.15);
-  }
+  padding: 0 3px;
+  box-shadow: 0 2px 8px rgba(200, 150, 62, 0.3);
 }
 
 .bottom-nav__badge--pulse {
   animation: badgePulse 0.4s ease-out;
+}
+
+.bottom-nav__badge-number {
+  font-size: 8px;
+  font-weight: 700;
 }
 
 @keyframes badgePulse {
@@ -107,38 +107,35 @@
     transform: scale(1);
   }
   50% {
-    transform: scale(1.4);
+    transform: scale(1.5);
   }
   100% {
     transform: scale(1);
   }
 }
 
-/* ============================================
-   OVERLAY
-   ============================================ */
+/* --- OVERLAY --- */
 .bottom-nav__overlay {
   position: fixed;
   inset: 0;
   z-index: 49;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
-/* ============================================
-   MENÚ DE CATEGORÍAS
-   ============================================ */
+/* --- MENÚ DE CATEGORÍAS --- */
 .bottom-nav__category-menu {
   position: absolute;
   bottom: 100%;
   left: 0;
   right: 0;
-  background: white;
-  border-radius: 24px 24px 0 0;
-  box-shadow: 0 -12px 40px rgba(11, 79, 55, 0.12);
-  max-height: 60vh;
-  overflow-y: auto;
-  animation: menuSlideUp 0.3s ease;
+  background: #ffffff;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 32px rgba(11, 79, 55, 0.1);
+  max-height: 65vh;
+  overflow: hidden;
+  animation: menuSlideUp 0.25s ease;
   border-top: 3px solid #c8963e;
 }
 
@@ -153,49 +150,86 @@
   }
 }
 
+.bottom-nav__category-container {
+  max-height: 65vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bottom-nav__category-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.bottom-nav__category-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bottom-nav__category-container::-webkit-scrollbar-thumb {
+  background: #d5d1ca;
+  border-radius: 4px;
+}
+
+/* --- HEADER DEL MENÚ --- */
 .bottom-nav__category-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px;
-  background: linear-gradient(135deg, #e8f5f0, #fdf8f0);
+  padding: 14px 16px;
+  background: #fafbf9;
+  border-bottom: 1px solid #e8edea;
   position: sticky;
   top: 0;
   z-index: 2;
+  min-height: 52px;
 }
 
 .bottom-nav__category-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 16px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #0b4f37, #c8963e);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-weight: 600;
+  color: #0b4f37;
   margin: 0;
+}
+
+.bottom-nav__category-title .material-symbols-outlined {
+  font-size: 20px;
+  color: #c8963e;
+}
+
+.bottom-nav__category-subtitle {
+  font-size: 13px;
+  font-weight: 400;
+  color: #5c6b63;
 }
 
 .bottom-nav__category-close {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(11, 79, 55, 0.06);
+  background: transparent;
   border: none;
   cursor: pointer;
-  color: #0b4f37;
+  color: #5c6b63;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
 }
 
-.bottom-nav__category-close:hover {
-  background: rgba(220, 38, 38, 0.1);
-  color: #dc2626;
-  transform: rotate(90deg);
+.bottom-nav__category-close:active {
+  background: #e8edea;
+  transform: scale(0.9);
 }
 
+.bottom-nav__category-close .material-symbols-outlined {
+  font-size: 22px;
+}
+
+/* --- LISTA DE CATEGORÍAS --- */
 .bottom-nav__category-list {
-  padding: 12px 16px;
+  padding: 8px 12px 16px;
 }
 
 .bottom-nav__category-item {
@@ -203,61 +237,162 @@
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 14px 16px;
-  border-radius: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   color: #1a1a1a;
-  transition: all 0.2s ease;
-  margin-bottom: 4px;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.bottom-nav__category-item:hover {
-  background: #fafbf9;
-  transform: translateX(4px);
+.bottom-nav__category-item:active {
+  transform: scale(0.97);
+  background: #e8f5f0;
 }
 
-.bottom-nav__category-item--active {
-  background: linear-gradient(135deg, #e8f5f0, #fdf8f0);
-  border: 2px solid rgba(200, 150, 62, 0.3);
-  color: #0b4f37;
-  font-weight: 600;
-}
-
-.bottom-nav__category-item-icon {
+.bottom-nav__category-item .material-symbols-outlined:first-child {
   font-size: 20px;
-  color: #0b4f37;
+  color: #5c6b63;
 }
 
-.bottom-nav__category-item-check {
+.bottom-nav__category-item span:last-child.material-symbols-outlined {
   margin-left: auto;
   color: #c8963e;
   font-size: 20px;
 }
 
+.bottom-nav__category-item--active {
+  background: #e8f5f0;
+  color: #0b4f37;
+  font-weight: 600;
+}
+
+.bottom-nav__category-item--active .material-symbols-outlined:first-child {
+  color: #0b4f37;
+}
+
 .bottom-nav__category-divider {
-  height: 2px;
-  background: linear-gradient(90deg, #0b4f37, #c8963e, transparent);
-  margin: 10px 0;
-  border-radius: 1px;
+  height: 1px;
+  background: #e8edea;
+  margin: 8px 0;
 }
 
-.bottom-nav__category-footer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 0;
-  font-size: 12px;
-  color: #a0aec0;
-  justify-content: center;
+/* --- ESTADO VACÍO --- */
+.bottom-nav__category-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: #5c6b63;
 }
 
+.bottom-nav__category-empty .material-symbols-outlined {
+  font-size: 40px;
+  color: #d5d1ca;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.bottom-nav__category-empty p {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+.bottom-nav__category-empty-sub {
+  font-size: 12px !important;
+  color: #a0aec0 !important;
+}
+
+/* ============================================
+   RESPONSIVE - TABLET Y DESKTOP
+   ============================================ */
+@media (min-width: 481px) {
+  .bottom-nav__container {
+    max-width: 600px;
+    height: 64px;
+    padding: 0 12px;
+  }
+
+  .bottom-nav__button {
+    min-width: 60px;
+    padding: 6px 12px;
+  }
+
+  .bottom-nav__icon {
+    font-size: 24px;
+  }
+
+  .bottom-nav__label {
+    font-size: 10px;
+  }
+
+  .bottom-nav__badge {
+    min-width: 18px;
+    height: 18px;
+    font-size: 9px;
+  }
+
+  .bottom-nav__category-menu {
+    border-radius: 24px 24px 0 0;
+    max-height: 60vh;
+  }
+
+  .bottom-nav__category-header {
+    padding: 16px 20px;
+  }
+
+  .bottom-nav__category-title {
+    font-size: 18px;
+  }
+
+  .bottom-nav__category-list {
+    padding: 12px 16px 20px;
+  }
+
+  .bottom-nav__category-item {
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 769px) {
+  .bottom-nav {
+    display: none;
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
 @media (prefers-reduced-motion: reduce) {
-  .bottom-nav__category-menu,
+  .bottom-nav__category-menu {
+    animation: none;
+  }
+
   .bottom-nav__badge {
     animation: none;
+  }
+
+  .bottom-nav__badge--pulse {
+    animation: none;
+  }
+
+  .bottom-nav__button:active {
+    transform: none;
+  }
+
+  .bottom-nav__category-item:active {
+    transform: none;
+  }
+}
+
+/* ============================================
+   SAFE AREA (iOS)
+   ============================================ */
+@supports (padding: max(0px)) {
+  .bottom-nav {
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
   }
 }
